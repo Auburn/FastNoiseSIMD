@@ -36,7 +36,7 @@
 #define SIMD_LEVEL AVX2
 #include <immintrin.h> 
 #ifndef __AVX__
-#error To compile AVX2 set C++ code generation to use /arch:AVX on FastNoiseSIMD_internal.cpp, or remove "#define COMPILE_AVX2" from FastNoiseSIMD.h
+#error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp, or remove "#define COMPILE_AVX2" from FastNoiseSIMD.h
 #endif
 #endif
 
@@ -97,7 +97,7 @@ typedef int SIMDi;
 
 // Memory Allocation
 #if SIMD_LEVEL > NO_SIMD_FALLBACK
-#define SIMD_ALIGNED_SET(floatCount) (float*)_aligned_malloc(floatCount* sizeof(float), MEMORY_ALIGNMENT)
+#define SIMD_ALIGNED_SET(floatCount) (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
 #else
 #define SIMD_ALIGNED_SET(floatCount) new float[floatCount]
 #endif
@@ -114,31 +114,8 @@ union uSIMDi
 	int a[VECTOR_SIZE];
 };
 
-#define SIMDf_NUM_DEFINE_NAME(n,x) const static SIMDf SIMDf_NUM(n) = SIMDf_SET(x)
-#define SIMDf_NUM_DEFINE(x) SIMDf_NUM_DEFINE_NAME(x,x)
-#define SIMDi_NUM_DEFINE_NAME(n,x) const static SIMDi SIMDi_NUM(n) = SIMDi_SET(x)
-#define SIMDi_NUM_DEFINE(x) SIMDi_NUM_DEFINE_NAME(x,x)
-
-SIMDf_NUM_DEFINE(0);
-SIMDf_NUM_DEFINE(1);
-SIMDf_NUM_DEFINE(6);
-SIMDf_NUM_DEFINE(10);
-SIMDf_NUM_DEFINE(15);
-
-SIMDi_NUM_DEFINE(0);
-SIMDi_NUM_DEFINE(1);
-SIMDi_NUM_DEFINE(2);
-SIMDi_NUM_DEFINE(4);
-SIMDi_NUM_DEFINE(8);
-SIMDi_NUM_DEFINE(12);
-SIMDi_NUM_DEFINE(14);
-SIMDi_NUM_DEFINE(15);
-SIMDi_NUM_DEFINE(60493);
-SIMDi_NUM_DEFINE(19990303);
-
-SIMDi_NUM_DEFINE_NAME(xPrime, 1619);
-SIMDi_NUM_DEFINE_NAME(yPrime, 31337);
-SIMDi_NUM_DEFINE_NAME(zPrime, 6971);
+static SIMDi SIMDi_NUM(0);
+static SIMDf SIMDf_NUM(1);
 
 // SIMD functions
 #if SIMD_LEVEL >= AVX2
@@ -298,7 +275,25 @@ static SIMDf FUNC(GradientSingle)(const SIMDi&, const SIMDf& x, const SIMDf& y, 
 static bool VAR(SIMD_Values_Set) = false;
 
 static SIMDf SIMDf_NUM(incremental);
+static SIMDf SIMDf_NUM(0);
+static SIMDf SIMDf_NUM(6);
+static SIMDf SIMDf_NUM(10);
+static SIMDf SIMDf_NUM(15);
+
 static SIMDi SIMDi_NUM(incremental);
+static SIMDi SIMDi_NUM(1);
+static SIMDi SIMDi_NUM(2);
+static SIMDi SIMDi_NUM(4);
+static SIMDi SIMDi_NUM(8);
+static SIMDi SIMDi_NUM(12);
+static SIMDi SIMDi_NUM(14);
+static SIMDi SIMDi_NUM(15);
+static SIMDi SIMDi_NUM(60493);
+static SIMDi SIMDi_NUM(19990303);
+
+static SIMDi SIMDi_NUM(xPrime);
+static SIMDi SIMDi_NUM(yPrime);
+static SIMDi SIMDi_NUM(zPrime);
 
 void FUNC(InitSIMDValues)()
 {
@@ -314,6 +309,27 @@ void FUNC(InitSIMDValues)()
 	}
 	SIMDf_NUM(incremental) = incF.m;
 	SIMDi_NUM(incremental) = incI.m;
+
+	SIMDf_NUM(0) = SIMDf_SET_ZERO();
+	SIMDf_NUM(1) = SIMDf_SET(1.0f);
+	SIMDf_NUM(6) = SIMDf_SET(6.0f);
+	SIMDf_NUM(10) = SIMDf_SET(10.0f);
+	SIMDf_NUM(15) = SIMDf_SET(15.0f);
+
+	SIMDi_NUM(0) = SIMDi_SET_ZERO();
+	SIMDi_NUM(1) = SIMDi_SET(1);
+	SIMDi_NUM(2) = SIMDi_SET(2);
+	SIMDi_NUM(4) = SIMDi_SET(4);
+	SIMDi_NUM(8) = SIMDi_SET(8);
+	SIMDi_NUM(12) = SIMDi_SET(12);
+	SIMDi_NUM(14) = SIMDi_SET(14);
+	SIMDi_NUM(15) = SIMDi_SET(15);
+	SIMDi_NUM(60493) = SIMDi_SET(60493);
+	SIMDi_NUM(19990303) = SIMDi_SET(19990303);
+
+	SIMDi_NUM(xPrime) = SIMDi_SET(1619);
+	SIMDi_NUM(yPrime) = SIMDi_SET(31337);
+	SIMDi_NUM(zPrime) = SIMDi_SET(6971);
 
 	VAR(SIMD_Values_Set) = true;
 }

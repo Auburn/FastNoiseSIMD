@@ -34,7 +34,7 @@
 #define COMPILE_SSE2 
 #define COMPILE_SSE41 
 
-// To compile AVX2 set C++ code generation to use /arch:AVX on FastNoiseSIMD_internal.cpp
+// To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp
 #define COMPILE_AVX2 
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 
