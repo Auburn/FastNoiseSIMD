@@ -30,12 +30,12 @@
 #define FASTNOISE_SIMD_H
 
 // Comment out lines to not compile for certain instruction sets
-#define COMPILE_NO_SIMD_FALLBACK 
-#define COMPILE_SSE2 
-#define COMPILE_SSE41 
+#define FN_COMPILE_NO_SIMD_FALLBACK 
+#define FN_COMPILE_SSE2 
+#define FN_COMPILE_SSE2 
 
-// To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp
-#define COMPILE_AVX2 
+// To compile FN_AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp
+#define FN_COMPILE_AVX2 
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 
 /*
@@ -83,6 +83,8 @@ public:
 
 	virtual float* GetGradientSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 	virtual float* GetGradientFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual float* GetSimplexSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual float* GetSimplexFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 
 protected:
 	int m_seed = 0;
@@ -97,33 +99,33 @@ protected:
 	static int s_currentSIMDLevel;
 };
 
-#define NO_SIMD_FALLBACK 0
-#define SSE2 1
-#define SSE41 2
-#define AVX2 3
+#define FN_NO_SIMD_FALLBACK 0
+#define FN_SSE2 1
+#define FN_SSE41 2
+#define FN_AVX2 3
 
 #define FASTNOISE_SIMD_CLASS2(x) FastNoiseSIMD_L##x
 #define FASTNOISE_SIMD_CLASS(level) FASTNOISE_SIMD_CLASS2(level)
 
 namespace FastNoiseSIMD_internal
 {
-#ifdef COMPILE_NO_SIMD_FALLBACK
-#define SIMD_LEVEL_H NO_SIMD_FALLBACK
+#ifdef FN_COMPILE_NO_SIMD_FALLBACK
+#define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-#ifdef COMPILE_SSE2
-#define SIMD_LEVEL_H SSE2
+#ifdef FN_COMPILE_SSE2
+#define SIMD_LEVEL_H FN_SSE2
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-#ifdef COMPILE_SSE41
-#define SIMD_LEVEL_H SSE41
+#ifdef FN_COMPILE_SSE2
+#define SIMD_LEVEL_H FN_SSE41
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-#ifdef COMPILE_AVX2
-#define SIMD_LEVEL_H AVX2
+#ifdef FN_COMPILE_AVX2
+#define SIMD_LEVEL_H FN_AVX2
 #include "FastNoiseSIMD_internal.h"
 #endif
 }

@@ -29,7 +29,7 @@
 #include "FastNoiseSIMD.h"
 
 // Intrisic headers retroactively include others
-//#include <immintrin.h> //AVX AVX2 FMA3
+//#include <immintrin.h> //AVX FN_AVX2 FMA3
 #include <smmintrin.h> //SSE4.1
 //#include <emmintrin.h> //SSE2
 
@@ -41,22 +41,22 @@
 #endif
 
 // Compile once for each instruction set
-#ifdef COMPILE_NO_SIMD_FALLBACK
-#define SIMD_LEVEL NO_SIMD_FALLBACK
+#ifdef FN_COMPILE_NO_SIMD_FALLBACK
+#define SIMD_LEVEL FN_NO_SIMD_FALLBACK
 #include "FastNoiseSIMD_internal.cpp"
 #endif
 
-#ifdef COMPILE_SSE2
-#define SIMD_LEVEL SSE2
+#ifdef FN_COMPILE_SSE2
+#define SIMD_LEVEL FN_SSE2
 #include "FastNoiseSIMD_internal.cpp"
 #endif
 
-#ifdef COMPILE_SSE41
-#define SIMD_LEVEL SSE41
+#ifdef FN_COMPILE_SSE2
+#define SIMD_LEVEL FN_SSE41
 #include "FastNoiseSIMD_internal.cpp"
 #endif
 
-// AVX2 compiled directly through FastNoiseSIMD_internal.cpp to allow arch:AVX flag
+// FN_AVX2 compiled directly through FastNoiseSIMD_internal.cpp to allow arch:AVX flag
 
 int FastNoiseSIMD::s_currentSIMDLevel = -1;
 
@@ -70,17 +70,17 @@ int GetFastestSIMD()
 	int nIds = cpuInfo[0];
 
 	if (nIds < 0x00000001)
-		return NO_SIMD_FALLBACK;
+		return FN_NO_SIMD_FALLBACK;
 
 	__cpuidex(cpuInfo, 0x00000001, 0);
 
-	// SSE2
+	// FN_SSE2
 	if ((cpuInfo[3] & 1 << 26) == 0)
-		return NO_SIMD_FALLBACK;
+		return FN_NO_SIMD_FALLBACK;
 
-	// SSE41
+	// FN_SSE41
 	if ((cpuInfo[2] & 1 << 19) == 0)
-		return SSE2;
+		return FN_SSE2;
 
 	// AVX
 	bool osAVXSuport =	(cpuInfo[2] & 1 << 27) != 0;
@@ -90,14 +90,14 @@ int GetFastestSIMD()
 	{
 		unsigned long long xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
 		if ((xcrFeatureMask & 0x6) == 0)
-			return SSE41;
+			return FN_SSE41;
 	}
 	else
-		return SSE41;
+		return FN_SSE41;
 
-	// AVX2 FMA3
+	// FN_AVX2 FMA3
 	if (nIds < 0x00000007)
-		return SSE41;
+		return FN_SSE41;
 
 	bool cpuFMA3Support = (cpuInfo[2] & 1 << 12) != 0;
 
@@ -106,9 +106,9 @@ int GetFastestSIMD()
 	bool cpuAVX2Support = (cpuInfo[1] & 1 << 5) != 0;
 
 	if (cpuFMA3Support && cpuAVX2Support)
-		return AVX2;
+		return FN_AVX2;
 	else
-		return SSE41;
+		return FN_SSE41;
 }
 
 FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
@@ -116,23 +116,23 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 	if (s_currentSIMDLevel < 0)
 		s_currentSIMDLevel = GetFastestSIMD();
 
-#ifdef COMPILE_AVX2
-	if (s_currentSIMDLevel >= AVX2)
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(AVX2)(seed);
+#ifdef FN_COMPILE_AVX2
+	if (s_currentSIMDLevel >= FN_AVX2)
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)(seed);
 #endif
 
-#ifdef COMPILE_SSE41
-	if (s_currentSIMDLevel >= SSE41)
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(SSE41)(seed);
+#ifdef FN_COMPILE_SSE2
+	if (s_currentSIMDLevel >= FN_SSE41)
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE41)(seed);
 #endif
 
-#ifdef COMPILE_SSE2
-	if (s_currentSIMDLevel >= SSE2)
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(SSE2)(seed);
+#ifdef FN_COMPILE_SSE2
+	if (s_currentSIMDLevel >= FN_SSE2)
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)(seed);
 #endif
 
-#ifdef COMPILE_NO_SIMD_FALLBACK
-	return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(NO_SIMD_FALLBACK)(seed);
+#ifdef FN_COMPILE_NO_SIMD_FALLBACK
+	return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NO_SIMD_FALLBACK)(seed);
 #else
 	return nullptr;
 #endif
@@ -140,7 +140,7 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 
 void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 {
-	if (s_currentSIMDLevel > NO_SIMD_FALLBACK)
+	if (s_currentSIMDLevel > FN_NO_SIMD_FALLBACK)
 		_aligned_free(floatArray);
 	else
 		delete[] floatArray;
