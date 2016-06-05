@@ -64,6 +64,7 @@ AMD Piledriver - 2012
 
 class FastNoiseSIMD
 {
+
 public:
 	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, Cellular, CellularHQ, WhiteNoise };
 	enum FractalType { FBM, Billow, RigidMulti };
@@ -81,11 +82,23 @@ public:
 	void SetFractalGain(float gain) { m_gain = gain; }
 	void SetFractalType(FractalType fractalType) { m_fractalType = fractalType; }
 
+	float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
+	virtual float* GetEmptySet(int size) = 0;
+
 	virtual float* GetGradientSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 	virtual float* GetGradientFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillGradientSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillGradientFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+
 	virtual float* GetSimplexSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 	virtual float* GetSimplexFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillSimplexSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillSimplexFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 
+	virtual float* GetValueSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual float* GetValueFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillValueFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 protected:
 	int m_seed = 0;
 	float m_frequency = 0.01f;
