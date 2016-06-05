@@ -51,7 +51,7 @@
 #include "FastNoiseSIMD_internal.cpp"
 #endif
 
-#ifdef FN_COMPILE_SSE2
+#ifdef FN_COMPILE_SSE41
 #define SIMD_LEVEL FN_SSE41
 #include "FastNoiseSIMD_internal.cpp"
 #endif
@@ -121,7 +121,7 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)(seed);
 #endif
 
-#ifdef FN_COMPILE_SSE2
+#ifdef FN_COMPILE_SSE41
 	if (s_currentSIMDLevel >= FN_SSE41)
 		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE41)(seed);
 #endif

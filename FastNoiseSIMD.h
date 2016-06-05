@@ -32,7 +32,7 @@
 // Comment out lines to not compile for certain instruction sets
 #define FN_COMPILE_NO_SIMD_FALLBACK 
 #define FN_COMPILE_SSE2 
-#define FN_COMPILE_SSE2 
+#define FN_COMPILE_SSE41
 
 // To compile FN_AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp
 #define FN_COMPILE_AVX2 
@@ -119,7 +119,7 @@ namespace FastNoiseSIMD_internal
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-#ifdef FN_COMPILE_SSE2
+#ifdef FN_COMPILE_SSE41
 #define SIMD_LEVEL_H FN_SSE41
 #include "FastNoiseSIMD_internal.h"
 #endif

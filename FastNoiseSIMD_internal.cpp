@@ -143,6 +143,7 @@ static SIMDi SIMDi_NUM(0xffffffff);
 #define SIMDi_MUL(a,b) _mm256_mullo_epi32(a,b)
 
 #define SIMDi_AND(a,b) _mm256_and_si256(a,b)
+#define SIMDi_AND_NOT(a,b) _mm256_andnot_si256(a,b)
 #define SIMDi_OR(a,b) _mm256_or_si256(a,b)
 #define SIMDi_XOR(a,b) _mm256_xor_si256(a,b)
 #define SIMDi_NOT(a) SIMDi_XOR(a,SIMDi_NUM(0xffffffff))
@@ -222,6 +223,7 @@ inline static SIMDf FUNC(GATHER)(const float* p, const SIMDi& a)
 #define SIMDi_SUB(a,b) _mm_sub_epi32(a,b)
 
 #define SIMDi_AND(a,b) _mm_and_si128(a,b)
+#define SIMDi_AND_NOT(a,b) _mm_andnot_si128(a,b)
 #define SIMDi_OR(a,b) _mm_or_si128(a,b)
 #define SIMDi_XOR(a,b) _mm_xor_si128(a,b)
 #define SIMDi_NOT(a) SIMDi_XOR(a,SIMDi_NUM(0xffffffff))
@@ -253,10 +255,10 @@ inline static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*
 #define SIMDf_MUL(a,b) ((a) * (b))
 #define SIMDf_DIV(a,b) ((a) / (b))
 
-#define SIMDf_LESS_THAN(a,b) ((a) < (b))
-#define SIMDf_GREATER_THAN(a,b) ((a) > (b))
-#define SIMDf_LESS_EQUAL(a,b) ((a) <= (b))
-#define SIMDf_GREATER_EQUAL(a,b) ((a) >= (b))
+#define SIMDf_LESS_THAN(a,b) (((a) < (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
+#define SIMDf_GREATER_THAN(a,b) (((a) > (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
+#define SIMDf_LESS_EQUAL(a,b) (((a) <= (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
+#define SIMDf_GREATER_EQUAL(a,b) (((a) >= (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
 
 #define SIMDf_FLOOR(a) floor(a)
 #define SIMDf_BLENDV(a,b,mask) (SIMDi_CAST_TO_INT(mask) ? (b) : (a))
@@ -267,6 +269,7 @@ inline static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*
 #define SIMDi_MUL(a,b) ((a) * (b))
 
 #define SIMDi_AND(a,b) ((a) & (b))
+#define SIMDi_AND_NOT(a,b) (~(a) & (b))
 #define SIMDi_OR(a,b) ((a) | (b))
 #define SIMDi_XOR(a,b) ((a) ^ (b))
 #define SIMDi_NOT(a) (~(a))
@@ -749,18 +752,14 @@ static SIMDf FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf&
 	SIMDi y0_ge_z0 = SIMDi_CAST_TO_INT(SIMDf_GREATER_EQUAL(y0, z0));
 	SIMDi x0_ge_z0 = SIMDi_CAST_TO_INT(SIMDf_GREATER_EQUAL(x0, z0));
 
-	SIMDi x0_lt_y0 = SIMDi_NOT(x0_ge_y0);
-	SIMDi y0_lt_z0 = SIMDi_NOT(y0_ge_z0);
-	SIMDi x0_lt_z0 = SIMDi_NOT(x0_ge_z0);
-
 	SIMDi i1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND(x0_ge_y0, x0_ge_z0));
 	SIMDi i2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_OR(x0_ge_y0, x0_ge_z0));
 
-	SIMDi j1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND(x0_lt_y0, y0_ge_z0));
-	SIMDi j2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_OR(x0_lt_y0, y0_ge_z0));
+	SIMDi j1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND_NOT(x0_ge_y0, y0_ge_z0));
+	SIMDi j2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_OR(SIMDi_NOT(x0_ge_y0), y0_ge_z0));
 
-	SIMDi k1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND(x0_lt_z0, y0_lt_z0));
-	SIMDi k2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_OR(x0_lt_z0, y0_lt_z0));
+	SIMDi k1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND_NOT(x0_ge_z0, SIMDi_NOT(y0_ge_z0)));
+	SIMDi k2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_NOT(SIMDi_AND(x0_ge_z0, y0_ge_z0)));
 
 	SIMDf x1 = SIMDf_ADD(SIMDf_SUB(x0, SIMDf_CONVERT_TO_FLOAT(i1)), SIMDf_NUM(G3));
 	SIMDf y1 = SIMDf_ADD(SIMDf_SUB(y0, SIMDf_CONVERT_TO_FLOAT(j1)), SIMDf_NUM(G3));
