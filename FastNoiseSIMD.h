@@ -64,9 +64,8 @@ AMD Piledriver - 2012
 
 class FastNoiseSIMD
 {
-
 public:
-	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, Cellular, CellularHQ, WhiteNoise };
+	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, WhiteNoise };
 	enum FractalType { FBM, Billow, RigidMulti };
 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
@@ -76,6 +75,7 @@ public:
 	void SetSeed(int seed) { m_seed = seed; }
 	int GetSeed(void) const	{ return m_seed; }
 	void SetFrequency(float frequency) { m_frequency = frequency; }
+	void SetNoiseType(NoiseType noiseType) { m_noiseType = noiseType; }
 
 	void SetFractalOctaves(unsigned int octaves) { m_octaves = octaves; }
 	void SetFractalLacunarity(float lacunarity) { m_lacunarity = lacunarity; }
@@ -84,6 +84,9 @@ public:
 
 	float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
 	virtual float* GetEmptySet(int size) = 0;
+
+	float* GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
+	void FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 
 	virtual float* GetGradientSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 	virtual float* GetGradientFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
@@ -99,6 +102,7 @@ public:
 	virtual float* GetValueFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 	virtual void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 	virtual void FillValueFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+
 protected:
 	int m_seed = 0;
 	float m_frequency = 0.01f;

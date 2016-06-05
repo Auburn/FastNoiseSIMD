@@ -83,7 +83,7 @@ int GetFastestSIMD()
 		return FN_SSE2;
 
 	// AVX
-	bool osAVXSuport =	(cpuInfo[2] & 1 << 27) != 0;
+	bool osAVXSuport = (cpuInfo[2] & 1 << 27) != 0;
 	bool cpuAVXSuport = (cpuInfo[2] & 1 << 28) != 0;
 
 	if (osAVXSuport && cpuAVXSuport)
@@ -102,7 +102,7 @@ int GetFastestSIMD()
 	bool cpuFMA3Support = (cpuInfo[2] & 1 << 12) != 0;
 
 	__cpuidex(cpuInfo, 0x00000007, 0);
-	
+
 	bool cpuAVX2Support = (cpuInfo[1] & 1 << 5) != 0;
 
 	if (cpuFMA3Support && cpuAVX2Support)
@@ -146,3 +146,40 @@ void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 		delete[] floatArray;
 }
 
+float* FastNoiseSIMD::GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)
+{
+	float* floatSet = GetEmptySet(xSize, ySize, zSize);
+
+	FillNoiseSet(floatSet, xStart,  yStart,  zStart,  xSize,  ySize,  zSize, stepDistance);
+
+	return floatSet;
+}
+
+void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)
+{
+	switch (m_noiseType)
+	{
+	case Value:
+		FillValueSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		break;
+	case ValueFractal:
+		FillValueFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		break;
+	case Gradient:
+		FillGradientSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance); 
+		break;
+	case GradientFractal:
+		FillGradientFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance); 
+		break;
+	case Simplex: 
+		FillSimplexSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		break;
+	case SimplexFractal: 
+		FillSimplexFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance); 
+		break;
+	case WhiteNoise: 
+		break;
+	default:
+		break;
+	}
+}
