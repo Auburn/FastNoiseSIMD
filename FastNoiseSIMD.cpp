@@ -178,8 +178,30 @@ void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zS
 		FillSimplexFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance); 
 		break;
 	case WhiteNoise: 
+		FillWhiteNoiseSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance); 
 		break;
 	default:
 		break;
 	}
 }
+
+#define GET_SET(f) \
+float* FastNoiseSIMD::Get##f##Set(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)\
+{\
+	float* floatSet = GetEmptySet(xSize, ySize, zSize);\
+	\
+	Fill##f##Set(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);\
+	\
+	return floatSet;\
+}
+
+GET_SET(WhiteNoise)
+
+GET_SET(Value)
+GET_SET(ValueFractal)
+
+GET_SET(Gradient)
+GET_SET(GradientFractal)
+
+GET_SET(Simplex)
+GET_SET(SimplexFractal)

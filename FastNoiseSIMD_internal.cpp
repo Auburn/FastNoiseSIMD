@@ -308,6 +308,7 @@ static SIMDf SIMDf_NUM(6);
 static SIMDf SIMDf_NUM(10);
 static SIMDf SIMDf_NUM(15);
 static SIMDf SIMDf_NUM(32);
+static SIMDf SIMDf_NUM(999999);
 
 static SIMDf SIMDf_NUM(0_6);
 
@@ -356,6 +357,7 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(10) = SIMDf_SET(10.0f);
 	SIMDf_NUM(15) = SIMDf_SET(15.0f);
 	SIMDf_NUM(32) = SIMDf_SET(32.0f);
+	SIMDf_NUM(999999) = SIMDf_SET(999999.0f);
 
 	SIMDf_NUM(0_6) = SIMDf_SET(0.6f);
 
@@ -421,16 +423,6 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 
 	//SIMD data has to be aligned
 	return SIMD_ALIGNED_SET(size);
-}
-
-#define GET_SET(f) \
-float* SIMD_LEVEL_CLASS::Get##f##Set(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)\
-{\
-	float* floatSet = FastNoiseSIMD::GetEmptySet(xSize, ySize, zSize);\
-	\
-	Fill##f##Set(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);\
-	\
-	return floatSet;\
 }
 
 #define FILL_SET(f) \
@@ -637,17 +629,16 @@ void SIMD_LEVEL_CLASS::Fill##f##FractalSet(float* floatSet, int xStart, int ySta
 	SIMD_ZERO_ALL();\
 }
 
-#define GET_FILL_SET(f) GET_SET(f) FILL_SET(f)
-#define GET_FILL_FRACTAL_SET(f) GET_SET(f##Fractal) FILL_FRACTAL_SET(f)
+FILL_SET(WhiteNoise)
 
-GET_FILL_SET(Value)
-GET_FILL_FRACTAL_SET(Value)
+FILL_SET(Value)
+FILL_FRACTAL_SET(Value)
 
-GET_FILL_SET(Gradient)
-GET_FILL_FRACTAL_SET(Gradient)
+FILL_SET(Gradient)
+FILL_FRACTAL_SET(Gradient)
 
-GET_FILL_SET(Simplex)
-GET_FILL_FRACTAL_SET(Simplex)
+FILL_SET(Simplex)
+FILL_FRACTAL_SET(Simplex)
 
 static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
@@ -700,6 +691,14 @@ static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi
 	SIMDf h2 = SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(SIMDi_AND(hash, SIMDi_NUM(2)), 30));
 	//then add them	
 	return SIMDf_ADD(SIMDf_BLENDV(u, SIMDf_SUB(SIMDf_NUM(0), u), h1), SIMDf_BLENDV(v, SIMDf_SUB(SIMDf_NUM(0), v), h2));
+}
+
+static SIMDf FUNC(WhiteNoiseSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+{
+	return FUNC(ValCoord)(seed,
+		SIMDi_XOR(SIMDi_CAST_TO_INT(x), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(x), 16)),
+		SIMDi_XOR(SIMDi_CAST_TO_INT(y), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(y), 16)),
+		SIMDi_XOR(SIMDi_CAST_TO_INT(z), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(z), 16)));
 }
 
 static SIMDf FUNC(ValueSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
