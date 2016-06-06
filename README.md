@@ -50,3 +50,5 @@ Noise Type |	FastNoise SIMD (AVX2) |	FastNoise |	LibNoise |	ANL
 | White Noise       | 0.48    | 2.92    |         |         |
 | Cellular          |         | 123.12  |         |         |
 | Cellular HQ       |         | 481.04  | 1,130.63 | 2,393.92 |
+
+Measurements are in ms
