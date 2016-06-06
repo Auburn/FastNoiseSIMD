@@ -648,6 +648,7 @@ static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const
 	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
 	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
 	hash = SIMDi_XOR(hash, seed);
+	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
 	hash = SIMDi_MUL(SIMDi_ADD(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), SIMDi_NUM(19990303)), hash);
 	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
