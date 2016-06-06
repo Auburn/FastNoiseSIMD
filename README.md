@@ -25,7 +25,7 @@ More documentation coming soon.
 
 #FastNoise SIMD Preview
 
-I have written a compact testing application for all the features included in FastNoiseSIMD with a visual representation. I use this for development purposes and testing noise settings used in terrain generation.
+I have written a compact testing application for all the features included in FastNoiseSIMD with a visual representation. I use this for development purposes and testing noise settings used in terrain generation. The fastest supported instruction set is also reported.
 
 Download links can be found in the [Releases Section](https://github.com/Auburns/FastNoiseSIMD/releases).
 
