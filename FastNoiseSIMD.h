@@ -30,15 +30,20 @@
 #define FASTNOISE_SIMD_H
 
 // Comment out lines to not compile for certain instruction sets
-#define FN_COMPILE_NO_SIMD_FALLBACK 
-#define FN_COMPILE_SSE2 
+#define FN_COMPILE_NO_SIMD_FALLBACK
+#define FN_COMPILE_SSE2
 #define FN_COMPILE_SSE41
 
 // To compile FN_AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp
-#define FN_COMPILE_AVX2 
+#define FN_COMPILE_AVX2
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 
 /*
+Tested Compilers
+-MSVC
+-Intel
+-GCC
+
 CPU instruction support
 
 SSE2
@@ -90,7 +95,7 @@ public:
 
 	float* GetWhiteNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	virtual void FillWhiteNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
-	
+
 	float* GetValueSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	float* GetValueFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	virtual void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;

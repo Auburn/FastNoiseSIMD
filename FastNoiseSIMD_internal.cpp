@@ -34,9 +34,23 @@
 
 #ifndef SIMD_LEVEL
 #define SIMD_LEVEL FN_AVX2
-#include <immintrin.h> 
+#include <immintrin.h>
 #ifndef __AVX__
+#ifdef __GNUC__
+#error To compile AVX2 set custom build commands "$compiler $options $includes -c $file -o $object -march=core-avx2" on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
+#elif
 #error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
+#endif
+#endif
+
+// GCC build settings
+#elif defined(__GNUC__) && SIMD_LEVEL != FN_NO_SIMD_FALLBACK
+#pragma GCC push_options
+
+#if SIMD_LEVEL == FN_SSE41
+#pragma GCC target ("sse4.1")
+#elif SIMD_LEVEL == FN_SSE2
+#pragma GCC target ("sse2")
 #endif
 #endif
 
@@ -57,7 +71,7 @@
 #define SIMDi_NUM(n) L_SIMD_NUM(n, SIMDi)
 
 #define L_VAR2(x, l) L##l##_##x
-#define L_VAR(x, l) L_VAR2(x, l) 
+#define L_VAR(x, l) L_VAR2(x, l)
 #define VAR(x) L_VAR(x, SIMD_LEVEL)
 #define FUNC(x) VAR(FUNC_##x)
 
@@ -74,7 +88,7 @@ typedef __m256i SIMDi;
 #define SIMDi_SET(a) _mm256_set1_epi32(a)
 #define SIMDi_SET_ZERO() _mm256_setzero_si256()
 
-#elif SIMD_LEVEL >= FN_SSE2 
+#elif SIMD_LEVEL >= FN_SSE2
 #define VECTOR_SIZE 4
 #define MEMORY_ALIGNMENT 16
 typedef __m128 SIMDf;
@@ -97,9 +111,13 @@ typedef int SIMDi;
 
 // Memory Allocation
 #if SIMD_LEVEL > FN_NO_SIMD_FALLBACK
-#define SIMD_ALIGNED_SET(floatCount) (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
+#ifdef _WIN32
+#define SIMD_ALIGNED_SET(floatP, floatCount) floatP = (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
 #else
-#define SIMD_ALIGNED_SET(floatCount) new float[floatCount]
+#define SIMD_ALIGNED_SET(floatP, floatCount) posix_memalign((void**)&floatP, MEMORY_ALIGNMENT, (floatCount)* sizeof(float))
+#endif
+#else
+#define SIMD_ALIGNED_SET(floatP, floatCount) floatP = new float[floatCount]
 #endif
 
 union uSIMDf
@@ -180,7 +198,7 @@ static SIMDi SIMDi_NUM(0xffffffff);
 #define SIMDf_FLOOR(a) _mm_floor_ps(a)
 #define SIMDf_BLENDV(a,b,mask) _mm_blendv_ps(a,b,mask)
 #else
-inline static SIMDi FUNC(MUL)(const SIMDi& a, const SIMDi& b)
+static SIMDi FUNC(MUL)(const SIMDi& a, const SIMDi& b)
 {
 	__m128 tmp1 = _mm_castsi128_ps(_mm_mul_epu32(a, b)); /* mul 2,0*/
 	__m128 tmp2 = _mm_castsi128_ps(_mm_mul_epu32(_mm_srli_si128(a, 4), _mm_srli_si128(b, 4))); /* mul 3,1 */
@@ -188,7 +206,7 @@ inline static SIMDi FUNC(MUL)(const SIMDi& a, const SIMDi& b)
 }
 #define SIMDi_MUL(a,b) FUNC(MUL)(a,b)
 
-inline static SIMDf FUNC(FLOOR)(const SIMDf& a)
+static SIMDf FUNC(FLOOR)(const SIMDf& a)
 {
 	__m128 fval = _mm_cvtepi32_ps(_mm_cvttps_epi32(a));
 
@@ -196,7 +214,7 @@ inline static SIMDf FUNC(FLOOR)(const SIMDf& a)
 }
 #define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
 
-inline static SIMDf FUNC(BLENDV)(const SIMDf& a, const SIMDf& b, const SIMDf& mask)
+static SIMDf FUNC(BLENDV)(const SIMDf& a, const SIMDf& b, const SIMDf& mask)
 {
 	SIMDf maskInv = _mm_castsi128_ps(_mm_cmpeq_epi32(_mm_castps_si128(mask), SIMDi_NUM(0)));
 
@@ -206,7 +224,7 @@ inline static SIMDf FUNC(BLENDV)(const SIMDf& a, const SIMDf& b, const SIMDf& ma
 #define SIMDf_BLENDV(a,b,mask) FUNC(BLENDV)(a,b,mask)
 #endif
 
-inline static SIMDf FUNC(GATHER)(const float* p, const SIMDi& a)
+static SIMDf FUNC(GATHER)(const float* p, const SIMDi& a)
 {
 	const uSIMDi* m = reinterpret_cast<const uSIMDi*>(&a);
 	uSIMDf r;
@@ -290,12 +308,12 @@ inline static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*
 
 // FMA2
 #if SIMD_LEVEL == FN_AVX2
-#define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c) 
-#define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c) 
+#define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
+#define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
 #define SIMD_ZERO_ALL() _mm256_zeroall()
 #else
 #define SIMDf_MUL_ADD(a,b,c) SIMDf_ADD(SIMDf_MUL(a,b),c)
-#define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c) 
+#define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c)
 #define SIMD_ZERO_ALL()
 #endif
 
@@ -421,8 +439,12 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 	if ((size & (VECTOR_SIZE - 1)) != 0)
 		throw;
 
+    float* noiseSet;
+
 	//SIMD data has to be aligned
-	return SIMD_ALIGNED_SET(size);
+	SIMD_ALIGNED_SET(noiseSet, size);
+
+	return noiseSet;
 }
 
 #define FILL_SET(f) \
@@ -686,11 +708,11 @@ static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi
 	h12o14 = SIMDf_BLENDV(z, x, h12o14);
 	v = SIMDf_BLENDV(h12o14, y, v);
 
-	//if h1 then -u else u	
+	//if h1 then -u else u
 	//if h2 then -v else v
 	SIMDf h1 = SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(SIMDi_AND(hash, SIMDi_NUM(1)), 31));
 	SIMDf h2 = SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(SIMDi_AND(hash, SIMDi_NUM(2)), 30));
-	//then add them	
+	//then add them
 	return SIMDf_ADD(SIMDf_BLENDV(u, SIMDf_SUB(SIMDf_NUM(0), u), h1), SIMDf_BLENDV(v, SIMDf_SUB(SIMDf_NUM(0), v), h2));
 }
 
@@ -821,5 +843,8 @@ static SIMDf FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf&
 
 	return SIMDf_MUL(SIMDf_NUM(32), SIMDf_ADD(n0, SIMDf_ADD(n1, SIMDf_ADD(n2, n3))));
 }
+#if defined(__GNUC__) && SIMD_LEVEL != FN_NO_SIMD_FALLBACK && SIMD_LEVEL != FN_AVX2
+#pragma GCC pop_options
+#endif
 #undef SIMD_LEVEL
 #endif

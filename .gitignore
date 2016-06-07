@@ -256,3 +256,4 @@ paket-files/
 /FastNoiseSIMD Preview.sln
 /FastNoiseSIMD Preview.vcxproj
 /My Advisor XE Results - FastNoiseSIMD Preview
+*.exe
