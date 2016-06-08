@@ -170,6 +170,7 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 
 void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 {
+#ifdef FN_ALIGNED_SETS
 	if (s_currentSIMDLevel > FN_NO_SIMD_FALLBACK)
         #ifdef _WIN32
 		_aligned_free(floatArray);
@@ -177,6 +178,7 @@ void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 		free(floatArray);
 		#endif
 	else
+#endif
 		delete[] floatArray;
 }
 

@@ -38,6 +38,10 @@
 #define FN_COMPILE_AVX2
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 
+// Using aligned sets of memory for float arrays allows faster storing of SIMD data
+// Comment out to allow unaligned float arrays to be used as sets
+#define FN_ALIGNED_SETS
+
 /*
 Tested Compilers
 -MSVC
@@ -87,8 +91,8 @@ public:
 	void SetFractalGain(float gain) { m_gain = gain; }
 	void SetFractalType(FractalType fractalType) { m_fractalType = fractalType; }
 
-	float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
 	virtual float* GetEmptySet(int size) = 0;
+	float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
 
 	float* GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	void FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);

@@ -38,7 +38,7 @@
 #ifndef __AVX__
 #ifdef __GNUC__
 #error To compile AVX2 set custom build commands "$compiler $options $includes -c $file -o $object -march=core-avx2" on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
-#elif
+#else
 #error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
 #endif
 #endif
@@ -110,7 +110,7 @@ typedef int SIMDi;
 #endif
 
 // Memory Allocation
-#if SIMD_LEVEL > FN_NO_SIMD_FALLBACK
+#if SIMD_LEVEL > FN_NO_SIMD_FALLBACK && defined(FN_ALIGNED_SETS)
 #ifdef _WIN32
 #define SIMD_ALIGNED_SET(floatP, floatCount) floatP = (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
 #else
@@ -139,7 +139,11 @@ static SIMDi SIMDi_NUM(0xffffffff);
 // SIMD functions
 #if SIMD_LEVEL >= FN_AVX2
 
-#define SIMDf_STORE(p,a) _mm256_stream_ps(p,a)
+#ifdef FN_ALIGNED_SETS
+#define SIMDf_STORE(p,a) _mm256_store_ps(p,a)
+#else
+#define SIMDf_STORE(p,a) _mm256_storeu_ps(p,a)
+#endif
 #define SIMDf_LOAD(p) _mm256_load_ps(p)
 
 #define SIMDf_ADD(a,b) _mm256_add_ps(a,b)
@@ -180,7 +184,11 @@ static SIMDi SIMDi_NUM(0xffffffff);
 
 #elif SIMD_LEVEL >= FN_SSE2
 
-#define SIMDf_STORE(p,a) _mm_stream_ps(p,a)
+#ifdef FN_ALIGNED_SETS
+#define SIMDf_STORE(p,a) _mm_store_ps(p,a)
+#else
+#define SIMDf_STORE(p,a) _mm_storeu_ps(p,a)
+#endif
 #define SIMDf_LOAD(p) _mm_load_ps(p)
 
 #define SIMDf_ADD(a,b) _mm_add_ps(a,b)
