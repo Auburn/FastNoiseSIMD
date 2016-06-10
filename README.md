@@ -14,7 +14,7 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - White Noise 3D
 
 ##Supported Instruction Sets
-- AVX2
+- AVX2 - FMA3
 - SSE4.1
 - SSE2
 
