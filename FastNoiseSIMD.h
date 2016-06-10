@@ -43,10 +43,10 @@
 #define FN_ALIGNED_SETS
 
 /*
-Tested Compilers
+Tested Compilers:
 -MSVC
 -Intel
--GCC
+-GCC Linux
 
 CPU instruction support
 
@@ -77,43 +77,76 @@ public:
 	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, WhiteNoise };
 	enum FractalType { FBM, Billow, RigidMulti };
 
+	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
-	static int GetSIMDLevel(void) { return s_currentSIMDLevel; }
-	static void FreeNoiseSet(float* floatArray);
 
-	void SetSeed(int seed) { m_seed = seed; }
+	// Returns highest detected level of CPU support
+	// 3: AVX2 & FMA3
+	// 2: SSE4.1
+	// 1: SSE2
+	// 0: Fallback, no SIMD support
+	// -1: Must create a FastNoiseSIMD to detect SIMD level
+	static int GetSIMDLevel(void) { return s_currentSIMDLevel; }
+
+	// Free a noise set from memory
+	static void FreeNoiseSet(float* noiseSet);
+
+
+	// Returns seed used for all noise types
 	int GetSeed(void) const	{ return m_seed; }
+
+	// Sets seed used for all noise types
+	// Default: 1337
+	void SetSeed(int seed) { m_seed = seed; }
+
+	// Sets frequency for all noise types
+	// Default: 0.01
 	void SetFrequency(float frequency) { m_frequency = frequency; }
+
+	// Sets noise return type of (Get/Fill)NoiseSet()
+	// Default: Simplex
 	void SetNoiseType(NoiseType noiseType) { m_noiseType = noiseType; }
 
+
+	// Sets octave count for all fractal noise types
+	// Default: 3
 	void SetFractalOctaves(unsigned int octaves) { m_octaves = octaves; }
+
+	// Sets octave lacunarity for all fractal noise types
+	// Default: 2.0
 	void SetFractalLacunarity(float lacunarity) { m_lacunarity = lacunarity; }
+
+	// Sets octave gain for all fractal noise types
+	// Default: 0.5
 	void SetFractalGain(float gain) { m_gain = gain; }
+
+	// Sets method for combining octaves in all fractal noise types
+	// Default: FBM
 	void SetFractalType(FractalType fractalType) { m_fractalType = fractalType; }
 
 	virtual float* GetEmptySet(int size) = 0;
 	float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
 
 	float* GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
-	void FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
+	void FillNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 
 	float* GetWhiteNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
-	virtual void FillWhiteNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 
 	float* GetValueSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	float* GetValueFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
-	virtual void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
-	virtual void FillValueFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillValueSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillValueFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 
 	float* GetGradientSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	float* GetGradientFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
-	virtual void FillGradientSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
-	virtual void FillGradientFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillGradientSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillGradientFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 
 	float* GetSimplexSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
 	float* GetSimplexFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f);
-	virtual void FillSimplexSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
-	virtual void FillSimplexFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillSimplexSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
+	virtual void FillSimplexFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) = 0;
 
 protected:
 	int m_seed = 0;
@@ -136,26 +169,4 @@ protected:
 #define FASTNOISE_SIMD_CLASS2(x) FastNoiseSIMD_L##x
 #define FASTNOISE_SIMD_CLASS(level) FASTNOISE_SIMD_CLASS2(level)
 
-namespace FastNoiseSIMD_internal
-{
-#ifdef FN_COMPILE_NO_SIMD_FALLBACK
-#define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
-#include "FastNoiseSIMD_internal.h"
-#endif
-
-#ifdef FN_COMPILE_SSE2
-#define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD_internal.h"
-#endif
-
-#ifdef FN_COMPILE_SSE41
-#define SIMD_LEVEL_H FN_SSE41
-#include "FastNoiseSIMD_internal.h"
-#endif
-
-#ifdef FN_COMPILE_AVX2
-#define SIMD_LEVEL_H FN_AVX2
-#include "FastNoiseSIMD_internal.h"
-#endif
-}
 #endif

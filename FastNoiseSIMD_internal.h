@@ -26,26 +26,29 @@
 // off every 'zix'.)
 //
 
-#ifdef SIMD_LEVEL_H
-
-class FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H) : public FastNoiseSIMD
+#ifndef SIMD_LEVEL_H
+#error Don't include this file without defining SIMD_LEVEL_H
+#else
+namespace FastNoiseSIMD_internal
 {
-public:
-	FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H)(int seed = 1337);
+	class FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H) : public FastNoiseSIMD
+	{
+	public:
+		FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H)(int seed = 1337);
 
-	float* GetEmptySet(int size) override;
+		float* GetEmptySet(int size) override;
 
-	void FillWhiteNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
-	
-	void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
-	void FillValueFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
+		void FillWhiteNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
 
-	void FillGradientSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
-	void FillGradientFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
+		void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
+		void FillValueFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
 
-	void FillSimplexSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
-	void FillSimplexFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
-};
+		void FillGradientSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
+		void FillGradientFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
 
+		void FillSimplexSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
+		void FillSimplexFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance = 1.0f) override;
+	};
+}
 #undef SIMD_LEVEL_H
 #endif

@@ -34,7 +34,10 @@
 
 #ifndef SIMD_LEVEL
 #define SIMD_LEVEL FN_AVX2
+#define SIMD_LEVEL_H FN_AVX2
+#include "FastNoiseSIMD_internal.h"
 #include <immintrin.h>
+
 #ifndef __AVX__
 #ifdef __GNUC__
 #error To compile AVX2 set custom build commands "$compiler $options $includes -c $file -o $object -march=core-avx2" on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
