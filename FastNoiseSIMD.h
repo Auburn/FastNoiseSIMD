@@ -44,9 +44,9 @@
 
 /*
 Tested Compilers:
--MSVC
--Intel
--GCC Linux
+-MSVC v120/v140
+-Intel 16.0
+-GCC 5.3.1 Linux
 
 CPU instruction support
 
