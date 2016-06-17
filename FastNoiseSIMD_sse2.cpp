@@ -28,6 +28,7 @@
 
 #include "FastNoiseSIMD.h"
 
+// Depending on the compiler this file may need to have SSE2 code generation manually enabled
 #ifdef FN_COMPILE_SSE2
 #define SIMD_LEVEL_H FN_SSE2
 #include "FastNoiseSIMD_internal.h"

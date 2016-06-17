@@ -29,6 +29,9 @@
 #ifndef SIMD_LEVEL_H
 #error Don't include this file without defining SIMD_LEVEL_H
 #else
+#define FASTNOISE_SIMD_CLASS2(x) FastNoiseSIMD_L##x
+#define FASTNOISE_SIMD_CLASS(level) FASTNOISE_SIMD_CLASS2(level)
+
 namespace FastNoiseSIMD_internal
 {
 	class FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H) : public FastNoiseSIMD

@@ -28,6 +28,7 @@
 
 #include "FastNoiseSIMD.h"
 
+// To compile this file enable AVX(2) code generation in the compiler flags
 #ifdef FN_COMPILE_AVX2
 #ifndef __AVX__
 #ifdef __GNUC__

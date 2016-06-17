@@ -48,9 +48,6 @@
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-// Intrisic headers retroactively include others
-#include <math.h>
-
 // CPUid
 #ifdef _WIN32
 #include <algorithm>
