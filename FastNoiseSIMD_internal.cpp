@@ -26,35 +26,15 @@
 // off every 'zix'.)
 //
 
-#ifndef SIMD_LEVEL
 #include "FastNoiseSIMD.h"
-#endif
 
-#if defined(SIMD_LEVEL) || defined(FN_COMPILE_AVX2)
+#if defined(SIMD_LEVEL) || defined(FN_COMPILE_NO_SIMD_FALLBACK)
 
 #ifndef SIMD_LEVEL
-#define SIMD_LEVEL FN_AVX2
-#define SIMD_LEVEL_H FN_AVX2
+#define SIMD_LEVEL FN_NO_SIMD_FALLBACK
+#define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
 #include "FastNoiseSIMD_internal.h"
-#include <immintrin.h>
-
-#ifndef __AVX__
-#ifdef __GNUC__
-#error To compile AVX2 set custom build commands "$compiler $options $includes -c $file -o $object -march=core-avx2" on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
-#else
-#error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_internal.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
-#endif
-#endif
-
-// GCC build settings
-#elif defined(__GNUC__) && SIMD_LEVEL != FN_NO_SIMD_FALLBACK
-#pragma GCC push_options
-
-#if SIMD_LEVEL == FN_SSE41
-#pragma GCC target ("sse4.1")
-#elif SIMD_LEVEL == FN_SSE2
-#pragma GCC target ("sse2")
-#endif
+#include <math.h>
 #endif
 
 // Per SIMD level var/function naming
@@ -115,12 +95,12 @@ typedef int SIMDi;
 // Memory Allocation
 #if SIMD_LEVEL > FN_NO_SIMD_FALLBACK && defined(FN_ALIGNED_SETS)
 #ifdef _WIN32
-#define SIMD_ALIGNED_SET(floatP, floatCount) floatP = (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
+#define SIMD_ALLOCATE_SET(floatP, floatCount) floatP = (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
 #else
-#define SIMD_ALIGNED_SET(floatP, floatCount) posix_memalign((void**)&floatP, MEMORY_ALIGNMENT, (floatCount)* sizeof(float))
+#define SIMD_ALLOCATE_SET(floatP, floatCount) posix_memalign((void**)&floatP, MEMORY_ALIGNMENT, (floatCount)* sizeof(float))
 #endif
 #else
-#define SIMD_ALIGNED_SET(floatP, floatCount) floatP = new float[floatCount]
+#define SIMD_ALLOCATE_SET(floatP, floatCount) floatP = new float[floatCount]
 #endif
 
 union uSIMDf
@@ -289,7 +269,7 @@ inline static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*
 #define SIMDf_LESS_EQUAL(a,b) (((a) <= (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
 #define SIMDf_GREATER_EQUAL(a,b) (((a) >= (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
 
-#define SIMDf_FLOOR(a) floor(a)
+#define SIMDf_FLOOR(a) floorf(a)
 #define SIMDf_BLENDV(a,b,mask) (SIMDi_CAST_TO_INT(mask) ? (b) : (a))
 #define SIMDf_GATHER(p,a) (*(reinterpret_cast<const float*>(p)+(a)))
 
@@ -316,6 +296,9 @@ inline static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*
 
 #define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(SIMDi_AND(SIMDi_CAST_TO_INT(a),SIMDi_CAST_TO_INT(b)))
 #define SIMDf_ABS(a) SIMDf_CAST_TO_FLOAT(SIMDi_AND(SIMDi_CAST_TO_INT(a),SIMDi_NUM(0x7fffffff)))
+#define SIMDi_GREATER_EQUAL(a,b) SIMDi_NOT(SIMDi_LESS_THAN(a,b))
+#define SIMDi_LESS_EQUAL(a,b) SIMDi_NOT(SIMDi_GREATER_THAN(a,b))
+#define SIMDi_BLENDV(a,b, mask) SIMDi_CAST_TO_INT(SIMDf_BLENDV(SIMDf_CAST_TO_FLOAT(a),SIMDf_CAST_TO_FLOAT(b),SIMDf_CAST_TO_FLOAT(mask)))
 
 // FMA2
 #if SIMD_LEVEL == FN_AVX2
@@ -339,6 +322,7 @@ static SIMDf SIMDf_NUM(15);
 static SIMDf SIMDf_NUM(32);
 static SIMDf SIMDf_NUM(999999);
 
+static SIMDf SIMDf_NUM(0_5);
 static SIMDf SIMDf_NUM(0_6);
 
 static SIMDf SIMDf_NUM(F3);
@@ -346,6 +330,7 @@ static SIMDf SIMDf_NUM(G3);
 static SIMDf SIMDf_NUM(G32);
 static SIMDf SIMDf_NUM(G33);
 static SIMDf SIMDf_NUM(hash2Float);
+static SIMDf SIMDf_NUM(vectorSize);
 
 static SIMDi SIMDi_NUM(incremental);
 static SIMDi SIMDi_NUM(1);
@@ -363,6 +348,7 @@ static SIMDi SIMDi_NUM(0x7fffffff);
 static SIMDi SIMDi_NUM(xPrime);
 static SIMDi SIMDi_NUM(yPrime);
 static SIMDi SIMDi_NUM(zPrime);
+static SIMDi SIMDi_NUM(vectorSize);
 
 void FUNC(InitSIMDValues)()
 {
@@ -388,6 +374,7 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(32) = SIMDf_SET(32.0f);
 	SIMDf_NUM(999999) = SIMDf_SET(999999.0f);
 
+	SIMDf_NUM(0_5) = SIMDf_SET(0.5f);
 	SIMDf_NUM(0_6) = SIMDf_SET(0.6f);
 
 	SIMDf_NUM(F3) = SIMDf_SET(1.f / 3.f);
@@ -395,6 +382,7 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(G32) = SIMDf_SET(2.f / 6.f);
 	SIMDf_NUM(G33) = SIMDf_SET(3.f / 6.f);
 	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 1073741824.f);
+	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
 
 	SIMDi_NUM(0) = SIMDi_SET_ZERO();
 	SIMDi_NUM(1) = SIMDi_SET(1);
@@ -411,6 +399,7 @@ void FUNC(InitSIMDValues)()
 	SIMDi_NUM(xPrime) = SIMDi_SET(1619);
 	SIMDi_NUM(yPrime) = SIMDi_SET(31337);
 	SIMDi_NUM(zPrime) = SIMDi_SET(6971);
+	SIMDi_NUM(vectorSize) = SIMDi_SET(VECTOR_SIZE);
 
 	SIMDi_NUM(0xffffffff) = SIMDi_EQUAL(SIMDi_SET_ZERO(), SIMDi_SET_ZERO());
 
@@ -446,218 +435,423 @@ SIMD_LEVEL_CLASS::FASTNOISE_SIMD_CLASS(SIMD_LEVEL)(int seed)
 
 float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 {
+#ifdef FN_ALIGNED_SETS
 	// size must be a multiple of VECTOR_SIZE (8)
 	if ((size & (VECTOR_SIZE - 1)) != 0)
-		throw;
+	{
+		size &= ~(VECTOR_SIZE - 1);
+		size += VECTOR_SIZE;
+	}
+#endif
 
-    float* noiseSet;
-
-	//SIMD data has to be aligned
-	SIMD_ALIGNED_SET(noiseSet, size);
+	float* noiseSet;
+	SIMD_ALLOCATE_SET(noiseSet, size);
 
 	return noiseSet;
 }
 
+#ifdef FN_ALIGNED_SETS
+#define STORE_LAST_RESULT(f) SIMDf_STORE(&floatSet[index], f)
+#else
+#include <cstring>
+#define STORE_LAST_RESULT(f)\
+	SIMDf temp = f;\
+	\
+	std::memcpy(&floatSet[index], &temp, (maxIndex - index) * 4)
+#endif
+
 #define FILL_SET(f) \
 static SIMDf FUNC(f##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z);\
-void SIMD_LEVEL_CLASS::Fill##f##Set(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)\
+void SIMD_LEVEL_CLASS::Fill##f##Set(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)\
 {\
 	SIMD_ZERO_ALL();\
+	SIMDi seedV = SIMDi_SET(m_seed); \
 	\
-	stepDistance *= m_frequency;\
+	SIMDf xFreqV = SIMDf_SET(m_frequency * xScale); \
+	SIMDf yFreqV = SIMDf_SET(m_frequency * yScale); \
+	SIMDf zFreqV = SIMDf_SET(m_frequency * zScale); \
 	\
-	SIMDi seed = SIMDi_SET(m_seed);\
-	\
-	SIMDf step = SIMDf_SET(stepDistance);\
-	SIMDf vStep = SIMDf_SET(stepDistance * VECTOR_SIZE);\
-	\
-	SIMDf yBase = SIMDf_SET(yStart * m_frequency);\
-	SIMDf zBase = SIMDf_MUL_ADD(step, SIMDf_NUM(incremental), SIMDf_SET(zStart * m_frequency));\
-	\
-	SIMDf x = SIMDf_SET(xStart * m_frequency);\
-	SIMDf y, z;\
-	\
-	int index = 0;\
-	\
-	for (int ix = 0; ix < xSize; ix++)\
+	if ((zSize & VECTOR_SIZE - 1) == 0)\
 	{\
-		y = yBase;\
+		SIMDf yBase = SIMDf_SET(yStart * m_frequency * yScale);\
+		SIMDf zBase = SIMDf_MUL_ADD(zFreqV, SIMDf_NUM(incremental), SIMDf_SET(zStart * m_frequency * zScale));\
 		\
-		for (int iy = 0; iy < ySize; iy++)\
+		zFreqV = SIMDf_MUL(zFreqV, SIMDf_NUM(vectorSize));\
+		\
+		SIMDf x = SIMDf_SET(xStart * m_frequency * xScale);\
+		SIMDf y, z;\
+		\
+		int index = 0;\
+		\
+		for (int ix = 0; ix < xSize; ix++)\
 		{\
-			z = zBase;\
+			y = yBase;\
 			\
-			for (int iz = 0; iz < zSize; iz += VECTOR_SIZE)\
+			for (int iy = 0; iy < ySize; iy++)\
 			{\
-				SIMDf_STORE(&floatSet[index], FUNC(f##Single)(seed, x, y, z));\
+				z = zBase;\
 				\
+				SIMDf_STORE(&floatSet[index], FUNC(f##Single)(seedV, x, y, z));\
+				\
+				int iz = VECTOR_SIZE;\
+				while (iz < zSize)\
+				{\
+					z = SIMDf_ADD(z, zFreqV);\
+					index += VECTOR_SIZE;\
+					iz += VECTOR_SIZE;\
+					\
+					SIMDf_STORE(&floatSet[index], FUNC(f##Single)(seedV, x, y, z));\
+				}\
 				index += VECTOR_SIZE;\
-				\
-				z = SIMDf_ADD(z, vStep);\
+				y = SIMDf_ADD(y, yFreqV);\
 			}\
-			y = SIMDf_ADD(y, step);\
+			x = SIMDf_ADD(x, xFreqV);\
 		}\
-		x = SIMDf_ADD(x, step);\
+	}\
+	else\
+	{\
+		\
+		SIMDi ySizeV = SIMDi_SET(ySize); \
+		SIMDi zSizeV = SIMDi_SET(zSize); \
+		\
+		SIMDi yEndV = SIMDi_SET(yStart + ySize); \
+		SIMDi zEndV = SIMDi_SET(zStart + zSize); \
+		\
+		SIMDi x = SIMDi_SET(xStart); \
+		SIMDi y = SIMDi_SET(yStart); \
+		SIMDi z = SIMDi_ADD(SIMDi_SET(zStart), SIMDi_NUM(incremental)); \
+		\
+		int index = 0; \
+		int maxIndex = xSize * ySize * zSize; \
+		\
+		for (; index < maxIndex - VECTOR_SIZE; index += VECTOR_SIZE)\
+		{\
+			SIMDf_STORE(&floatSet[index], FUNC(f##Single)(seedV, \
+				SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV),\
+				SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV),\
+				SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV)));\
+			\
+			z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));\
+			\
+			SIMDi zReset = SIMDi_LESS_THAN(z, zEndV);\
+			y = SIMDi_BLENDV(SIMDi_ADD(y, SIMDi_NUM(1)), y, zReset);\
+			z = SIMDi_BLENDV(SIMDi_SUB(z, zSizeV), z, zReset);\
+			\
+			SIMDi yReset = SIMDi_LESS_THAN(y, yEndV);\
+			x = SIMDi_BLENDV(SIMDi_ADD(x, SIMDi_NUM(1)), x, yReset);\
+			y = SIMDi_BLENDV(SIMDi_SUB(y, ySizeV), y, yReset);\
+		}\
+		\
+		STORE_LAST_RESULT(FUNC(f##Single)(seedV,\
+			SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV),\
+			SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV),\
+			SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV)));\
 	}\
 	SIMD_ZERO_ALL();\
 }
 
+#define FBM_SINGLE(f)\
+	SIMDi seedF = seedV;\
+	\
+	SIMDf sumF = FUNC(f)(seedF, xF, yF, zF);\
+	\
+	SIMDf maxF = SIMDf_NUM(1);\
+	SIMDf ampF = SIMDf_NUM(1);\
+	unsigned int octaveIndex = 0;\
+	\
+	while (++octaveIndex < m_octaves)\
+	{\
+		xF = SIMDf_MUL(xF, lacunarityV);\
+		yF = SIMDf_MUL(yF, lacunarityV);\
+		zF = SIMDf_MUL(zF, lacunarityV);\
+		seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
+		\
+		ampF = SIMDf_MUL(ampF, gainV);\
+		maxF = SIMDf_ADD(maxF, ampF);\
+		sumF = SIMDf_MUL_ADD(FUNC(f)(seedF, xF, yF, zF), ampF, sumF);\
+	}\
+	sumF = SIMDf_DIV(sumF, maxF)
+
+#define BILLOW_SINGLE(f)\
+	SIMDi seedF = seedV;\
+	\
+	SIMDf sumF = SIMDf_MUL_SUB(SIMDf_ABS(FUNC(f)(seedF, xF, yF, zF)), SIMDf_NUM(2), SIMDf_NUM(1));\
+	\
+	SIMDf maxF = SIMDf_NUM(1);\
+	SIMDf ampF = SIMDf_NUM(1);\
+	unsigned int octaveIndex = 0;\
+	\
+	while (++octaveIndex < m_octaves)\
+	{\
+		xF = SIMDf_MUL(xF, lacunarityV);\
+		yF = SIMDf_MUL(yF, lacunarityV);\
+		zF = SIMDf_MUL(zF, lacunarityV);\
+		seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
+		\
+		ampF = SIMDf_MUL(ampF, gainV);\
+		maxF = SIMDf_ADD(maxF, ampF);\
+		sumF = SIMDf_MUL_ADD(SIMDf_MUL_SUB(SIMDf_ABS(FUNC(f)(seedF, xF, yF, zF)), SIMDf_NUM(2), SIMDf_NUM(1)), ampF, sumF);\
+	}\
+	sumF = SIMDf_DIV(sumF, maxF)
+
+#define RIGIDMULTI_SINGLE(f)\
+	SIMDi seedF = seedV;\
+	\
+	SIMDf sumF = SIMDf_SUB(SIMDf_NUM(1), SIMDf_ABS(FUNC(f)(seedF, xF, yF, zF)));\
+	\
+	SIMDf ampF = SIMDf_NUM(1);\
+	unsigned int octaveIndex = 0;\
+	\
+	while (++octaveIndex < m_octaves)\
+	{\
+		xF = SIMDf_MUL(xF, lacunarityV);\
+		yF = SIMDf_MUL(yF, lacunarityV);\
+		zF = SIMDf_MUL(zF, lacunarityV);\
+		seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
+		\
+		ampF = SIMDf_MUL(ampF, gainV);\
+		sumF = SIMDf_SUB(sumF, SIMDf_MUL(SIMDf_SUB(SIMDf_NUM(1), SIMDf_ABS(FUNC(f)(seedF, xF, yF, zF))), ampF));\
+	}
+
 #define FILL_FRACTAL_SET(f) \
-void SIMD_LEVEL_CLASS::Fill##f##FractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)\
+void SIMD_LEVEL_CLASS::Fill##f##FractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)\
 {\
 	SIMD_ZERO_ALL();\
 	\
-	stepDistance *= m_frequency;\
+	SIMDi seedV = SIMDi_SET(m_seed);\
+	SIMDf lacunarityV = SIMDf_SET(m_lacunarity);\
+	SIMDf gainV = SIMDf_SET(m_gain);\
 	\
-	SIMDi seed = SIMDi_SET(m_seed);\
-	SIMDf lacunarity = SIMDf_SET(m_lacunarity);\
-	SIMDf gain = SIMDf_SET(m_gain);\
+	SIMDf xFreqV = SIMDf_SET(m_frequency * xScale);\
+	SIMDf yFreqV = SIMDf_SET(m_frequency * yScale);\
+	SIMDf zFreqV = SIMDf_SET(m_frequency * zScale);\
 	\
-	SIMDf step = SIMDf_SET(stepDistance);\
-	SIMDf vStep = SIMDf_SET(stepDistance * VECTOR_SIZE);\
-	\
-	SIMDf yBase = SIMDf_SET(yStart * m_frequency);\
-	SIMDf zBase = SIMDf_MUL_ADD(step, SIMDf_NUM(incremental), SIMDf_SET(zStart * m_frequency));\
-	\
-	SIMDf x = SIMDf_SET(xStart * m_frequency);\
-	SIMDf y, z;\
-	\
-	int index = 0;\
-	\
-	switch(m_fractalType)\
+	if ((zSize & VECTOR_SIZE - 1) == 0)\
 	{\
-	case FBM:\
-		for (int ix = 0; ix < xSize; ix++)\
+		SIMDf yBase = SIMDf_SET(yStart * m_frequency * yScale);\
+		SIMDf zBase = SIMDf_MUL_ADD(zFreqV, SIMDf_NUM(incremental), SIMDf_SET(zStart * m_frequency * zScale));\
+		\
+		zFreqV = SIMDf_MUL(zFreqV, SIMDf_NUM(vectorSize));\
+		\
+		SIMDf x = SIMDf_SET(xStart * m_frequency * xScale);\
+		SIMDf y, z;\
+		\
+		int index = 0;\
+		switch(m_fractalType)\
 		{\
-			y = yBase;\
+		case FBM:\
 			\
-			for (int iy = 0; iy < ySize; iy++)\
+			for (int ix = 0; ix < xSize; ix++)\
 			{\
-				z = zBase;\
+				y = yBase;\
 				\
-				for (int iz = 0; iz < zSize; iz += VECTOR_SIZE)\
+				for (int iy = 0; iy < ySize; iy++)\
 				{\
-					SIMDi seedF = seed;\
-					SIMDf sumF = FUNC(f##Single)(seed, x, y, z);\
-					SIMDf maxF = SIMDf_NUM(1);\
-					SIMDf ampF = SIMDf_NUM(1);\
-					unsigned int octaveIndex = 0;\
+					z = zBase;\
 					\
+					{\
 					SIMDf xF = x;\
 					SIMDf yF = y;\
 					SIMDf zF = z;\
-					\
-					while (++octaveIndex < m_octaves)\
-					{\
-						xF = SIMDf_MUL(xF, lacunarity);\
-						yF = SIMDf_MUL(yF, lacunarity);\
-						zF = SIMDf_MUL(zF, lacunarity);\
-						seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
-						\
-						ampF = SIMDf_MUL(ampF, gain);\
-						maxF = SIMDf_ADD(maxF, ampF);\
-						sumF = SIMDf_MUL_ADD(FUNC(f##Single)(seedF, xF, yF, zF), ampF, sumF);\
-					}\
-					\
-					SIMDf_STORE(&floatSet[index], SIMDf_DIV(sumF, maxF));\
-					\
-					index += VECTOR_SIZE;\
-					\
-					z = SIMDf_ADD(z, vStep);\
-				}\
-				y = SIMDf_ADD(y, step);\
-			}\
-			x = SIMDf_ADD(x, step);\
-		}\
-		break;\
-	\
-	case Billow:\
-		for (int ix = 0; ix < xSize; ix++)\
-		{\
-			y = yBase;\
-			\
-			for (int iy = 0; iy < ySize; iy++)\
-			{\
-				z = zBase;\
-				\
-				for (int iz = 0; iz < zSize; iz += VECTOR_SIZE)\
-				{\
-					SIMDi seedF = seed;\
-					SIMDf sumF = SIMDf_MUL_SUB(SIMDf_ABS(FUNC(f##Single)(seed, x, y, z)), SIMDf_NUM(2), SIMDf_NUM(1));\
-					SIMDf maxF = SIMDf_NUM(1);\
-					SIMDf ampF = SIMDf_NUM(1);\
-					unsigned int octaveIndex = 0;\
-					\
-					SIMDf xF = x;\
-					SIMDf yF = y;\
-					SIMDf zF = z;\
-					\
-					while (++octaveIndex < m_octaves)\
-					{\
-						xF = SIMDf_MUL(xF, lacunarity);\
-						yF = SIMDf_MUL(yF, lacunarity);\
-						zF = SIMDf_MUL(zF, lacunarity);\
-						seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
-						\
-						ampF = SIMDf_MUL(ampF, gain);\
-						maxF = SIMDf_ADD(maxF, ampF);\
-						sumF = SIMDf_MUL_ADD(SIMDf_MUL_SUB(SIMDf_ABS(FUNC(f##Single)(seedF, xF, yF, zF)), SIMDf_NUM(2), SIMDf_NUM(1)), ampF, sumF);\
-					}\
-					\
-					SIMDf_STORE(&floatSet[index], SIMDf_DIV(sumF, maxF));\
-					\
-					index += VECTOR_SIZE;\
-					\
-					z = SIMDf_ADD(z, vStep);\
-				}\
-				y = SIMDf_ADD(y, step);\
-			}\
-			x = SIMDf_ADD(x, step);\
-		}\
-		break;\
-	\
-	case RigidMulti:\
-		for (int ix = 0; ix < xSize; ix++)\
-		{\
-			y = yBase;\
-			\
-			for (int iy = 0; iy < ySize; iy++)\
-			{\
-				z = zBase;\
-				\
-				for (int iz = 0; iz < zSize; iz += VECTOR_SIZE)\
-				{\
-					SIMDi seedF = seed;\
-					SIMDf sumF = SIMDf_SUB(SIMDf_NUM(1), SIMDf_ABS(FUNC(f##Single)(seed, x, y, z)));\
-					SIMDf ampF = SIMDf_NUM(1);\
-					unsigned int octaveIndex = 0;\
-					\
-					SIMDf xF = x;\
-					SIMDf yF = y;\
-					SIMDf zF = z;\
-					\
-					while (++octaveIndex < m_octaves)\
-					{\
-						xF = SIMDf_MUL(xF, lacunarity);\
-						yF = SIMDf_MUL(yF, lacunarity);\
-						zF = SIMDf_MUL(zF, lacunarity);\
-						seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
-						\
-						ampF = SIMDf_MUL(ampF, gain);\
-						sumF = SIMDf_SUB(sumF, SIMDf_MUL(SIMDf_SUB(SIMDf_NUM(1), SIMDf_ABS(FUNC(f##Single)(seedF, xF, yF, zF))), ampF));\
-					}\
-					\
+					FBM_SINGLE(f##Single);\
 					SIMDf_STORE(&floatSet[index], sumF);\
-					\
+					}\
+					int iz = VECTOR_SIZE;\
+					while (iz < zSize)\
+					{\
+						z = SIMDf_ADD(z, zFreqV);\
+						index += VECTOR_SIZE;\
+						iz += VECTOR_SIZE;\
+						\
+						SIMDf xF = x;\
+						SIMDf yF = y;\
+						SIMDf zF = z;\
+						FBM_SINGLE(f##Single);\
+						SIMDf_STORE(&floatSet[index], sumF);\
+					}\
 					index += VECTOR_SIZE;\
-					\
-					z = SIMDf_ADD(z, vStep);\
+					y = SIMDf_ADD(y, yFreqV);\
 				}\
-				y = SIMDf_ADD(y, step);\
+				x = SIMDf_ADD(x, xFreqV);\
 			}\
-			x = SIMDf_ADD(x, step);\
+			break;\
+		\
+		case Billow:\
+			\
+			for (int ix = 0; ix < xSize; ix++)\
+			{\
+				y = yBase;\
+				\
+				for (int iy = 0; iy < ySize; iy++)\
+				{\
+					z = zBase;\
+					\
+					{\
+					SIMDf xF = x;\
+					SIMDf yF = y;\
+					SIMDf zF = z;\
+					BILLOW_SINGLE(f##Single);\
+					SIMDf_STORE(&floatSet[index], sumF);\
+					}\
+					int iz = VECTOR_SIZE;\
+					while (iz < zSize)\
+					{\
+						z = SIMDf_ADD(z, zFreqV);\
+						index += VECTOR_SIZE;\
+						iz += VECTOR_SIZE;\
+						\
+						SIMDf xF = x;\
+						SIMDf yF = y;\
+						SIMDf zF = z;\
+						BILLOW_SINGLE(f##Single);\
+						SIMDf_STORE(&floatSet[index], sumF);\
+					}\
+					index += VECTOR_SIZE;\
+					y = SIMDf_ADD(y, yFreqV);\
+				}\
+				x = SIMDf_ADD(x, xFreqV);\
+			}\
+			break;\
+		\
+		case RigidMulti:\
+			\
+			for (int ix = 0; ix < xSize; ix++)\
+			{\
+				y = yBase;\
+				\
+				for (int iy = 0; iy < ySize; iy++)\
+				{\
+					z = zBase;\
+					\
+					{\
+					SIMDf xF = x;\
+					SIMDf yF = y;\
+					SIMDf zF = z;\
+					RIGIDMULTI_SINGLE(f##Single);\
+					SIMDf_STORE(&floatSet[index], sumF);\
+					}\
+					int iz = VECTOR_SIZE;\
+					while (iz < zSize)\
+					{\
+						z = SIMDf_ADD(z, zFreqV);\
+						index += VECTOR_SIZE;\
+						iz += VECTOR_SIZE;\
+						\
+						SIMDf xF = x;\
+						SIMDf yF = y;\
+						SIMDf zF = z;\
+						RIGIDMULTI_SINGLE(f##Single);\
+						SIMDf_STORE(&floatSet[index], sumF);\
+					}\
+					index += VECTOR_SIZE;\
+					y = SIMDf_ADD(y, yFreqV);\
+				}\
+				x = SIMDf_ADD(x, xFreqV);\
+			}\
+			break;\
 		}\
-		break;\
+	}\
+	else\
+	{\
+		SIMDi ySizeV = SIMDi_SET(ySize);\
+		SIMDi zSizeV = SIMDi_SET(zSize);\
+		\
+		SIMDi yEndV = SIMDi_SET(yStart + ySize);\
+		SIMDi zEndV = SIMDi_SET(zStart + zSize);\
+		\
+		SIMDi x = SIMDi_SET(xStart);\
+		SIMDi y = SIMDi_SET(yStart);\
+		SIMDi z = SIMDi_ADD(SIMDi_SET(zStart), SIMDi_NUM(incremental));\
+		\
+		int index = 0;\
+		int maxIndex = xSize * ySize * zSize;\
+		\
+		switch(m_fractalType)\
+		{\
+		case FBM:\
+			for (;index < maxIndex - VECTOR_SIZE; index += VECTOR_SIZE)\
+			{\
+				SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
+				SIMDf yF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV);\
+				SIMDf zF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV);\
+				\
+				FBM_SINGLE(f##Single);\
+				SIMDf_STORE(&floatSet[index], sumF);\
+				\
+				z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));\
+				\
+				SIMDi zReset = SIMDi_LESS_THAN(z, zEndV);\
+				y = SIMDi_BLENDV(SIMDi_ADD(y, SIMDi_NUM(1)), y, zReset);\
+				z = SIMDi_BLENDV(SIMDi_SUB(z, zSizeV), z, zReset);\
+				\
+				SIMDi yReset = SIMDi_LESS_THAN(y, yEndV);\
+				x = SIMDi_BLENDV(SIMDi_ADD(x, SIMDi_NUM(1)), x, yReset);\
+				y = SIMDi_BLENDV(SIMDi_SUB(y, ySizeV), y, yReset);\
+			}{\
+			SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
+			SIMDf yF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV);\
+			SIMDf zF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV);\
+			\
+			FBM_SINGLE(f##Single); \
+			STORE_LAST_RESULT(sumF);}\
+			break;\
+		\
+		case Billow:\
+			for (;index < maxIndex - VECTOR_SIZE; index += VECTOR_SIZE)\
+			{\
+				SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
+				SIMDf yF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV);\
+				SIMDf zF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV);\
+				\
+				BILLOW_SINGLE(f##Single);\
+				SIMDf_STORE(&floatSet[index], sumF);\
+				\
+				z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));\
+				\
+				SIMDi zReset = SIMDi_LESS_THAN(z, zEndV);\
+				y = SIMDi_BLENDV(SIMDi_ADD(y, SIMDi_NUM(1)), y, zReset);\
+				z = SIMDi_BLENDV(SIMDi_SUB(z, zSizeV), z, zReset);\
+				\
+				SIMDi yReset = SIMDi_LESS_THAN(y, yEndV);\
+				x = SIMDi_BLENDV(SIMDi_ADD(x, SIMDi_NUM(1)), x, yReset);\
+				y = SIMDi_BLENDV(SIMDi_SUB(y, ySizeV), y, yReset);\
+			}{\
+			SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
+			SIMDf yF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV);\
+			SIMDf zF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV);\
+			\
+			BILLOW_SINGLE(f##Single);\
+			STORE_LAST_RESULT(sumF);}\
+			break;\
+		\
+		case RigidMulti:\
+			for (;index < maxIndex - VECTOR_SIZE; index += VECTOR_SIZE)\
+			{\
+				SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
+				SIMDf yF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV);\
+				SIMDf zF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV);\
+				\
+				RIGIDMULTI_SINGLE(f##Single);\
+				SIMDf_STORE(&floatSet[index], sumF);\
+				\
+				z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));\
+				\
+				SIMDi zReset = SIMDi_LESS_THAN(z, zEndV);\
+				y = SIMDi_BLENDV(SIMDi_ADD(y, SIMDi_NUM(1)), y, zReset);\
+				z = SIMDi_BLENDV(SIMDi_SUB(z, zSizeV), z, zReset);\
+				\
+				SIMDi yReset = SIMDi_LESS_THAN(y, yEndV);\
+				x = SIMDi_BLENDV(SIMDi_ADD(x, SIMDi_NUM(1)), x, yReset);\
+				y = SIMDi_BLENDV(SIMDi_SUB(y, ySizeV), y, yReset);\
+			}{\
+			SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
+			SIMDf yF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(y), yFreqV);\
+			SIMDf zF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(z), zFreqV);\
+			\
+			RIGIDMULTI_SINGLE(f##Single);\
+			STORE_LAST_RESULT(sumF);}\
+			break;\
+		}\
 	}\
 	SIMD_ZERO_ALL();\
 }
@@ -675,13 +869,11 @@ FILL_FRACTAL_SET(Simplex)
 
 static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
-	SIMDi hash;
+	SIMDi hash = seed;
 
-	hash = SIMDi_MUL(x, SIMDi_NUM(xPrime));
+	hash = SIMDi_ADD(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
 	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
 	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
-	hash = SIMDi_XOR(hash, seed);
-	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
 	hash = SIMDi_MUL(SIMDi_ADD(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), SIMDi_NUM(19990303)), hash);
 	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
@@ -692,12 +884,11 @@ static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const
 static SIMDf FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
 	// High bit hash
-	SIMDi hash;
+	SIMDi hash = seed;
 
-	hash = SIMDi_MUL(x, SIMDi_NUM(xPrime));
+	hash = SIMDi_ADD(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
 	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
 	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
-	hash = SIMDi_XOR(hash, seed);
 	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
 	hash = SIMDi_AND(SIMDi_MUL(SIMDi_ADD(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), SIMDi_NUM(19990303)), hash), SIMDi_NUM(0x7fffffff));
@@ -854,8 +1045,6 @@ static SIMDf FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf&
 
 	return SIMDf_MUL(SIMDf_NUM(32), SIMDf_ADD(n0, SIMDf_ADD(n1, SIMDf_ADD(n2, n3))));
 }
-#if defined(__GNUC__) && SIMD_LEVEL != FN_NO_SIMD_FALLBACK && SIMD_LEVEL != FN_AVX2
-#pragma GCC pop_options
-#endif
+
 #undef SIMD_LEVEL
 #endif

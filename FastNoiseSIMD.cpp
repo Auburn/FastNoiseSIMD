@@ -43,10 +43,12 @@
 #include "FastNoiseSIMD_internal.h"
 #endif
 
+#ifdef FN_COMPILE_AVX2
+#define SIMD_LEVEL_H FN_AVX2
+#include "FastNoiseSIMD_internal.h"
+#endif
+
 // Intrisic headers retroactively include others
-//#include <immintrin.h> //AVX FN_AVX2 FMA3
-#include <smmintrin.h> //SSE4.1
-//#include <emmintrin.h> //SSE2
 #include <math.h>
 
 // CPUid
@@ -57,35 +59,6 @@
 #include <cpuid.h>
 #include "inttypes.h"
 #endif
-
-// Macro redefinition warning
-#ifdef _MSC_VER
-#pragma warning(disable : 4005)
-#endif
-// Cannot disable in GCC unfortunately
-
-// Compile once for each instruction set
-#ifdef FN_COMPILE_NO_SIMD_FALLBACK
-#define SIMD_LEVEL FN_NO_SIMD_FALLBACK
-#include "FastNoiseSIMD_internal.cpp"
-#endif
-
-#ifdef FN_COMPILE_SSE2
-#define SIMD_LEVEL FN_SSE2
-#include "FastNoiseSIMD_internal.cpp"
-#endif
-
-#ifdef FN_COMPILE_SSE41
-#define SIMD_LEVEL FN_SSE41
-#include "FastNoiseSIMD_internal.cpp"
-#endif
-
-#ifdef FN_COMPILE_AVX2
-#define SIMD_LEVEL_H FN_AVX2
-#include "FastNoiseSIMD_internal.h"
-#endif
-
-// FN_AVX2 compiled directly through FastNoiseSIMD_internal.cpp to allow arch:AVX flag
 
 int FastNoiseSIMD::s_currentSIMDLevel = -1;
 
@@ -202,39 +175,39 @@ void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 		delete[] floatArray;
 }
 
-float* FastNoiseSIMD::GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)
+float* FastNoiseSIMD::GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)
 {
 	float* floatSet = GetEmptySet(xSize, ySize, zSize);
 
-	FillNoiseSet(floatSet, xStart,  yStart,  zStart,  xSize,  ySize,  zSize, stepDistance);
+	FillNoiseSet(floatSet, xStart,  yStart,  zStart,  xSize,  ySize,  zSize, xScale, yScale, zScale);
 
 	return floatSet;
 }
 
-void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)
+void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)
 {
 	switch (m_noiseType)
 	{
 	case Value:
-		FillValueSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillValueSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	case ValueFractal:
-		FillValueFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillValueFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	case Gradient:
-		FillGradientSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillGradientSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	case GradientFractal:
-		FillGradientFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillGradientFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	case Simplex:
-		FillSimplexSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillSimplexSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	case SimplexFractal:
-		FillSimplexFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillSimplexFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	case WhiteNoise:
-		FillWhiteNoiseSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);
+		FillWhiteNoiseSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
 		break;
 	default:
 		break;
@@ -242,11 +215,11 @@ void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zS
 }
 
 #define GET_SET(f) \
-float* FastNoiseSIMD::Get##f##Set(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float stepDistance)\
+float* FastNoiseSIMD::Get##f##Set(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)\
 {\
 	float* floatSet = GetEmptySet(xSize, ySize, zSize);\
 	\
-	Fill##f##Set(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, stepDistance);\
+	Fill##f##Set(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);\
 	\
 	return floatSet;\
 }
