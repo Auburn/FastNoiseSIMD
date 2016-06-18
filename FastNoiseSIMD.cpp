@@ -172,39 +172,39 @@ void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 		delete[] floatArray;
 }
 
-float* FastNoiseSIMD::GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)
+float* FastNoiseSIMD::GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize)
 {
 	float* floatSet = GetEmptySet(xSize, ySize, zSize);
 
-	FillNoiseSet(floatSet, xStart,  yStart,  zStart,  xSize,  ySize,  zSize, xScale, yScale, zScale);
+	FillNoiseSet(floatSet, xStart,  yStart,  zStart,  xSize,  ySize,  zSize);
 
 	return floatSet;
 }
 
-void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)
+void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize)
 {
 	switch (m_noiseType)
 	{
 	case Value:
-		FillValueSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillValueSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	case ValueFractal:
-		FillValueFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillValueFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	case Gradient:
-		FillGradientSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillGradientSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	case GradientFractal:
-		FillGradientFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillGradientFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	case Simplex:
-		FillSimplexSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillSimplexSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	case SimplexFractal:
-		FillSimplexFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillSimplexFractalSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	case WhiteNoise:
-		FillWhiteNoiseSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);
+		FillWhiteNoiseSet(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);
 		break;
 	default:
 		break;
@@ -212,11 +212,11 @@ void FastNoiseSIMD::FillNoiseSet(float* floatSet, int xStart, int yStart, int zS
 }
 
 #define GET_SET(f) \
-float* FastNoiseSIMD::Get##f##Set(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale, float yScale, float zScale)\
+float* FastNoiseSIMD::Get##f##Set(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize)\
 {\
 	float* floatSet = GetEmptySet(xSize, ySize, zSize);\
 	\
-	Fill##f##Set(floatSet, xStart, yStart, zStart, xSize, ySize, zSize, xScale, yScale, zScale);\
+	Fill##f##Set(floatSet, xStart, yStart, zStart, xSize, ySize, zSize);\
 	\
 	return floatSet;\
 }

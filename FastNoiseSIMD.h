@@ -108,6 +108,10 @@ public:
 	// Default: Simplex
 	void SetNoiseType(NoiseType noiseType) { m_noiseType = noiseType; }
 
+	// Sets scaling factor for individual axis
+	// Defaults: 1.0
+	void SetAxisScales(float xScale, float yScale, float zScale) { m_xScale = xScale; m_yScale = yScale; m_zScale = zScale;}
+
 
 	// Sets octave count for all fractal noise types
 	// Default: 3
@@ -129,31 +133,35 @@ public:
 	virtual float* GetEmptySet(int size) = 0;
 	float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
 
-	float* GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	void FillNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
+	float* GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	void FillNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
 
-	float* GetWhiteNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	virtual void FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
+	float* GetWhiteNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	virtual void FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
 
-	float* GetValueSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	float* GetValueFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	virtual void FillValueSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
-	virtual void FillValueFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
+	float* GetValueSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	float* GetValueFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	virtual void FillValueSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
+	virtual void FillValueFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
 
-	float* GetGradientSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	float* GetGradientFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	virtual void FillGradientSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
-	virtual void FillGradientFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
+	float* GetGradientSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	float* GetGradientFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	virtual void FillGradientSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
+	virtual void FillGradientFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
 
-	float* GetSimplexSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	float* GetSimplexFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f);
-	virtual void FillSimplexSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
-	virtual void FillSimplexFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float xScale = 1.0f, float yScale = 1.0f, float zScale = 1.0f) = 0;
+	float* GetSimplexSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	float* GetSimplexFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize);
+	virtual void FillSimplexSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
+	virtual void FillSimplexFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize) = 0;
 
 protected:
 	int m_seed = 1337;
 	float m_frequency = 0.01f;
 	NoiseType m_noiseType = Simplex;
+
+	float m_xScale = 1.0f;
+	float m_yScale = 1.0f;
+	float m_zScale = 1.0f;
 
 	unsigned int m_octaves = 3;
 	float m_lacunarity = 2.0f;
