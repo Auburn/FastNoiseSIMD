@@ -37,7 +37,7 @@ Using default noise settings on FastNoise SIMD and matching those settings acros
 Timing are averages of time taken for 1 million iterations on a single thread.
 
 - CPU: i7 4790k @ 4.0Ghz
-- Compiler: MSVC v120
+- Compiler: MSVC v120 x64
 
 | Noise Type       | FastNoise SIMD - AVX2 | FastNoise SIMD - SSE4.1 | FastNoise SIMD - SSE2 | FastNoise SIMD - Fallback | FastNoise | LibNoise | ANL    |
 |------------------|-----------------------|-------------------------|-----------------------|---------------------------|-----------|----------|--------|
