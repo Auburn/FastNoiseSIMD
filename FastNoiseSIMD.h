@@ -89,6 +89,16 @@ public:
 	// -1: Must create a FastNoiseSIMD to detect SIMD level
 	static int GetSIMDLevel(void) { return s_currentSIMDLevel; }
 
+	// Sets the SIMD level for newly created FastNoiseSIMD objects
+	// 3: AVX2 & FMA3
+	// 2: SSE4.1
+	// 1: SSE2
+	// 0: Fallback, no SIMD support
+	// -1: Auto-detect fastest supported (Default)
+	// Caution: Setting this manually can cause crashes on CPUs that do not support that level
+	static void SetSIMDLevel(int level) { s_currentSIMDLevel = level; }
+
+
 	// Free a noise set from memory
 	static void FreeNoiseSet(float* noiseSet);
 
@@ -157,7 +167,7 @@ public:
 protected:
 	int m_seed = 1337;
 	float m_frequency = 0.01f;
-	NoiseType m_noiseType = Simplex;
+	NoiseType m_noiseType = SimplexFractal;
 
 	float m_xScale = 1.0f;
 	float m_yScale = 1.0f;

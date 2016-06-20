@@ -32,7 +32,7 @@
 #ifdef FN_COMPILE_AVX2
 #ifndef __AVX__
 #ifdef __GNUC__
-#error To compile AVX2 set add build command "-march=core-avx2" on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
+#error To compile AVX2 add build command "-march=core-avx2" on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
 #else
 #error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
 #endif

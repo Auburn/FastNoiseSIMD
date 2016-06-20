@@ -78,10 +78,13 @@ uint64_t xgetbv(unsigned int index){
 #define _XCR_XFEATURE_ENABLED_MASK  0
 #endif
 
+//#include <immintrin.h>
 
 int GetFastestSIMD()
 {
-	// https://github.com/Mysticial/FeatureDetector
+	//https://github.com/Mysticial/FeatureDetector
+
+
 
 	int cpuInfo[4];
 
