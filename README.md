@@ -37,18 +37,16 @@ Using default noise settings on FastNoise SIMD and matching those settings acros
 Timing are averages of time taken for 1 million iterations on a single thread.
 
 - CPU: i7 4790k @ 4.0Ghz
-- Compiler: MSVC v120
+- Compiler: MSVC v120 x64
 
-Noise Type |	FastNoise SIMD (AVX2) |	FastNoise |	LibNoise |	ANL
-| ---               | ---     | ---     | ---     | ---     |
-| Value             | 4.48    | 15.68   | 25.08   | 98.21   |
-| Value Fractal     | 13.49   | 52.79   |         | 310.84  |
-| Gradient          | 8.23    | 24.47   | 29.68   | 103.06  |
-| Gradient Fractal  | 26.80   | 80.65   | 109.67  | 325.56  |
-| Simplex           | 7.76    | 30.84   |         |  43.48  |
-| Simplex Fractal   | 23.43   | 105.07  |         | 162.27  |
-| White Noise       | 0.48    | 2.92    |         |         |
-| Cellular          |         | 123.12  |         |         |
-| Cellular HQ       |         | 481.04  | 1,130.63 | 2,393.92 |
+| Noise Type       | FastNoise SIMD - AVX2 | FastNoise SIMD - SSE4.1 | FastNoise SIMD - SSE2 | FastNoise SIMD - Fallback | FastNoise | LibNoise | ANL    |
+|------------------|-----------------------|-------------------------|-----------------------|---------------------------|-----------|----------|--------|
+| Value            | 4.48                  | 9.28                    | 11.62                 | 25.55                     | 16.09     | 26.22    | 103.14 |
+| Value Fractal    | 13.49                 | 27.32                   | 34.62                 | 81.43                     | 54.93     |          | 316.39 |
+| Gradient         | 7.17                  | 15.06                   | 18.67                 | 92.42                     | 25.00     | 30.80    | 107.00 |
+| Gradient Fractal | 23.55                 | 46.80                   | 58.66                 | 321.28                    | 82.26     | 112.72   | 332.47 |
+| Simplex          | 7.16                  | 13.92                   | 15.11                 | 94.04                     | 31.42     |          | 44.23  |
+| Simplex Fractal  | 22.12                 | 43.36                   | 45.20                 | 292.07                    | 106.80    |          | 167.67 |
+| White Noise      | 0.56                  | 0.94                    | 1.50                  | 2.36                      | 3.01      |          |        |
 
 Measurements are in ms
