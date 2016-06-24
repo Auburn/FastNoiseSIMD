@@ -297,7 +297,6 @@ inline static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*
 
 #define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 //#define SIMDf_SIGN_FLIP(a) SIMDf_XOR(a,SIMDf_NUM(neg0)))
-
 //#define SIMDi_GREATER_EQUAL(a,b) SIMDi_NOT(SIMDi_LESS_THAN(a,b))
 //#define SIMDi_LESS_EQUAL(a,b) SIMDi_NOT(SIMDi_GREATER_THAN(a,b))
 //#define SIMDi_BLENDV(a,b, mask) SIMDi_CAST_TO_INT(SIMDf_BLENDV(SIMDf_CAST_TO_FLOAT(a),SIMDf_CAST_TO_FLOAT(b),SIMDf_CAST_TO_FLOAT(mask)))
@@ -466,23 +465,25 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 
 #define FILL_SET(f) \
 static SIMDf FUNC(f##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z);\
-void SIMD_LEVEL_CLASS::Fill##f##Set(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize)\
+void SIMD_LEVEL_CLASS::Fill##f##Set(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)\
 {\
 	SIMD_ZERO_ALL();\
 	SIMDi seedV = SIMDi_SET(m_seed); \
 	\
-	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale); \
-	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale); \
-	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale); \
+	scaleModifier *= m_frequency;\
+	\
+	SIMDf xFreqV = SIMDf_SET(scaleModifier * m_xScale); \
+	SIMDf yFreqV = SIMDf_SET(scaleModifier * m_yScale); \
+	SIMDf zFreqV = SIMDf_SET(scaleModifier * m_zScale); \
 	\
 	if ((zSize & VECTOR_SIZE - 1) == 0)\
 	{\
-		SIMDf yBase = SIMDf_SET(yStart * m_frequency * m_yScale);\
-		SIMDf zBase = SIMDf_MUL_ADD(zFreqV, SIMDf_NUM(incremental), SIMDf_SET(zStart * m_frequency * m_zScale));\
+		SIMDf yBase = SIMDf_SET(yStart * scaleModifier * m_yScale);\
+		SIMDf zBase = SIMDf_MUL_ADD(zFreqV, SIMDf_NUM(incremental), SIMDf_SET(zStart * scaleModifier * m_zScale));\
 		\
 		zFreqV = SIMDf_MUL(zFreqV, SIMDf_NUM(vectorSize));\
 		\
-		SIMDf x = SIMDf_SET(xStart * m_frequency * m_xScale);\
+		SIMDf x = SIMDf_SET(xStart * scaleModifier * m_xScale);\
 		SIMDf y, z;\
 		\
 		int index = 0;\
@@ -618,7 +619,7 @@ void SIMD_LEVEL_CLASS::Fill##f##Set(float* floatSet, int xStart, int yStart, int
 	}
 
 #define FILL_FRACTAL_SET(f) \
-void SIMD_LEVEL_CLASS::Fill##f##FractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize)\
+void SIMD_LEVEL_CLASS::Fill##f##FractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)\
 {\
 	SIMD_ZERO_ALL();\
 	\
@@ -626,18 +627,20 @@ void SIMD_LEVEL_CLASS::Fill##f##FractalSet(float* floatSet, int xStart, int ySta
 	SIMDf lacunarityV = SIMDf_SET(m_lacunarity);\
 	SIMDf gainV = SIMDf_SET(m_gain);\
 	\
-	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale);\
-	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale);\
-	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale);\
+	scaleModifier *= m_frequency;\
+	\
+	SIMDf xFreqV = SIMDf_SET(scaleModifier * m_xScale);\
+	SIMDf yFreqV = SIMDf_SET(scaleModifier * m_yScale);\
+	SIMDf zFreqV = SIMDf_SET(scaleModifier * m_zScale);\
 	\
 	if ((zSize & VECTOR_SIZE - 1) == 0)\
 	{\
-		SIMDf yBase = SIMDf_SET(yStart * m_frequency * m_yScale);\
-		SIMDf zBase = SIMDf_MUL_ADD(zFreqV, SIMDf_NUM(incremental), SIMDf_SET(zStart * m_frequency * m_zScale));\
+		SIMDf yBase = SIMDf_SET(yStart * scaleModifier * m_yScale);\
+		SIMDf zBase = SIMDf_MUL_ADD(zFreqV, SIMDf_NUM(incremental), SIMDf_SET(zStart * scaleModifier * m_zScale));\
 		\
 		zFreqV = SIMDf_MUL(zFreqV, SIMDf_NUM(vectorSize));\
 		\
-		SIMDf x = SIMDf_SET(xStart * m_frequency * m_xScale);\
+		SIMDf x = SIMDf_SET(xStart * scaleModifier * m_xScale);\
 		SIMDf y, z;\
 		\
 		int index = 0;\
@@ -870,6 +873,152 @@ FILL_FRACTAL_SET(Gradient)
 
 FILL_SET(Simplex)
 FILL_FRACTAL_SET(Simplex)
+
+void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, int sampleScale)
+{
+	SIMD_ZERO_ALL();
+
+	if (sampleScale <= 0)
+	{
+		FillNoiseSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize);
+		return;
+	}
+
+	int sampleSize = 1 << sampleScale;
+	int sampleMask = sampleSize - 1;
+	float scaleModifier = sampleSize;
+
+	int xOffset = sampleSize - (xStart & sampleMask) & sampleMask;
+	int yOffset = sampleSize - (yStart & sampleMask) & sampleMask;
+	int zOffset = sampleSize - (zStart & sampleMask) & sampleMask;
+
+	int xSizeSample = xSize + xOffset;
+	int ySizeSample = ySize + yOffset;
+	int zSizeSample = zSize + zOffset;
+
+	if (xSizeSample & sampleMask)
+		xSizeSample = (xSizeSample & ~sampleMask) + sampleSize;
+
+	if (ySizeSample & sampleMask)
+		ySizeSample = (ySizeSample & ~sampleMask) + sampleSize;
+
+	if (zSizeSample & sampleMask)
+		zSizeSample = (zSizeSample & ~sampleMask) + sampleSize;
+
+	xSizeSample = (xSizeSample >> sampleScale) + 1;
+	ySizeSample = (ySizeSample >> sampleScale) + 1;
+	zSizeSample = (zSizeSample >> sampleScale) + 1;
+
+	float* noiseSetSample = GetEmptySet(xSizeSample * ySizeSample * zSizeSample);
+	switch (m_noiseType)
+	{
+	case Value:
+		FillValueSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	case ValueFractal:
+		FillValueFractalSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	case Gradient:
+		FillGradientSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	case GradientFractal:
+		FillGradientFractalSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	case Simplex:
+		FillSimplexSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	case SimplexFractal:
+		FillSimplexFractalSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	case WhiteNoise:
+		FillWhiteNoiseSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
+		break;
+	default:
+		break;
+	}
+
+	int yzSizeSample = ySizeSample * zSizeSample;
+	int yzSize = ySize * zSize;
+#define SAMPLE_INDEX(_x,_y,_z) ((_x) * yzSizeSample + (_y) * zSizeSample + (_z))
+#define SET_INDEX(_x,_y,_z) ((_x) * yzSize + (_y) * zSize + (_z))
+
+	SIMDi axisMask = SIMDi_SET(sampleMask);
+	SIMDf axisScale = SIMDf_SET(1.f / scaleModifier);
+	SIMDf axisOffset = SIMDf_MUL(axisScale, SIMDf_NUM(0_5));
+
+	SIMDi sampleSizeSIMD = SIMDi_SET(sampleSize);
+	SIMDi xSIMD = SIMDi_SET(-xOffset);
+	SIMDi yBase = SIMDi_SET(-yOffset);
+	SIMDi zBase = SIMDi_SET(-zOffset);
+
+	for (int x = 0; x < xSizeSample - 1; x++)
+	{
+		SIMDi ySIMD = yBase;
+		for (int y = 0; y < ySizeSample - 1; y++)
+		{
+			SIMDi zSIMD = zBase;
+			for (int z = 0; z < zSizeSample - 1; z++)
+			{
+				SIMDf c000 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x, y, z)]);
+				SIMDf c100 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x + 1, y, z)]);
+				SIMDf c010 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x, y + 1, z)]);
+				SIMDf c110 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x + 1, y + 1, z)]);
+				SIMDf c001 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x, y, z + 1)]);
+				SIMDf c101 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x + 1, y, z + 1)]);
+				SIMDf c011 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x, y + 1, z + 1)]);
+				SIMDf c111 = SIMDf_SET(noiseSetSample[SAMPLE_INDEX(x + 1, y + 1, z + 1)]);
+
+				SIMDi localCountSIMD = SIMDi_NUM(incremental);
+
+				int localCount = 0;
+				while (localCount < (1 << (sampleScale * 3)))
+				{
+					uSIMDi xi, yi, zi;
+					xi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale * 2), axisMask);
+					yi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale), axisMask);
+					zi.m = SIMDi_AND(localCountSIMD, axisMask);
+
+					SIMDf xf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(xi.m), axisScale, axisOffset);
+					SIMDf yf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(yi.m), axisScale, axisOffset);
+					SIMDf zf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(zi.m), axisScale, axisOffset);
+
+					xi.m = SIMDi_ADD(xi.m, xSIMD);
+					yi.m = SIMDi_ADD(yi.m, ySIMD);
+					zi.m = SIMDi_ADD(zi.m, zSIMD);
+
+					uSIMDf sampledResults;
+					sampledResults.m = FUNC(Lerp)(
+						FUNC(Lerp)(
+							FUNC(Lerp)(c000, c100, xf),
+							FUNC(Lerp)(c010, c110, xf), yf),
+						FUNC(Lerp)(
+							FUNC(Lerp)(c001, c101, xf),
+							FUNC(Lerp)(c011, c111, xf), yf), zf);
+
+					for (int i = 0; i < VECTOR_SIZE; i++)
+					{
+						if (xi.a[i] >= 0 && xi.a[i] < xSize &&
+							yi.a[i] >= 0 && yi.a[i] < ySize &&
+							zi.a[i] >= 0 && zi.a[i] < zSize)
+						{
+							int index = SET_INDEX(xi.a[i], yi.a[i], zi.a[i]);
+							noiseSet[index] = sampledResults.a[i];
+						}
+					}
+
+					localCount += VECTOR_SIZE;
+					localCountSIMD = SIMDi_ADD(localCountSIMD, SIMDi_NUM(vectorSize));
+				}
+				zSIMD = SIMDi_ADD(zSIMD, sampleSizeSIMD);
+			}
+			ySIMD = SIMDi_ADD(ySIMD, sampleSizeSIMD);
+		}
+		xSIMD = SIMDi_ADD(xSIMD, sampleSizeSIMD);
+	}
+
+	FreeNoiseSet(noiseSetSample);
+	SIMD_ZERO_ALL();
+}
 
 static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
