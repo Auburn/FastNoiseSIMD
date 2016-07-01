@@ -12,6 +12,8 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Simplex Noise 3D
 - Multiple fractal options for all of the above
 - White Noise 3D
+- Cellular Noise 3D
+- Large variety of cellular noise settings
 
 ##Supported Instruction Sets
 - AVX2 - FMA3
