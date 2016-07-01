@@ -85,32 +85,6 @@ int GetFastestSIMD()
 {
 	//https://github.com/Mysticial/FeatureDetector
 
-	//__try
-	//{
-	//	_mm256_movemask_epi8(_mm256_setzero_si256());
-	//}
-	//__except (GetExceptionCode() == STATUS_ILLEGAL_INSTRUCTION || GetExceptionCode() == STATUS_PRIVILEGED_INSTRUCTION)
-	//{
-	//	__try
-	//	{
-	//		_mm_testz_si128(_mm_setzero_si128(), _mm_setzero_si128());
-	//	}
-	//	__except (GetExceptionCode() == STATUS_ILLEGAL_INSTRUCTION || GetExceptionCode() == STATUS_PRIVILEGED_INSTRUCTION)
-	//	{
-	//		__try
-	//		{
-	//			_mm_lfence();
-	//		}
-	//		__except (GetExceptionCode() == STATUS_ILLEGAL_INSTRUCTION || GetExceptionCode() == STATUS_PRIVILEGED_INSTRUCTION)
-	//		{
-	//			return FN_NO_SIMD_FALLBACK;
-	//		}
-	//		return FN_SSE2;
-	//	}
-	//	return FN_SSE41;
-	//}
-	//return FN_AVX2;
-
 	int cpuInfo[4];
 
 	cpuid(cpuInfo, 0);

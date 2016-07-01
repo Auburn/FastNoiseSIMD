@@ -82,6 +82,9 @@ public:
 	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, WhiteNoise, Cellular };
 	enum FractalType { FBM, Billow, RigidMulti };
 
+	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
+	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div };
+
 	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
 
@@ -101,7 +104,6 @@ public:
 	// -1: Auto-detect fastest supported (Default)
 	// Caution: Setting this manually can cause crashes on CPUs that do not support that level
 	static void SetSIMDLevel(int level) { s_currentSIMDLevel = level; }
-
 
 	// Free a noise set from memory
 	static void FreeNoiseSet(float* noiseSet);
@@ -142,6 +144,15 @@ public:
 	// Sets method for combining octaves in all fractal noise types
 	// Default: FBM
 	void SetFractalType(FractalType fractalType) { m_fractalType = fractalType; }
+
+
+	// Sets return type from cellular noise calculations
+	// Default: Distance
+	void SetCellularReturnType(CellularReturnType cellularReturnType) { m_cellularReturnType = cellularReturnType; }
+
+	// Sets distance function used in cellular noise calculations
+	// Default: Euclidean
+	void SetCellularDistanceFunction(CellularDistanceFunction cellularDistanceFunction) { m_cellularDistanceFunction = cellularDistanceFunction; }
 
 
 	virtual float* GetEmptySet(int size) = 0;
@@ -187,6 +198,9 @@ protected:
 	float m_lacunarity = 2.0f;
 	float m_gain = 0.5f;
 	FractalType m_fractalType = FBM;
+	
+	CellularDistanceFunction m_cellularDistanceFunction = Euclidean;
+	CellularReturnType m_cellularReturnType = Distance;
 
 	static int s_currentSIMDLevel;
 };
