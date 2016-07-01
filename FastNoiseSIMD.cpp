@@ -234,6 +234,9 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, int xStart, int yStart, int zS
 	case WhiteNoise:
 		FillWhiteNoiseSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
+	case Cellular:
+		FillCellularSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+		break;
 	default:
 		break;
 	}
@@ -268,3 +271,5 @@ GET_SET(GradientFractal)
 
 GET_SET(Simplex)
 GET_SET(SimplexFractal)
+
+GET_SET(Cellular)

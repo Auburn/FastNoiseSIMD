@@ -40,13 +40,17 @@
 
 // Using aligned sets of memory for float arrays allows faster storing of SIMD data
 // Comment out to allow unaligned float arrays to be used as sets
-//#define FN_ALIGNED_SETS
+#define FN_ALIGNED_SETS
+
+// Reduced minimum of zSize from 8 to 4
+// Causes slightly performance loss on non-"mulitple of 8" zSize
+//#define FN_MIN_Z_4
 
 /*
 Tested Compilers:
 -MSVC v120/v140
 -Intel 16.0
--GCC 5.3.1 Linux
+-GCC 4.7 Linux
 -Clang MacOSX
 
 CPU instruction support:
@@ -75,7 +79,7 @@ AMD Piledriver - 2012
 class FastNoiseSIMD
 {
 public:
-	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, WhiteNoise };
+	enum NoiseType { Value, ValueFractal, Gradient, GradientFractal, Simplex, SimplexFractal, WhiteNoise, Cellular };
 	enum FractalType { FBM, Billow, RigidMulti };
 
 	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
@@ -166,6 +170,9 @@ public:
 	float* GetSimplexFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f);
 	virtual void FillSimplexSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
 	virtual void FillSimplexFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
+
+	float* GetCellularSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f);
+	virtual void FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
 
 protected:
 	int m_seed = 1337;
