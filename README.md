@@ -59,6 +59,8 @@ Measurements are in ms
 
 ![Cellular Noise](http://i.imgur.com/PjPYBXu.png)
 
+![Cellular Noise](http://i.imgur.com/hyKjIuH.png)
+
 ###Value Noise
 ![Value Noise](http://i.imgur.com/Ss22zRs.png)
 
