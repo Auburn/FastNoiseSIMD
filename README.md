@@ -31,7 +31,7 @@ I have written a compact testing application for all the features included in Fa
 
 Download links can be found in the [Releases Section](https://github.com/Auburns/FastNoiseSIMD/releases).
 
-![FastNoise SIMD Preview](http://i.imgur.com/p4kHh7P.png)
+![Simplex Fractal](http://i.imgur.com/45JkT5j.png)
 
 #Performance Comparisons
 Using default noise settings on FastNoise SIMD and matching those settings across the other libraries where possible.
@@ -52,3 +52,15 @@ Timing are averages of time taken for 1 million iterations on a single thread.
 | White Noise      | 0.56                  | 0.94                    | 1.50                  | 2.36                      | 3.01      |          |        |
 
 Measurements are in ms
+
+##Examples
+###Cellular Noise
+![Cellular Noise](http://i.imgur.com/RshUkoe.png)
+
+![Cellular Noise](http://i.imgur.com/PjPYBXu.png)
+
+###Value Noise
+![Value Noise](http://i.imgur.com/Ss22zRs.png)
+
+###White Noise
+![White Noise](http://i.imgur.com/wcTlyek.png)
