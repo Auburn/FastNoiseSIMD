@@ -668,7 +668,7 @@ static SIMDf FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf&
 
 #define Euclidean_DISTANCE(_x, _y, _z) SIMDf_MUL_ADD(_x, _x, SIMDf_MUL_ADD(_y, _y, SIMDf_MUL(_z, _z)))
 #define Manhattan_DISTANCE(_x, _y, _z) SIMDf_ADD(SIMDf_ADD(SIMDf_ABS(_x), SIMDf_ABS(_y)), SIMDf_ABS(_z))
-#define Natural_DISTANCE(_x, _y, _z) SIMDf_MUL(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
+#define Natural_DISTANCE(_x, _y, _z) SIMDf_ADD(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
 
 #define Distance2_RETURN(_distance, _distance2) (_distance2)
 #define Distance2Add_RETURN(_distance, _distance2) SIMDf_ADD(_distance, _distance2)
@@ -818,6 +818,8 @@ static SIMDf FUNC(Cellular##returnFunc##distanceFunc##Single)(const SIMDi& seed,
 CELLULAR_VALUE_SINGLE(Euclidean)
 CELLULAR_VALUE_SINGLE(Manhattan)
 CELLULAR_VALUE_SINGLE(Natural)
+
+#define Natural_DISTANCE(_x, _y, _z) SIMDf_MUL(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
 
 CELLULAR_DISTANCE_SINGLE(Euclidean)
 CELLULAR_DISTANCE_SINGLE(Manhattan)
