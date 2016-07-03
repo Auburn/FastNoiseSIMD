@@ -819,6 +819,7 @@ CELLULAR_VALUE_SINGLE(Euclidean)
 CELLULAR_VALUE_SINGLE(Manhattan)
 CELLULAR_VALUE_SINGLE(Natural)
 
+#undef Natural_DISTANCE
 #define Natural_DISTANCE(_x, _y, _z) SIMDf_MUL(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
 
 CELLULAR_DISTANCE_SINGLE(Euclidean)
