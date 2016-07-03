@@ -353,6 +353,7 @@ static SIMDf SIMDf_NUM(999999);
 static SIMDf SIMDf_NUM(0_45);
 static SIMDf SIMDf_NUM(0_5);
 static SIMDf SIMDf_NUM(0_6);
+static SIMDf SIMDf_NUM(511_5);
 
 static SIMDf SIMDf_NUM(F3);
 static SIMDf SIMDf_NUM(G3);
@@ -378,6 +379,7 @@ static SIMDi SIMDi_NUM(0x7fffffff);
 static SIMDi SIMDi_NUM(xPrime);
 static SIMDi SIMDi_NUM(yPrime);
 static SIMDi SIMDi_NUM(zPrime);
+static SIMDi SIMDi_NUM(bit10Mask);
 static SIMDi SIMDi_NUM(vectorSize);
 
 void FUNC(InitSIMDValues)()
@@ -407,6 +409,7 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(0_45) = SIMDf_SET(0.45f);
 	SIMDf_NUM(0_5) = SIMDf_SET(0.5f);
 	SIMDf_NUM(0_6) = SIMDf_SET(0.6f);
+	SIMDf_NUM(511_5) = SIMDf_SET(511.5f);
 
 	SIMDf_NUM(F3) = SIMDf_SET(1.f / 3.f);
 	SIMDf_NUM(G3) = SIMDf_SET(1.f / 6.f);
@@ -431,6 +434,7 @@ void FUNC(InitSIMDValues)()
 	SIMDi_NUM(xPrime) = SIMDi_SET(1619);
 	SIMDi_NUM(yPrime) = SIMDi_SET(31337);
 	SIMDi_NUM(zPrime) = SIMDi_SET(6971);
+	SIMDi_NUM(bit10Mask) = SIMDi_SET(1023);
 	SIMDi_NUM(vectorSize) = SIMDi_SET(VECTOR_SIZE);
 
 	SIMDi_NUM(0xffffffff) = SIMDi_EQUAL(SIMDi_SET_ZERO(), SIMDi_SET_ZERO());
@@ -479,6 +483,20 @@ static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
+
+	return hash;
+}
+
+static SIMDi FUNC(HashHB)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
+{
+	SIMDi hash = seed;
+
+	hash = SIMDi_ADD(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
+	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
+	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
+
+	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 
 	return hash;
 }
@@ -668,10 +686,6 @@ static SIMDf FUNC(CellularValue##distanceFunc##Single)(const SIMDi& seed, const 
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
-	SIMDi seed1 = SIMDi_ADD(seed, SIMDi_NUM(1));\
-	SIMDi seed2 = SIMDi_ADD(seed, SIMDi_NUM(2));\
-	SIMDi seed3 = SIMDi_ADD(seed, SIMDi_NUM(3));\
-	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
 		SIMDf xcf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
@@ -682,9 +696,10 @@ static SIMDf FUNC(CellularValue##distanceFunc##Single)(const SIMDi& seed, const 
 			SIMDi zc = zcBase;\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
-				SIMDf xd = FUNC(ValCoord)(seed, xc, yc, zc);\
-				SIMDf yd = FUNC(ValCoord)(seed1, xc, yc, zc);\
-				SIMDf zd = FUNC(ValCoord)(seed2, xc, yc, zc);\
+				SIMDi hash = FUNC(HashHB)(seed, xc, yc, zc);\
+				SIMDf xd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(hash, SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
+				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
+				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
 				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
@@ -692,7 +707,7 @@ static SIMDf FUNC(CellularValue##distanceFunc##Single)(const SIMDi& seed, const 
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
 				zd = SIMDf_MUL_ADD(zd, invMag, SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zc), z));\
 				\
-				SIMDf newCellValue = FUNC(ValCoord)(seed3, xc, yc, zc);\
+				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(SIMDi_AND(hash,SIMDi_NUM(0x7fffffff)), SIMDi_NUM(0x40000000))));\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
 				SIMDf closer = SIMDf_LESS_THAN(newDistance, distance);\
@@ -719,9 +734,6 @@ static SIMDf FUNC(CellularDistance##distanceFunc##Single)(const SIMDi& seed, con
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
-	SIMDi seed1 = SIMDi_ADD(seed, SIMDi_NUM(1));\
-	SIMDi seed2 = SIMDi_ADD(seed, SIMDi_NUM(2));\
-	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
 		SIMDf xcf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
@@ -732,9 +744,10 @@ static SIMDf FUNC(CellularDistance##distanceFunc##Single)(const SIMDi& seed, con
 			SIMDi zc = zcBase;\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
-				SIMDf xd = FUNC(ValCoord)(seed, xc, yc, zc);\
-				SIMDf yd = FUNC(ValCoord)(seed1, xc, yc, zc);\
-				SIMDf zd = FUNC(ValCoord)(seed2, xc, yc, zc);\
+				SIMDi hash = FUNC(HashHB)(seed, xc, yc, zc);\
+				SIMDf xd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(hash, SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
+				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
+				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
 				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
@@ -766,9 +779,6 @@ static SIMDf FUNC(Cellular##returnFunc##distanceFunc##Single)(const SIMDi& seed,
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
-	SIMDi seed1 = SIMDi_ADD(seed, SIMDi_NUM(1));\
-	SIMDi seed2 = SIMDi_ADD(seed, SIMDi_NUM(2));\
-	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
 		SIMDf xcf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
@@ -779,9 +789,10 @@ static SIMDf FUNC(Cellular##returnFunc##distanceFunc##Single)(const SIMDi& seed,
 			SIMDi zc = zcBase;\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
-				SIMDf xd = FUNC(ValCoord)(seed, xc, yc, zc);\
-				SIMDf yd = FUNC(ValCoord)(seed1, xc, yc, zc);\
-				SIMDf zd = FUNC(ValCoord)(seed2, xc, yc, zc);\
+				SIMDi hash = FUNC(HashHB)(seed, xc, yc, zc);\
+				SIMDf xd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(hash, SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
+				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
+				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
 				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
