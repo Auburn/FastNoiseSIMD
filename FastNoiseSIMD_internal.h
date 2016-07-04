@@ -41,6 +41,7 @@ namespace FastNoiseSIMD_internal
 		FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H)(int seed = 1337);
 
 		static float* GetEmptySet(int size);
+		static int AlignedSize(int size);
 
 		void FillSampledNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, int sampleScale) override;
 		void FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet, int xSize, int ySize, int zSize, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
@@ -65,6 +66,7 @@ namespace FastNoiseSIMD_internal
 
 		void FillCellularSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
 		void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+	
 	};
 }
 #undef SIMD_LEVEL_H

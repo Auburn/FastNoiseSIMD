@@ -42,6 +42,10 @@
 // Comment out to allow unaligned float arrays to be used as sets
 #define FN_ALIGNED_SETS
 
+// Using FMA3 instructions with AVX2 provides a small performance increase but can cause 
+// tiny variations in noise output compared to other SIMD levels due to higher calculation precision
+#define FN_USE_FMA3
+
 // Reduced minimum of zSize from 8 to 4 when not using a vector set
 // Causes slightly performance loss on non-"mulitple of 8" zSize
 //#define FN_MIN_Z_4
@@ -110,8 +114,13 @@ public:
 	// Free a noise set from memory
 	static void FreeNoiseSet(float* noiseSet);
 
+	// Create an empty (aligned) noise set for use with FillNoiseSet()
 	static float* GetEmptySet(int size);
-	static float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); };
+
+	// Create an empty (aligned) noise set for use with FillNoiseSet()
+	static float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); }
+
+	static int AlignedSize(int size);
 
 
 	// Returns seed used for all noise types
@@ -235,25 +244,9 @@ struct FastNoiseVectorSet
 
 	~FastNoiseVectorSet() { Free(); }
 
-	void Free()
-	{ 
-		size = -1;
-		FastNoiseSIMD::FreeNoiseSet(xSet);
-		FastNoiseSIMD::FreeNoiseSet(ySet);
-		FastNoiseSIMD::FreeNoiseSet(zSet);
-		xSet = nullptr;
-		ySet = nullptr;
-		zSet = nullptr;
-	}
+	void Free();
 
-	void SetSize(int _size)
-	{
-		Free();
-		xSet = FastNoiseSIMD::GetEmptySet(_size);
-		ySet = FastNoiseSIMD::GetEmptySet(_size);
-		zSet = FastNoiseSIMD::GetEmptySet(_size);
-		size = _size;
-	}
+	void SetSize(int _size);
 };
 
 #define FN_NO_SIMD_FALLBACK 0

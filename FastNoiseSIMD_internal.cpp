@@ -274,8 +274,8 @@ static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*>(&i); 
 #define SIMDf_MUL(a,b) ((a) * (b))
 #define SIMDf_DIV(a,b) ((a) / (b))
 
-#define SIMDf_MIN(a,b) fmin(a,b)
-#define SIMDf_MAX(a,b) fmax(a,b)
+#define SIMDf_MIN(a,b) fminf(a,b)
+#define SIMDf_MAX(a,b) fmaxf(a,b)
 
 static float FUNC(INV_SQRT)(float x)
 {
@@ -322,21 +322,30 @@ static float FUNC(INV_SQRT)(float x)
 #define SIMDf_CONVERT_TO_FLOAT(a) static_cast<float>(a)
 #endif
 
-#define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 //#define SIMDf_SIGN_FLIP(a) SIMDf_XOR(a,SIMDf_NUM(neg0)))
 //#define SIMDi_GREATER_EQUAL(a,b) SIMDi_NOT(SIMDi_LESS_THAN(a,b))
 //#define SIMDi_LESS_EQUAL(a,b) SIMDi_NOT(SIMDi_GREATER_THAN(a,b))
 //#define SIMDi_BLENDV(a,b, mask) SIMDi_CAST_TO_INT(SIMDf_BLENDV(SIMDf_CAST_TO_FLOAT(a),SIMDf_CAST_TO_FLOAT(b),SIMDf_CAST_TO_FLOAT(mask)))
 
-// FMA2
+#if SIMD_LEVEL == FN_NO_SIMD_FALLBACK
+#define SIMDf_ABS(a) fabsf(a)
+#else
+#define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
+#endif
+
 #if SIMD_LEVEL == FN_AVX2
+#define SIMD_ZERO_ALL() _mm256_zeroall()
+#else
+#define SIMD_ZERO_ALL()
+#endif
+
+// FMA3
+#if defined(FN_USE_FMA3) && SIMD_LEVEL == FN_AVX2
 #define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
 #define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
-#define SIMD_ZERO_ALL() _mm256_zeroall()
 #else
 #define SIMDf_MUL_ADD(a,b,c) SIMDf_ADD(SIMDf_MUL(a,b),c)
 #define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c)
-#define SIMD_ZERO_ALL()
 #endif
 
 static bool VAR(SIMD_Values_Set) = false;
@@ -844,7 +853,7 @@ SIMD_LEVEL_CLASS::FASTNOISE_SIMD_CLASS(SIMD_LEVEL)(int seed)
 	s_currentSIMDLevel = SIMD_LEVEL;
 }
 
-float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
+int SIMD_LEVEL_CLASS::AlignedSize(int size)
 {
 #ifdef FN_ALIGNED_SETS
 	// size must be a multiple of VECTOR_SIZE (8)
@@ -854,6 +863,12 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 		size += VECTOR_SIZE;
 	}
 #endif
+	return size;
+}
+
+float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
+{
+	size = AlignedSize(size);
 
 	float* noiseSet;
 	SIMD_ALLOCATE_SET(noiseSet, size);
@@ -1156,6 +1171,7 @@ void SIMD_LEVEL_CLASS::Fill##func##Set(float* noiseSet, FastNoiseVectorSet* vect
 {\
 	assert(noiseSet);\
 	assert(vectorSet);\
+	assert(vectorSet->size >= 0);\
 	SIMD_ZERO_ALL();\
 	\
 	SIMDi seedV = SIMDi_SET(m_seed);\
@@ -1176,6 +1192,7 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 {\
 	assert(noiseSet);\
 	assert(vectorSet);\
+	assert(vectorSet->size >= 0);\
 	SIMD_ZERO_ALL();\
 	\
 	SIMDi seedV = SIMDi_SET(m_seed);\
@@ -1367,6 +1384,7 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 {
 	assert(noiseSet);
 	assert(vectorSet);
+	assert(vectorSet->size >= 0);
 	SIMD_ZERO_ALL();
 
 	SIMDi seedV = SIMDi_SET(m_seed);
@@ -1536,6 +1554,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 {
 	assert(noiseSet);
 	assert(vectorSet);
+	assert(vectorSet->size >= 0);
 	SIMD_ZERO_ALL();
 
 	int sampleScale = vectorSet->sampleScale;

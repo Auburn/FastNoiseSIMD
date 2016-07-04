@@ -61,20 +61,20 @@
 int FastNoiseSIMD::s_currentSIMDLevel = -1;
 
 #ifdef _WIN32
-void cpuid(int32_t out[4], int32_t x){
-    __cpuidex(out, x, 0);
+void cpuid(int32_t out[4], int32_t x) {
+	__cpuidex(out, x, 0);
 }
-__int64 xgetbv(unsigned int x){
-    return _xgetbv(x);
+__int64 xgetbv(unsigned int x) {
+	return _xgetbv(x);
 }
 #else
-void cpuid(int32_t out[4], int32_t x){
-    __cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
+void cpuid(int32_t out[4], int32_t x) {
+	__cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
 }
-uint64_t xgetbv(unsigned int index){
-    uint32_t eax, edx;
-    __asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-    return ((uint64_t)edx << 32) | eax;
+uint64_t xgetbv(unsigned int index) {
+	uint32_t eax, edx;
+	__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
+	return ((uint64_t)edx << 32) | eax;
 }
 #define _XCR_XFEATURE_ENABLED_MASK  0
 #endif
@@ -171,18 +171,37 @@ void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 
 #ifdef FN_ALIGNED_SETS
 	if (s_currentSIMDLevel > FN_NO_SIMD_FALLBACK)
-        #ifdef _WIN32
+#ifdef _WIN32
 		_aligned_free(floatArray);
-		#else
+#else
 		free(floatArray);
-		#endif
+#endif
 	else
 #endif
 		delete[] floatArray;
 }
 
+int FastNoiseSIMD::AlignedSize(int size)
+{
+#ifdef FN_ALIGNED_SETS
+	GetSIMDLevel();
+
+#ifdef FN_COMPILE_AVX2
+	if (s_currentSIMDLevel >= FN_AVX2)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)::AlignedSize(size);
+#endif
+
+#ifdef FN_COMPILE_SSE2
+	if (s_currentSIMDLevel >= FN_SSE2)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)::AlignedSize(size);
+#endif
+#endif
+	return size;
+}
+
 float* FastNoiseSIMD::GetEmptySet(int size)
 {
+#ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
 #ifdef FN_COMPILE_AVX2
@@ -190,21 +209,12 @@ float* FastNoiseSIMD::GetEmptySet(int size)
 		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)::GetEmptySet(size);
 #endif
 
-#ifdef FN_COMPILE_SSE41
-	if (s_currentSIMDLevel >= FN_SSE41)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE41)::GetEmptySet(size);
-#endif
-
 #ifdef FN_COMPILE_SSE2
 	if (s_currentSIMDLevel >= FN_SSE2)
 		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)::GetEmptySet(size);
 #endif
-
-#ifdef FN_COMPILE_NO_SIMD_FALLBACK
-	return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NO_SIMD_FALLBACK)::GetEmptySet(size);
-#else
-	return nullptr;
 #endif
+	return new float[size];
 }
 
 FastNoiseVectorSet* FastNoiseSIMD::GetVectorSet(int xSize, int ySize, int zSize)
@@ -219,6 +229,8 @@ void FastNoiseSIMD::FillVectorSet(FastNoiseVectorSet* vectorSet, int xSize, int 
 	assert(vectorSet);
 
 	vectorSet->SetSize(xSize*ySize*zSize);
+	vectorSet->sampleScale = 0;
+
 	int index = 0;
 
 	for (int ix = 0; ix < xSize; ix++)
@@ -233,7 +245,7 @@ void FastNoiseSIMD::FillVectorSet(FastNoiseVectorSet* vectorSet, int xSize, int 
 				index++;
 			}
 		}
-	}	
+	}
 }
 
 FastNoiseVectorSet* FastNoiseSIMD::GetSamplingVectorSet(int sampleScale, int xSize, int ySize, int zSize)
@@ -291,14 +303,14 @@ void FastNoiseSIMD::FillSamplingVectorSet(FastNoiseVectorSet* vectorSet, int sam
 				index++;
 			}
 		}
-	}	
+	}
 }
 
 float* FastNoiseSIMD::GetNoiseSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
 {
 	float* noiseSet = GetEmptySet(xSize, ySize, zSize);
 
-	FillNoiseSet(noiseSet, xStart,  yStart,  zStart,  xSize,  ySize,  zSize, scaleModifier);
+	FillNoiseSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 
 	return noiseSet;
 }
@@ -400,3 +412,24 @@ GET_SET(Simplex)
 GET_SET(SimplexFractal)
 
 GET_SET(Cellular)
+
+void FastNoiseVectorSet::Free()
+{
+	size = -1;
+	FastNoiseSIMD::FreeNoiseSet(xSet);
+	xSet = nullptr;
+	ySet = nullptr;
+	zSet = nullptr;
+}
+
+void FastNoiseVectorSet::SetSize(int _size)
+{
+	Free();
+	size = _size;
+
+	int alignedSize = FastNoiseSIMD::AlignedSize(size);
+
+	xSet = FastNoiseSIMD::GetEmptySet(alignedSize * 3);
+	ySet = xSet + alignedSize;
+	zSet = xSet + alignedSize * 2;
+}
