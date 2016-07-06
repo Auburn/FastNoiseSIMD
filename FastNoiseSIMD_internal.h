@@ -27,7 +27,7 @@
 //
 
 #ifndef SIMD_LEVEL_H
-#error Don't include this file without defining SIMD_LEVEL_H
+#error Dont include this file without defining SIMD_LEVEL_H
 #else
 #define FASTNOISE_SIMD_CLASS2(x) FastNoiseSIMD_L##x
 #define FASTNOISE_SIMD_CLASS(level) FASTNOISE_SIMD_CLASS2(level)

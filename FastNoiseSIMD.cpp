@@ -64,7 +64,7 @@ int FastNoiseSIMD::s_currentSIMDLevel = -1;
 void cpuid(int32_t out[4], int32_t x) {
 	__cpuidex(out, x, 0);
 }
-__int64 xgetbv(unsigned int x) {
+uint64_t xgetbv(unsigned int x) {
 	return _xgetbv(x);
 }
 #else
@@ -107,7 +107,7 @@ int GetFastestSIMD()
 
 	if (osAVXSuport && cpuAVXSuport)
 	{
-		__int64 xcrFeatureMask = xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+		uint64_t xcrFeatureMask = xgetbv(_XCR_XFEATURE_ENABLED_MASK);
 		if ((xcrFeatureMask & 0x6) != 0x6)
 			return FN_SSE41;
 	}
@@ -167,9 +167,9 @@ int FastNoiseSIMD::GetSIMDLevel()
 
 void FastNoiseSIMD::FreeNoiseSet(float* floatArray)
 {
+#ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
-#ifdef FN_ALIGNED_SETS
 	if (s_currentSIMDLevel > FN_NO_SIMD_FALLBACK)
 #ifdef _WIN32
 		_aligned_free(floatArray);
@@ -267,7 +267,6 @@ void FastNoiseSIMD::FillSamplingVectorSet(FastNoiseVectorSet* vectorSet, int sam
 
 	int sampleSize = 1 << sampleScale;
 	int sampleMask = sampleSize - 1;
-	float scaleModifier = float(sampleSize);
 
 	int xSizeSample = xSize;
 	int ySizeSample = ySize;
@@ -431,5 +430,5 @@ void FastNoiseVectorSet::SetSize(int _size)
 
 	xSet = FastNoiseSIMD::GetEmptySet(alignedSize * 3);
 	ySet = xSet + alignedSize;
-	zSet = xSet + alignedSize * 2;
+	zSet = ySet + alignedSize;
 }
