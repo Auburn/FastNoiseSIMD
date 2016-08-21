@@ -39,17 +39,18 @@ Using default noise settings on FastNoise SIMD and matching those settings acros
 Timing are averages of time taken for 1 million iterations on a single thread.
 
 - CPU: i7 4790k @ 4.0Ghz
-- Compiler: MSVC v120 x64
+- Compiler: MSVC v140 x64
 
-| Noise Type       | FastNoise SIMD - AVX2 | FastNoise SIMD - SSE4.1 | FastNoise SIMD - SSE2 | FastNoise SIMD - Fallback | FastNoise | LibNoise | ANL    |
-|------------------|-----------------------|-------------------------|-----------------------|---------------------------|-----------|----------|--------|
-| Value            | 4.48                  | 9.28                    | 11.62                 | 25.55                     | 16.09     | 26.22    | 103.14 |
-| Value Fractal    | 13.49                 | 27.32                   | 34.62                 | 81.43                     | 54.93     |          | 316.39 |
-| Gradient         | 7.17                  | 15.06                   | 18.67                 | 92.42                     | 25.00     | 30.80    | 107.00 |
-| Gradient Fractal | 23.55                 | 46.80                   | 58.66                 | 321.28                    | 82.26     | 112.72   | 332.47 |
-| Simplex          | 7.16                  | 13.92                   | 15.11                 | 94.04                     | 31.42     |          | 44.23  |
-| Simplex Fractal  | 22.12                 | 43.36                   | 45.20                 | 292.07                    | 106.80    |          | 167.67 |
-| White Noise      | 0.56                  | 0.94                    | 1.50                  | 2.36                      | 3.01      |          |        |
+| Noise Type       | FastNoise SIMD - AVX2 | FastNoise | LibNoise | ANL      |
+|------------------|-----------------------|-----------|----------|----------|
+| Value            | 4.12                  | 13.85     | 24.16    | 94.73    |
+| Value Fractal    | 12.22                 | 46.99     |          | 289.91   |
+| Gradient         | 7.68                  | 21.69     | 32.68    | 109.26   |
+| Gradient Fractal | 21.54                 | 84.22     | 122.15   | 325.04   |
+| Simplex          | 7.03                  | 27.56     |          | 43.68    |
+| Simplex Fractal  | 19.91                 | 85.47     |          | 154.41   |
+| White Noise      | 0.47                  | 2.81      |          |          |
+| Cellular         | 31.42                 | 122.21    | 1,122.60 | 2,473.06 |
 
 Measurements are in ms
 
@@ -60,6 +61,11 @@ Measurements are in ms
 ![Cellular Noise](http://i.imgur.com/PjPYBXu.png)
 
 ![Cellular Noise](http://i.imgur.com/hyKjIuH.png)
+
+###Fracal Noise
+![Simplex Fractal Billow](http://i.imgur.com/gURJtpc.png)
+
+![Gradient Fractal Billow](http://i.imgur.com/IcjbpYz.png)
 
 ###Value Noise
 ![Value Noise](http://i.imgur.com/Ss22zRs.png)
