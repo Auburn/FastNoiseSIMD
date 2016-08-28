@@ -36,7 +36,7 @@ Download links can be found in the [Releases Section](https://github.com/Auburns
 #Performance Comparisons
 Using default noise settings on FastNoise SIMD and matching those settings across the other libraries where possible.
 
-Timing are averages of time taken for 1 million iterations on a single thread.
+Timings below are average milliseconds for 1 million iterations on a single thread.
 
 - CPU: i7 4790k @ 4.0Ghz
 - Compiler: MSVC v140 x64
