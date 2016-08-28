@@ -52,7 +52,7 @@ Timings below are average milliseconds for 1 million iterations on a single thre
 | White Noise      | 0.47                  | 2.81      |          |          |
 | Cellular         | 31.42                 | 122.21    | 1,122.60 | 2,473.06 |
 
-Measurements are in ms
+Comparision of different SIMD levels can be seen [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
 ##Examples
 ###Cellular Noise
