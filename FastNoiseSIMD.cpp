@@ -118,7 +118,11 @@ int GetFastestSIMD()
 	if (nIds < 0x00000007)
 		return FN_SSE41;
 
+#ifdef FN_USE_FMA3
 	bool cpuFMA3Support = (cpuInfo[2] & 1 << 12) != 0;
+#else
+	bool cpuFMA3Support = true;
+#endif
 
 	cpuid(cpuInfo, 0x00000007);
 
