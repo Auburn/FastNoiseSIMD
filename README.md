@@ -54,7 +54,7 @@ Timings below are average milliseconds for 1 million iterations on a single thre
 
 Comparision of different SIMD levels can be seen [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
-##Examples
+#Examples
 ###Cellular Noise
 ![Cellular Noise](http://i.imgur.com/RshUkoe.png)
 
