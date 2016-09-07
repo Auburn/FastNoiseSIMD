@@ -20,7 +20,7 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - SSE4.1
 - SSE2
 
-##Tested Compilers:
+##Tested Compilers
 - MSVC v120/v140
 - Intel 16.0
 - GCC 4.7 Linux
