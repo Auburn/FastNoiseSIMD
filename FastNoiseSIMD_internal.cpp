@@ -152,6 +152,7 @@ static SIMDf SIMDf_NUM(1);
 #define SIMDf_FLOOR(a) _mm256_floor_ps(a)
 #define SIMDf_BLENDV(a,b,mask) _mm256_blendv_ps(a,b,mask)
 #define SIMDf_GATHER(p,a) _mm256_i32gather_ps(p,a,4)
+#define SIMDf_PERMUTE(a,b) _mm256_permutevar8x32_ps(a,b)
 
 #define SIMDi_ADD(a,b) _mm256_add_epi32(a,b)
 #define SIMDi_SUB(a,b) _mm256_sub_epi32(a,b)
@@ -373,6 +374,15 @@ static SIMDf SIMDf_NUM(G33);
 static SIMDf SIMDf_NUM(hash2Float);
 static SIMDf SIMDf_NUM(vectorSize);
 
+#if SIMD_LEVEL == FN_AVX2
+static SIMDf SIMDf_NUM(X_GRAD_0);
+static SIMDf SIMDf_NUM(X_GRAD_8);
+static SIMDf SIMDf_NUM(Y_GRAD_0);
+//static SIMDf SIMDf_NUM(Y_GRAD_8);
+static SIMDf SIMDf_NUM(Z_GRAD_0);
+static SIMDf SIMDf_NUM(Z_GRAD_8);
+#endif
+
 static SIMDi SIMDi_NUM(incremental);
 static SIMDi SIMDi_NUM(1);
 static SIMDi SIMDi_NUM(2);
@@ -428,6 +438,15 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(G33) = SIMDf_SET(3.f / 6.f);
 	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 1073741824.f);
 	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
+
+#if SIMD_LEVEL == FN_AVX2
+	SIMDf_NUM(X_GRAD_0) = _mm256_set_ps(-1, 1, -1, 1, -1, 1, -1, 1);
+	SIMDf_NUM(X_GRAD_8) = _mm256_set_ps(0, -1, 0, 1, 0, 0, 0, 0);
+	SIMDf_NUM(Y_GRAD_0) = _mm256_set_ps(0, 0, 0, 0, -1, -1, 1, 1);
+	//SIMDf_NUM(Y_GRAD_8) = _mm256_set_ps(-1, 1, -1, 1, -1, 1, -1, 1); Same as x0
+	SIMDf_NUM(Z_GRAD_0) = _mm256_set_ps(-1, -1, 1, 1, 0, 0, 0, 0);
+	SIMDf_NUM(Z_GRAD_8) = _mm256_set_ps(-1, 0, 1, 0, -1, -1, 1, 1);
+#endif
 
 	SIMDi_NUM(1) = SIMDi_SET(1);
 	SIMDi_NUM(2) = SIMDi_SET(2);
@@ -527,6 +546,19 @@ static SIMDf FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, c
 	return SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(hash, SIMDi_NUM(0x40000000))));
 }
 
+#if SIMD_LEVEL == FN_AVX2
+static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+{
+	SIMDi hash = FUNC(Hash)(seed, xi, yi, zi);
+	SIMDf hash8Bit = SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(hash, 28));
+
+	SIMDf xGrad = SIMDf_BLENDV(SIMDf_PERMUTE(SIMDf_NUM(X_GRAD_0), hash), SIMDf_PERMUTE(SIMDf_NUM(X_GRAD_8), hash), hash8Bit);
+	SIMDf yGrad = SIMDf_BLENDV(SIMDf_PERMUTE(SIMDf_NUM(Y_GRAD_0), hash), SIMDf_PERMUTE(SIMDf_NUM(X_GRAD_0), hash), hash8Bit);
+	SIMDf zGrad = SIMDf_BLENDV(SIMDf_PERMUTE(SIMDf_NUM(Z_GRAD_0), hash), SIMDf_PERMUTE(SIMDf_NUM(Z_GRAD_8), hash), hash8Bit);
+
+	return SIMDf_MUL_ADD(x, xGrad, SIMDf_MUL_ADD(y, yGrad, SIMDf_MUL(z, zGrad)));
+}
+#else
 static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDi hash = SIMDi_AND(FUNC(Hash)(seed, xi, yi, zi), SIMDi_NUM(15));
@@ -548,6 +580,7 @@ static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi
 	//then add them
 	return SIMDf_ADD(SIMDf_XOR(u, h1), SIMDf_XOR(v, h2));
 }
+#endif
 
 static SIMDf FUNC(WhiteNoiseSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {

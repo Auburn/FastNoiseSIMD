@@ -43,7 +43,7 @@
 #define FN_ALIGNED_SETS
 
 // Using FMA3 instructions with AVX2 provides a small performance increase but can cause 
-// tiny variations in noise output compared to other SIMD levels due to higher calculation precision
+// minute variations in noise output compared to other SIMD levels due to higher calculation precision
 #define FN_USE_FMA3
 
 // Reduced minimum of zSize from 8 to 4 when not using a vector set

@@ -257,3 +257,4 @@ paket-files/
 /FastNoiseSIMD Preview.vcxproj
 /My Advisor XE Results - FastNoiseSIMD Preview
 *.exe
+/avxPerm
