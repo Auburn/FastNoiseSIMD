@@ -20,6 +20,12 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - SSE4.1
 - SSE2
 
+##Tested Compilers
+- MSVC v120/v140
+- Intel 16.0
+- GCC 4.7 Linux
+- Clang MacOSX
+
 ##Wiki
 [Getting Started](https://github.com/Auburns/FastNoiseSIMD/wiki)
 
@@ -54,7 +60,7 @@ Timings below are average milliseconds for 1 million iterations on a single thre
 
 Comparision of different SIMD levels can be seen [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
-##Examples
+#Examples
 ###Cellular Noise
 ![Cellular Noise](http://i.imgur.com/RshUkoe.png)
 
