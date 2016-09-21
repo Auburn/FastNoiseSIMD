@@ -102,10 +102,11 @@ int GetFastestSIMD()
 		return FN_SSE2;
 
 	// AVX
+	bool cpuXSaveSuport = (cpuInfo[2] & 1 << 26) != 0;
 	bool osAVXSuport = (cpuInfo[2] & 1 << 27) != 0;
 	bool cpuAVXSuport = (cpuInfo[2] & 1 << 28) != 0;
 
-	if (osAVXSuport && cpuAVXSuport)
+	if (cpuXSaveSuport && osAVXSuport && cpuAVXSuport)
 	{
 		uint64_t xcrFeatureMask = xgetbv(_XCR_XFEATURE_ENABLED_MASK);
 		if ((xcrFeatureMask & 0x6) != 0x6)
@@ -150,14 +151,14 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 #endif
 
 #ifdef FN_COMPILE_SSE2
+#ifdef FN_COMPILE_NO_SIMD_FALLBACK
 	if (s_currentSIMDLevel >= FN_SSE2)
+#endif
 		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)(seed);
 #endif
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
 	return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NO_SIMD_FALLBACK)(seed);
-#else
-	return nullptr;
 #endif
 }
 

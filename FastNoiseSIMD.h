@@ -30,13 +30,17 @@
 #define FASTNOISE_SIMD_H
 
 // Comment out lines to not compile for certain instruction sets
-#define FN_COMPILE_NO_SIMD_FALLBACK
 #define FN_COMPILE_SSE2
 #define FN_COMPILE_SSE41
 
 // To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_avx2.cpp
 #define FN_COMPILE_AVX2
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
+
+// SSE2 support is guarenteed on 64bit CPUs so no fallback is not needed
+#if !(defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__))
+#define FN_COMPILE_NO_SIMD_FALLBACK
+#endif
 
 // Using aligned sets of memory for float arrays allows faster storing of SIMD data
 // Comment out to allow unaligned float arrays to be used as sets
