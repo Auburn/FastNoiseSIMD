@@ -270,6 +270,10 @@ void FastNoiseSIMD::FillSamplingVectorSet(FastNoiseVectorSet* vectorSet, int sam
 		return;
 	}
 
+	vectorSet->sampleSizeX = xSize;
+	vectorSet->sampleSizeY = ySize;
+	vectorSet->sampleSizeZ = zSize;
+
 	int sampleSize = 1 << sampleScale;
 	int sampleMask = sampleSize - 1;
 
@@ -329,11 +333,11 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, int xStart, int yStart, int zS
 	case ValueFractal:
 		FillValueFractalSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
-	case Gradient:
-		FillGradientSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+	case Perlin:
+		FillPerlinSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
-	case GradientFractal:
-		FillGradientFractalSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+	case PerlinFractal:
+		FillPerlinFractalSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
 	case Simplex:
 		FillSimplexSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
@@ -362,11 +366,11 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet,
 	case ValueFractal:
 		FillValueFractalSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
 		break;
-	case Gradient:
-		FillGradientSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
+	case Perlin:
+		FillPerlinSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
 		break;
-	case GradientFractal:
-		FillGradientFractalSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
+	case PerlinFractal:
+		FillPerlinFractalSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
 		break;
 	case Simplex:
 		FillSimplexSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
@@ -409,8 +413,8 @@ GET_SET(WhiteNoise)
 GET_SET(Value)
 GET_SET(ValueFractal)
 
-GET_SET(Gradient)
-GET_SET(GradientFractal)
+GET_SET(Perlin)
+GET_SET(PerlinFractal)
 
 GET_SET(Simplex)
 GET_SET(SimplexFractal)

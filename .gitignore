@@ -258,3 +258,4 @@ paket-files/
 /My Advisor XE Results - FastNoiseSIMD Preview
 *.exe
 /avxPerm
+*.filters

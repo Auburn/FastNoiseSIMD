@@ -1,4 +1,4 @@
-// FastNoiseSIMD_sse2.cpp
+// FastNoiseSIMD_sse41.cpp
 //
 // MIT License
 //
@@ -28,12 +28,14 @@
 
 #include "FastNoiseSIMD.h"
 
-// Depending on the compiler this file may need to have SSE2 code generation compiler flags enabled
-#ifdef FN_COMPILE_SSE2
-#define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD_internal.h"
-#include <emmintrin.h> //SSE2
+// DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
 
-#define SIMD_LEVEL FN_SSE2
+// Depending on the compiler this file may need to have SSE4.1 code generation compiler flags enabled
+#ifdef FN_COMPILE_SSE41
+#define SIMD_LEVEL_H FN_SSE41
+#include "FastNoiseSIMD_internal.h"
+#include <smmintrin.h> //SSE4.1
+
+#define SIMD_LEVEL FN_SSE41
 #include "FastNoiseSIMD_internal.cpp"
 #endif
