@@ -8,7 +8,7 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 ##Features
 
 - Value Noise 3D
-- Gradient (Perlin) Noise 3D
+- Perlin Noise 3D
 - Simplex Noise 3D
 - Multiple fractal options for all of the above
 - White Noise 3D
@@ -51,8 +51,8 @@ Timings below are average milliseconds for 1 million iterations on a single thre
 |------------------|-----------------------|-----------|----------|----------|
 | Value            | 4.12                  | 13.85     | 24.16    | 94.73    |
 | Value Fractal    | 12.22                 | 46.99     |          | 289.91   |
-| Gradient         | 7.68                  | 21.69     | 32.68    | 109.26   |
-| Gradient Fractal | 21.54                 | 84.22     | 122.15   | 325.04   |
+| Perlin           | 7.68                  | 21.69     | 32.68    | 109.26   |
+| Perlin Fractal   | 21.54                 | 84.22     | 122.15   | 325.04   |
 | Simplex          | 7.03                  | 27.56     |          | 43.68    |
 | Simplex Fractal  | 19.91                 | 85.47     |          | 154.41   |
 | White Noise      | 0.47                  | 2.81      |          |          |
@@ -68,10 +68,10 @@ Comparision of different SIMD levels can be seen [here](https://github.com/Aubur
 
 ![Cellular Noise](http://i.imgur.com/hyKjIuH.png)
 
-###Fracal Noise
+###Fractal Noise
 ![Simplex Fractal Billow](http://i.imgur.com/gURJtpc.png)
 
-![Gradient Fractal Billow](http://i.imgur.com/IcjbpYz.png)
+![Perlin Fractal Billow](http://i.imgur.com/IcjbpYz.png)
 
 ###Value Noise
 ![Value Noise](http://i.imgur.com/Ss22zRs.png)
