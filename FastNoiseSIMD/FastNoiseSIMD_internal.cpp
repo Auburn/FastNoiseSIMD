@@ -1181,9 +1181,9 @@ if (loopMax != vectorSet->size)\
 	std::memcpy(&yf, &vectorSet->ySet[loopMax], remaining);\
 	std::memcpy(&zf, &vectorSet->zSet[loopMax], remaining);\
 	\
-	xf = SIMDf_MUL_ADD(xf, freqV, xOffsetV);\
-	yf = SIMDf_MUL_ADD(yf, freqV, yOffsetV);\
-	zf = SIMDf_MUL_ADD(zf, freqV, zOffsetV);\
+	xf = SIMDf_MUL_ADD(xf, xFreqV, xOffsetV);\
+	yf = SIMDf_MUL_ADD(yf, yFreqV, yOffsetV);\
+	zf = SIMDf_MUL_ADD(zf, zFreqV, zOffsetV);\
 	\
 	f;\
 	std::memcpy(&noiseSet[index], &result, remaining);\
@@ -1193,9 +1193,9 @@ if (loopMax != vectorSet->size)\
 #define VECTOR_SET_BUILDER(f)\
 while (index < loopMax)\
 {\
-	SIMDf xf = SIMDf_MUL_ADD(SIMDf_LOAD(&vectorSet->xSet[index]), freqV, xOffsetV);\
-	SIMDf yf = SIMDf_MUL_ADD(SIMDf_LOAD(&vectorSet->ySet[index]), freqV, yOffsetV);\
-	SIMDf zf = SIMDf_MUL_ADD(SIMDf_LOAD(&vectorSet->zSet[index]), freqV, zOffsetV);\
+	SIMDf xf = SIMDf_MUL_ADD(SIMDf_LOAD(&vectorSet->xSet[index]), xFreqV, xOffsetV);\
+	SIMDf yf = SIMDf_MUL_ADD(SIMDf_LOAD(&vectorSet->ySet[index]), yFreqV, yOffsetV);\
+	SIMDf zf = SIMDf_MUL_ADD(SIMDf_LOAD(&vectorSet->zSet[index]), zFreqV, zOffsetV);\
 	\
 	f;\
 	SIMDf_STORE(&noiseSet[index], result);\
@@ -1212,10 +1212,12 @@ void SIMD_LEVEL_CLASS::Fill##func##Set(float* noiseSet, FastNoiseVectorSet* vect
 	SIMD_ZERO_ALL();\
 	\
 	SIMDi seedV = SIMDi_SET(m_seed);\
-	SIMDf freqV = SIMDf_SET(m_frequency);\
-	SIMDf xOffsetV = SIMDf_SET(xOffset*m_frequency);\
-	SIMDf yOffsetV = SIMDf_SET(yOffset*m_frequency);\
-	SIMDf zOffsetV = SIMDf_SET(zOffset*m_frequency);\
+	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale);\
+	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale);\
+	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale);\
+	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV);\
+	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV);\
+	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);\
 	\
 	int index = 0;\
 	int loopMax = vectorSet->size SIZE_MASK;\
@@ -1233,12 +1235,14 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 	SIMD_ZERO_ALL();\
 	\
 	SIMDi seedV = SIMDi_SET(m_seed);\
-	SIMDf freqV = SIMDf_SET(m_frequency);\
 	SIMDf lacunarityV = SIMDf_SET(m_lacunarity);\
 	SIMDf gainV = SIMDf_SET(m_gain);\
-	SIMDf xOffsetV = SIMDf_SET(xOffset*m_frequency);\
-	SIMDf yOffsetV = SIMDf_SET(yOffset*m_frequency);\
-	SIMDf zOffsetV = SIMDf_SET(zOffset*m_frequency);\
+	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale);\
+	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale);\
+	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale);\
+	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV);\
+	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV);\
+	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);\
 	\
 	int index = 0;\
 	int loopMax = vectorSet->size SIZE_MASK;\
@@ -1425,10 +1429,12 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 	SIMD_ZERO_ALL();
 
 	SIMDi seedV = SIMDi_SET(m_seed);
-	SIMDf freqV = SIMDf_SET(m_frequency);
-	SIMDf xOffsetV = SIMDf_SET(xOffset*m_frequency);
-	SIMDf yOffsetV = SIMDf_SET(yOffset*m_frequency);
-	SIMDf zOffsetV = SIMDf_SET(zOffset*m_frequency);
+	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale); 
+	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale); 
+	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale); 
+	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV); 
+	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV); 
+	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV); 
 
 	int index = 0;
 	int loopMax = vectorSet->size SIZE_MASK;
