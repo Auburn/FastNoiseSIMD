@@ -31,19 +31,12 @@
 // DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
 
 // To compile AVX2 support enable AVX(2) code generation compiler flags for this file
-#ifdef FN_COMPILE_AVX2
-#ifndef __AVX__
-#ifdef __GNUC__
-#error To compile AVX2 add build command "-march=core-avx2" on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
-#else
-#error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
-#endif
-#endif
+#ifdef FN_COMPILE_ARMV7
 
-#define SIMD_LEVEL_H FN_AVX2
+#define SIMD_LEVEL_H FN_ARMV7
 #include "FastNoiseSIMD_internal.h"
-#include <immintrin.h> //AVX2 FMA3
+#include <arm_neon.h> //AVX2 FMA3
 
-#define SIMD_LEVEL FN_AVX2
+#define SIMD_LEVEL FN_ARMV7
 #include "FastNoiseSIMD_internal.cpp"
 #endif

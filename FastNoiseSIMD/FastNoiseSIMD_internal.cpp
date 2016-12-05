@@ -27,7 +27,7 @@
 //
 
 #include "FastNoiseSIMD.h"
-#include <assert.h> 
+#include <assert.h>
 
 #if defined(SIMD_LEVEL) || defined(FN_COMPILE_NO_SIMD_FALLBACK)
 
@@ -63,25 +63,15 @@
 #define SIMD_LEVEL_CLASS FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(SIMD_LEVEL)
 
 // Typedefs
-#if SIMD_LEVEL == FN_AVX2
-#define VECTOR_SIZE 8
-#define MEMORY_ALIGNMENT 32
-typedef __m256 SIMDf;
-typedef __m256i SIMDi;
-#define SIMDf_SET(a) _mm256_set1_ps(a)
-#define SIMDf_SET_ZERO() _mm256_setzero_ps()
-#define SIMDi_SET(a) _mm256_set1_epi32(a)
-#define SIMDi_SET_ZERO() _mm256_setzero_si256()
-
-#elif SIMD_LEVEL >= FN_SSE2
+#if SIMD_LEVEL == FN_ARMV7
 #define VECTOR_SIZE 4
 #define MEMORY_ALIGNMENT 16
-typedef __m128 SIMDf;
-typedef __m128i SIMDi;
-#define SIMDf_SET(a) _mm_set1_ps(a)
-#define SIMDf_SET_ZERO() _mm_setzero_ps()
-#define SIMDi_SET(a) _mm_set1_epi32(a)
-#define SIMDi_SET_ZERO() _mm_setzero_si128()
+typedef float32x4_t SIMDf;
+typedef int32x4_t SIMDi;
+#define SIMDf_SET(a) vdupq_n_f32(a)
+#define SIMDf_SET_ZERO() vdupq_n_f32(0)
+#define SIMDi_SET(a) vdupq_n_s32(a)
+#define SIMDi_SET_ZERO() vdupq_n_s32(0)
 
 #else // Fallback to float/int
 #define VECTOR_SIZE 1
@@ -121,7 +111,7 @@ static SIMDi SIMDi_NUM(0xffffffff);
 static SIMDf SIMDf_NUM(1);
 
 // SIMD functions
-#if SIMD_LEVEL >= FN_AVX2
+#if SIMD_LEVEL >= FN_ARMV7
 
 #ifdef FN_ALIGNED_SETS
 #define SIMDf_STORE(p,a) _mm256_store_ps(p,a)
@@ -175,92 +165,6 @@ static SIMDf SIMDf_NUM(1);
 #define SIMDf_CAST_TO_FLOAT(a) _mm256_castsi256_ps(a)
 #define SIMDi_CONVERT_TO_INT(a) _mm256_cvtps_epi32(a)
 #define SIMDi_CAST_TO_INT(a) _mm256_castps_si256(a)
-
-#elif SIMD_LEVEL >= FN_SSE2
-
-#ifdef FN_ALIGNED_SETS
-#define SIMDf_STORE(p,a) _mm_store_ps(p,a)
-#define SIMDf_LOAD(p) _mm_load_ps(p)
-#else
-#define SIMDf_STORE(p,a) _mm_storeu_ps(p,a)
-#define SIMDf_LOAD(p) _mm_loadu_ps(p)
-#endif
-
-#define SIMDf_ADD(a,b) _mm_add_ps(a,b)
-#define SIMDf_SUB(a,b) _mm_sub_ps(a,b)
-#define SIMDf_MUL(a,b) _mm_mul_ps(a,b)
-#define SIMDf_DIV(a,b) _mm_div_ps(a,b)
-
-#define SIMDf_MIN(a,b) _mm_min_ps(a,b)
-#define SIMDf_MAX(a,b) _mm_max_ps(a,b)
-#define SIMDf_INV_SQRT(a) _mm_rsqrt_ps(a)
-
-#define SIMDf_LESS_THAN(a,b) _mm_cmplt_ps(a,b)
-#define SIMDf_GREATER_THAN(a,b) _mm_cmpgt_ps(a,b)
-#define SIMDf_LESS_EQUAL(a,b) _mm_cmple_ps(a,b)
-#define SIMDf_GREATER_EQUAL(a,b) _mm_cmpge_ps(a,b)
-
-#define SIMDf_AND(a,b) _mm_and_ps(a,b)
-#define SIMDf_AND_NOT(a,b) _mm_andnot_ps(a,b)
-#define SIMDf_XOR(a,b) _mm_xor_ps(a,b)
-
-#if SIMD_LEVEL == FN_SSE41
-#define SIMDi_MUL(a,b) _mm_mullo_epi32(a,b)
-#define SIMDf_FLOOR(a) _mm_floor_ps(a)
-#define SIMDf_BLENDV(a,b,mask) _mm_blendv_ps(a,b,mask)
-#else
-static SIMDi FUNC(MUL)(const SIMDi& a, const SIMDi& b)
-{
-	__m128 tmp1 = _mm_castsi128_ps(_mm_mul_epu32(a, b)); /* mul 2,0*/
-	__m128 tmp2 = _mm_castsi128_ps(_mm_mul_epu32(_mm_srli_si128(a, 4), _mm_srli_si128(b, 4))); /* mul 3,1 */
-	return _mm_shuffle_epi32(_mm_castps_si128(_mm_shuffle_ps(tmp1, tmp2, _MM_SHUFFLE(2, 0, 2, 0))), _MM_SHUFFLE(3, 1, 2, 0));
-}
-#define SIMDi_MUL(a,b) FUNC(MUL)(a,b)
-
-static SIMDf FUNC(FLOOR)(const SIMDf& a)
-{
-	__m128 fval = _mm_cvtepi32_ps(_mm_cvttps_epi32(a));
-
-	return _mm_sub_ps(fval, _mm_and_ps(_mm_cmplt_ps(a, fval), SIMDf_NUM(1)));
-}
-#define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
-
-#define SIMDf_BLENDV(a,b,mask) _mm_or_ps(_mm_andnot_ps(mask, a), _mm_and_ps(mask, b))
-#endif
-
-static SIMDf FUNC(GATHER)(const float* p, const SIMDi& a)
-{
-	const uSIMDi* m = reinterpret_cast<const uSIMDi*>(&a);
-	uSIMDf r;
-
-	for (int i = 0; i < VECTOR_SIZE; i++)
-	{
-		r.a[i] = *(p + m->a[i]);
-	}
-	return r.m;
-}
-#define SIMDf_GATHER(p,a) FUNC(GATHER)(p, a)
-
-#define SIMDi_ADD(a,b) _mm_add_epi32(a,b)
-#define SIMDi_SUB(a,b) _mm_sub_epi32(a,b)
-
-#define SIMDi_AND(a,b) _mm_and_si128(a,b)
-#define SIMDi_AND_NOT(a,b) _mm_andnot_si128(a,b)
-#define SIMDi_OR(a,b) _mm_or_si128(a,b)
-#define SIMDi_XOR(a,b) _mm_xor_si128(a,b)
-#define SIMDi_NOT(a) SIMDi_XOR(a,SIMDi_NUM(0xffffffff))
-
-#define SIMDi_SHIFT_R(a,b) _mm_srai_epi32(a, b)
-#define SIMDi_SHIFT_L(a,b) _mm_slli_epi32(a, b)
-
-#define SIMDi_EQUAL(a,b) _mm_cmpeq_epi32(a,b)
-#define SIMDi_GREATER_THAN(a,b) _mm_cmpgt_epi32(a,b)
-#define SIMDi_LESS_THAN(a,b) _mm_cmpgt_epi32(b,a)
-
-#define SIMDf_CONVERT_TO_FLOAT(a) _mm_cvtepi32_ps(a)
-#define SIMDf_CAST_TO_FLOAT(a) _mm_castsi128_ps(a)
-#define SIMDi_CONVERT_TO_INT(a) _mm_cvtps_epi32(a)
-#define SIMDi_CAST_TO_INT(a) _mm_castps_si128(a)
 
 #else // Fallback
 
@@ -336,7 +240,7 @@ static float FUNC(INV_SQRT)(float x)
 #define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 #endif
 
-#if SIMD_LEVEL == FN_AVX2
+#if SIMD_LEVEL == FN_AVX2 && 0
 #define SIMD_ZERO_ALL() _mm256_zeroall()
 #else
 #define SIMD_ZERO_ALL()
@@ -439,15 +343,6 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 1073741824.f);
 	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
 
-#if SIMD_LEVEL == FN_AVX2
-	//SIMDf_NUM(X_GRAD_0) = _mm256_set_ps(-1, 1, -1, 1, -1, 1, -1, 1);
-	SIMDf_NUM(X_GRAD_8) = _mm256_set_ps(0, -1, 0, 1, 0, 0, 0, 0);
-	SIMDf_NUM(Y_GRAD_0) = _mm256_set_ps(0, 0, 0, 0, -1, -1, 1, 1);
-	//SIMDf_NUM(Y_GRAD_8) = _mm256_set_ps(-1, 1, -1, 1, -1, 1, -1, 1); Same as x0
-	SIMDf_NUM(Z_GRAD_0) = _mm256_set_ps(-1, -1, 1, 1, 0, 0, 0, 0);
-	SIMDf_NUM(Z_GRAD_8) = _mm256_set_ps(-1, 0, 1, 0, -1, -1, 1, 1);
-#endif
-
 	SIMDi_NUM(1) = SIMDi_SET(1);
 	SIMDi_NUM(2) = SIMDi_SET(2);
 	SIMDi_NUM(3) = SIMDi_SET(3);
@@ -546,7 +441,7 @@ static SIMDf FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, c
 	return SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(hash, SIMDi_NUM(0x40000000))));
 }
 
-#if SIMD_LEVEL == FN_AVX2
+#if SIMD_LEVEL == FN_AVX2 && 0
 static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDi hash = FUNC(Hash)(seed, xi, yi, zi);
@@ -1429,12 +1324,12 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 	SIMD_ZERO_ALL();
 
 	SIMDi seedV = SIMDi_SET(m_seed);
-	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale); 
-	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale); 
-	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale); 
-	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV); 
-	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV); 
-	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV); 
+	SIMDf xFreqV = SIMDf_SET(m_frequency * m_xScale);
+	SIMDf yFreqV = SIMDf_SET(m_frequency * m_yScale);
+	SIMDf zFreqV = SIMDf_SET(m_frequency * m_zScale);
+	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV);
+	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV);
+	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);
 
 	int index = 0;
 	int loopMax = vectorSet->size SIZE_MASK;

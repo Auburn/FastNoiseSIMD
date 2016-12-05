@@ -35,105 +35,20 @@
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-#ifdef FN_COMPILE_SSE2
-#define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD_internal.h"
-#endif
-
-#ifdef FN_COMPILE_SSE41
-#define SIMD_LEVEL_H FN_SSE41
-#include "FastNoiseSIMD_internal.h"
-#endif
-
-#ifdef FN_COMPILE_AVX2
-#define SIMD_LEVEL_H FN_AVX2
+#ifdef FN_COMPILE_ARMV7
+#define SIMD_LEVEL_H FN_ARMV7
 #include "FastNoiseSIMD_internal.h"
 #endif
 
 // CPUid
-#ifdef _WIN32
-#include <algorithm>
-#include <cstdint>
-#else
-#include <cpuid.h>
-#include "inttypes.h"
-#endif
+
 
 int FastNoiseSIMD::s_currentSIMDLevel = -1;
 
-#ifdef _WIN32
-void cpuid(int32_t out[4], int32_t x) {
-	__cpuidex(out, x, 0);
-}
-uint64_t xgetbv(unsigned int x) {
-	return _xgetbv(x);
-}
-#else
-void cpuid(int32_t out[4], int32_t x) {
-	__cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
-}
-uint64_t xgetbv(unsigned int index) {
-	uint32_t eax, edx;
-	__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-	return ((uint64_t)edx << 32) | eax;
-}
-#define _XCR_XFEATURE_ENABLED_MASK  0
-#endif
 
 int GetFastestSIMD()
 {
-	//https://github.com/Mysticial/FeatureDetector
-
-	int cpuInfo[4];
-
-	cpuid(cpuInfo, 0);
-	int nIds = cpuInfo[0];
-
-	if (nIds < 0x00000001)
-		return FN_NO_SIMD_FALLBACK;
-
-	cpuid(cpuInfo, 0x00000001);
-
-	// SSE2
-	if ((cpuInfo[3] & 1 << 26) == 0)
-		return FN_NO_SIMD_FALLBACK;
-
-	// SSE41
-	if ((cpuInfo[2] & 1 << 19) == 0)
-		return FN_SSE2;
-
-	// AVX
-	bool cpuXSaveSuport = (cpuInfo[2] & 1 << 26) != 0;
-	bool osAVXSuport = (cpuInfo[2] & 1 << 27) != 0;
-	bool cpuAVXSuport = (cpuInfo[2] & 1 << 28) != 0;
-
-	if (cpuXSaveSuport && osAVXSuport && cpuAVXSuport)
-	{
-		uint64_t xcrFeatureMask = xgetbv(_XCR_XFEATURE_ENABLED_MASK);
-		if ((xcrFeatureMask & 0x6) != 0x6)
-			return FN_SSE41;
-	}
-	else
-		return FN_SSE41;
-
-	// AVX2 FMA3
-	if (nIds < 0x00000007)
-		return FN_SSE41;
-
-#ifdef FN_USE_FMA3
-	bool cpuFMA3Support = (cpuInfo[2] & 1 << 12) != 0;
-#else
-	bool cpuFMA3Support = true;
-#endif
-
-	cpuid(cpuInfo, 0x00000007);
-
-	bool cpuAVX2Support = (cpuInfo[1] & 1 << 5) != 0;
-
-	if (cpuFMA3Support && cpuAVX2Support)
-		return FN_AVX2;
-	else
-		return FN_SSE41;
+	return 1;
 }
 
 
@@ -141,21 +56,9 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 {
 	GetSIMDLevel();
 
-#ifdef FN_COMPILE_AVX2
-	if (s_currentSIMDLevel >= FN_AVX2)
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)(seed);
-#endif
-
-#ifdef FN_COMPILE_SSE41
-	if (s_currentSIMDLevel >= FN_SSE41)
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE41)(seed);
-#endif
-
-#ifdef FN_COMPILE_SSE2
-#ifdef FN_COMPILE_NO_SIMD_FALLBACK
-	if (s_currentSIMDLevel >= FN_SSE2)
-#endif
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)(seed);
+#ifdef FN_COMPILE_ARMV7
+	if (s_currentSIMDLevel >= FN_ARMV7)
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_ARMV7)(seed);
 #endif
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
@@ -192,14 +95,9 @@ int FastNoiseSIMD::AlignedSize(int size)
 #ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
-#ifdef FN_COMPILE_AVX2
-	if (s_currentSIMDLevel >= FN_AVX2)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)::AlignedSize(size);
-#endif
-
-#ifdef FN_COMPILE_SSE2
-	if (s_currentSIMDLevel >= FN_SSE2)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)::AlignedSize(size);
+#ifdef FN_COMPILE_ARMV7
+	if (s_currentSIMDLevel >= FN_ARMV7)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_ARMV7)::AlignedSize(size);
 #endif
 #endif
 	return size;
@@ -210,14 +108,9 @@ float* FastNoiseSIMD::GetEmptySet(int size)
 #ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
-#ifdef FN_COMPILE_AVX2
-	if (s_currentSIMDLevel >= FN_AVX2)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)::GetEmptySet(size);
-#endif
-
-#ifdef FN_COMPILE_SSE2
-	if (s_currentSIMDLevel >= FN_SSE2)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_SSE2)::GetEmptySet(size);
+#ifdef FN_COMPILE_ARMV7
+	if (s_currentSIMDLevel >= FN_ARMV7)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_ARMV7)::GetEmptySet(size);
 #endif
 #endif
 	return new float[size];
