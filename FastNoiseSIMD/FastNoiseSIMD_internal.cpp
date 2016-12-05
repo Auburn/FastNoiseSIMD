@@ -28,6 +28,7 @@
 
 #include "FastNoiseSIMD.h"
 #include <assert.h>
+#include <stdlib.h>
 
 #if defined(SIMD_LEVEL) || defined(FN_COMPILE_NO_SIMD_FALLBACK)
 
@@ -131,7 +132,7 @@ static SIMDf SIMDf_NUM(1);
 #define SIMDf_MUL(a,b) vmulq_f32(a,b)
 #define SIMDf_DIV(a,b) FUNC(DIV)(a,b)
 
-static float FUNC(DIV)(const SIMDf& a, const SIMDf& b)
+static SIMDf FUNC(DIV)(const SIMDf& a, const SIMDf& b)
 {
 	SIMDf reciprocal = vrecpeq_f32(b);
 
@@ -179,6 +180,8 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 
 #define SIMDi_SHIFT_R(a, b) vshrq_n_s32(a, b)
 #define SIMDi_SHIFT_L(a, b) vshlq_n_s32(a, b)
+
+#define SIMDi_VSHIFT_L(a, b) vshlq_s32(a, b)
 
 #define SIMDi_EQUAL(a,b) vreinterpretq_s32_u32(vceqq_s32(a,b))
 #define SIMDi_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_s32(a,b))
@@ -238,6 +241,8 @@ static float FUNC(INV_SQRT)(float x)
 
 #define SIMDi_SHIFT_R(a, b) ((a) >> (b))
 #define SIMDi_SHIFT_L(a, b) ((a) << (b))
+
+#define SIMDi_VSHIFT_L(a, b) SIMDi_SHIFT_R(a, -b)
 
 #define SIMDi_EQUAL(a,b) (((a) == (b)) ? 0xFFFFFFFF : 0)
 #define SIMDi_GREATER_THAN(a,b) (((a) > (b)) ? 0xFFFFFFFF : 0)
@@ -1435,6 +1440,9 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 	SIMDi yBase = SIMDi_SET(-yOffset);
 	SIMDi zBase = SIMDi_SET(-zOffset);
 
+	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
+	SIMDi sampleScale2V = SIMDi_MUL(sampleScaleV, SIMDi_NUM(2));
+
 	for (int x = 0; x < xSizeSample - 1; x++)
 	{
 		SIMDi ySIMD = yBase;
@@ -1463,8 +1471,8 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 				while (localCount < (1 << (sampleScale * 3)))
 				{
 					uSIMDi xi, yi, zi;
-					xi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale * 2), axisMask);
-					yi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale), axisMask);
+					xi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScale2V), axisMask);
+					yi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScaleV), axisMask);
 					zi.m = SIMDi_AND(localCountSIMD, axisMask);
 
 					SIMDf xf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(xi.m), axisScale, axisOffset);
@@ -1559,6 +1567,9 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 	SIMDf axisScale = SIMDf_SET(1.f / scaleModifier);
 	SIMDf axisOffset = SIMDf_MUL(axisScale, SIMDf_NUM(0_5));
 
+	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
+	SIMDi sampleScale2V = SIMDi_MUL(sampleScaleV, SIMDi_NUM(2));
+
 	SIMDi sampleSizeSIMD = SIMDi_SET(sampleSize);
 	SIMDi xSIMD = SIMDi_SET_ZERO();
 
@@ -1590,8 +1601,8 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 				while (localCount < (1 << (sampleScale * 3)))
 				{
 					uSIMDi xi, yi, zi;
-					xi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale * 2), axisMask);
-					yi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale), axisMask);
+					xi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScale2V), axisMask);
+					yi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScaleV), axisMask);
 					zi.m = SIMDi_AND(localCountSIMD, axisMask);
 
 					SIMDf xf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(xi.m), axisScale, axisOffset);
