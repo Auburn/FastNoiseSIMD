@@ -114,57 +114,69 @@ static SIMDf SIMDf_NUM(1);
 #if SIMD_LEVEL >= FN_ARMV7
 
 #ifdef FN_ALIGNED_SETS
-#define SIMDf_STORE(p,a) _mm256_store_ps(p,a)
-#define SIMDf_LOAD(p) _mm256_load_ps(p)
+#define SIMDf_STORE(p,a) vst1q_f32(p, a)
+#define SIMDf_LOAD(p) vld1q_f32(p)
 #else
-#define SIMDf_STORE(p,a) _mm256_storeu_ps(p,a)
-#define SIMDf_LOAD(p) _mm256_loadu_ps(p)
+#define SIMDf_STORE(p,a) vst1q_f32(p, a)
+#define SIMDf_LOAD(p) vld1q_f32(p)
 #endif
 
-#define SIMDf_ADD(a,b) _mm256_add_ps(a,b)
-#define SIMDf_SUB(a,b) _mm256_sub_ps(a,b)
-#define SIMDf_MUL(a,b) _mm256_mul_ps(a,b)
-#define SIMDf_DIV(a,b) _mm256_div_ps(a,b)
+#define SIMDf_CONVERT_TO_FLOAT(a) vcvtq_f32_s32(a)
+#define SIMDf_CAST_TO_FLOAT(a) vreinterpretq_f32_s32(a)
+#define SIMDi_CONVERT_TO_INT(a) vcvtq_s32_f32(a)
+#define SIMDi_CAST_TO_INT(a) vreinterpretq_s32_f32(a)
 
-#define SIMDf_MIN(a,b) _mm256_min_ps(a,b)
-#define SIMDf_MAX(a,b) _mm256_max_ps(a,b)
-#define SIMDf_INV_SQRT(a) _mm256_rsqrt_ps(a)
+#define SIMDf_ADD(a,b) vaddq_f32(a,b)
+#define SIMDf_SUB(a,b) vsubq_f32(a,b)
+#define SIMDf_MUL(a,b) vmulq_f32(a,b)
+#define SIMDf_DIV(a,b) FUNC(DIV)(a,b)
 
-#define SIMDf_LESS_THAN(a,b) _mm256_cmp_ps(a,b,_CMP_LT_OQ)
-#define SIMDf_GREATER_THAN(a,b) _mm256_cmp_ps(a,b,_CMP_GT_OQ)
-#define SIMDf_LESS_EQUAL(a,b) _mm256_cmp_ps(a,b,_CMP_LE_OQ)
-#define SIMDf_GREATER_EQUAL(a,b) _mm256_cmp_ps(a,b,_CMP_GE_OQ)
+static float FUNC(DIV)(SIMDf a, SIMDf b)
+{
+	SIMDf reciprocal = vrecpeq_f32(b);
 
-#define SIMDf_AND(a,b) _mm256_and_ps(a,b)
-#define SIMDf_AND_NOT(a,b) _mm256_andnot_ps(a,b)
-#define SIMDf_XOR(a,b) _mm256_xor_ps(a,b)
+	// use a couple Newton-Raphson steps to refine the estimate.  Depending on your
+	// application's accuracy requirements, you may be able to get away with only
+	// one refinement (instead of the two used here).  Be sure to test!
+	reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
+	reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
 
-#define SIMDf_FLOOR(a) _mm256_floor_ps(a)
-#define SIMDf_BLENDV(a,b,mask) _mm256_blendv_ps(a,b,mask)
-#define SIMDf_GATHER(p,a) _mm256_i32gather_ps(p,a,4)
-#define SIMDf_PERMUTE(a,b) _mm256_permutevar8x32_ps(a,b)
+	// and finally, compute a/b = a*(1/b)
+	return vmulq_f32(a, reciprocal);
+}
 
-#define SIMDi_ADD(a,b) _mm256_add_epi32(a,b)
-#define SIMDi_SUB(a,b) _mm256_sub_epi32(a,b)
-#define SIMDi_MUL(a,b) _mm256_mullo_epi32(a,b)
+#define SIMDf_MIN(a,b) vminq_f32(a,b)
+#define SIMDf_MAX(a,b) vmaxq_f32(a,b)
+#define SIMDf_INV_SQRT(a) vrsqrteq_f32(a)
 
-#define SIMDi_AND(a,b) _mm256_and_si256(a,b)
-#define SIMDi_AND_NOT(a,b) _mm256_andnot_si256(a,b)
-#define SIMDi_OR(a,b) _mm256_or_si256(a,b)
-#define SIMDi_XOR(a,b) _mm256_xor_si256(a,b)
-#define SIMDi_NOT(a) SIMDi_XOR(a,SIMDi_NUM(0xffffffff))
+#define SIMDf_LESS_THAN(a,b) vreinterpretq_f32_u32(vcltq_f32(a,b))
+#define SIMDf_GREATER_THAN(a,b) vreinterpretq_f32_u32(vcgtq_f32(a,b))
+#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_f32_u32(vcleq_f32(a,b))
+#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_f32_u32(vcgeq_f32(a,b))
 
-#define SIMDi_SHIFT_R(a, b) _mm256_srai_epi32(a, b)
-#define SIMDi_SHIFT_L(a, b) _mm256_slli_epi32(a, b)
+#define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
+#define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
+#define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(veorq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
 
-#define SIMDi_EQUAL(a,b) _mm256_cmpeq_epi32(a,b)
-#define SIMDi_GREATER_THAN(a,b) _mm256_cmpgt_epi32(a,b)
-#define SIMDi_LESS_THAN(a,b) _mm256_cmpgt_epi32(b,a)
+#define SIMDf_FLOOR(a) vrndqm_f32(a)
+#define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_f32(mask),b,a)
 
-#define SIMDf_CONVERT_TO_FLOAT(a) _mm256_cvtepi32_ps(a)
-#define SIMDf_CAST_TO_FLOAT(a) _mm256_castsi256_ps(a)
-#define SIMDi_CONVERT_TO_INT(a) _mm256_cvtps_epi32(a)
-#define SIMDi_CAST_TO_INT(a) _mm256_castps_si256(a)
+#define SIMDi_ADD(a,b) vaddq_s32(a,b)
+#define SIMDi_SUB(a,b) vsubq_s32(a,b)
+#define SIMDi_MUL(a,b) vmulq_s32(a,b)
+
+#define SIMDi_AND(a,b) vandq_s32(a,b)
+#define SIMDi_AND_NOT(a,b) vandq_s32(vmvnq_s32(a),b)
+#define SIMDi_OR(a,b) vorrq_s32(a,b)
+#define SIMDi_XOR(a,b) veorq_s32(a,b)
+#define SIMDi_NOT(a) vmvnq_s32(a)
+
+#define SIMDi_SHIFT_R(a, b) vshrq_n_s32(a, b)
+#define SIMDi_SHIFT_L(a, b) vshlq_n_s32(a, b)
+
+#define SIMDi_EQUAL(a,b) vreinterpretq_s32_u32(vceqq_s32(a,b))
+#define SIMDi_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_s32(a,b))
+#define SIMDi_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_s32(a,b))
 
 #else // Fallback
 
@@ -247,9 +259,9 @@ static float FUNC(INV_SQRT)(float x)
 #endif
 
 // FMA3
-#if defined(FN_USE_FMA3) && SIMD_LEVEL == FN_AVX2
-#define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
-#define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
+#if defined(FN_USE_FMA) && SIMD_LEVEL == FN_ARMV7
+#define SIMDf_MUL_ADD(a,b,c) vfmaq_f32(a,b,c)
+#define SIMDf_MUL_SUB(a,b,c) vfmsq_f32(a,b,c)
 #else
 #define SIMDf_MUL_ADD(a,b,c) SIMDf_ADD(SIMDf_MUL(a,b),c)
 #define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c)
