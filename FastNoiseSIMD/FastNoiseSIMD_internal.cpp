@@ -131,7 +131,7 @@ static SIMDf SIMDf_NUM(1);
 #define SIMDf_MUL(a,b) vmulq_f32(a,b)
 #define SIMDf_DIV(a,b) FUNC(DIV)(a,b)
 
-static float FUNC(DIV)(SIMDf a, SIMDf b)
+static float FUNC(DIV)(const SIMDf& a, const SIMDf& b)
 {
 	SIMDf reciprocal = vrecpeq_f32(b);
 
@@ -158,7 +158,13 @@ static float FUNC(DIV)(SIMDf a, SIMDf b)
 #define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
 #define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(veorq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
 
-#define SIMDf_FLOOR(a) vrndqm_f32(a)
+static SIMDf FUNC(FLOOR)(const SIMDf& a)
+{
+	SIMDf fval = SIMDf_CONVERT_TO_FLOAT(SIMDi_CONVERT_TO_INT(a));
+
+	return vsubq_f32(fval, SIMDf_AND(SIMDf_LESS_THAN(a, fval), SIMDf_NUM(1)));
+}
+#define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
 #define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_f32(mask),b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
