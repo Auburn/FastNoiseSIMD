@@ -1,4 +1,4 @@
-// FastNoiseSIMD_avx2.cpp
+// FastNoiseSIMD_ARMv7.cpp
 //
 // MIT License
 //
@@ -27,15 +27,11 @@
 //
 
 #include "FastNoiseSIMD.h"
-
-// DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
-
-// To compile AVX2 support enable AVX(2) code generation compiler flags for this file
 #ifdef FN_COMPILE_ARMV7
 
 #define SIMD_LEVEL_H FN_ARMV7
 #include "FastNoiseSIMD_internal.h"
-#include <arm_neon.h> //AVX2 FMA3
+#include <arm_neon.h>
 
 #define SIMD_LEVEL FN_ARMV7
 #include "FastNoiseSIMD_internal.cpp"
