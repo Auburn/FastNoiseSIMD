@@ -37,7 +37,7 @@
 #define FN_COMPILE_AVX2
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 
-// SSE2 support is guaranteed on 64bit CPUs so no fallback is not needed
+// SSE2 support is guaranteed on 64bit CPUs so no fallback is needed
 #if !(defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__))
 #define FN_COMPILE_NO_SIMD_FALLBACK
 #endif
