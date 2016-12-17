@@ -30,24 +30,24 @@
 #define FASTNOISE_SIMD_H
 
 // Comment out lines to not compile for certain instruction sets
-#define FN_COMPILE_ARMV7
+#define FN_COMPILE_NEON
 
 // SSE2 support is guaranteed on 64bit CPUs so no fallback is not needed
-//#if !(defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__))
+#ifndef __aarch64__
 #define FN_COMPILE_NO_SIMD_FALLBACK
-//#endif
+#endif
 
 // Using aligned sets of memory for float arrays allows faster storing of SIMD data
 // Comment out to allow unaligned float arrays to be used as sets
-#define FN_ALIGNED_SETS
+//#define FN_ALIGNED_SETS
 
 // Using FMA3 instructions with AVX2 provides a small performance increase but can cause
 // minute variations in noise output compared to other SIMD levels due to higher calculation precision
-//#define FN_USE_FMA
+#define FN_USE_FMA
 
 // Reduced minimum of zSize from 8 to 4 when not using a vector set
 // Causes slightly performance loss on non-"mulitple of 8" zSize
-//#define FN_MIN_Z_4
+#define FN_MIN_Z_4
 
 /*
 Tested Compilers:
@@ -209,6 +209,8 @@ public:
 	virtual void FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
 	virtual void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) = 0;
 
+	virtual ~FastNoiseSIMD() {}
+
 protected:
 	int m_seed = 1337;
 	float m_frequency = 0.01f;
@@ -255,5 +257,5 @@ public:
 };
 
 #define FN_NO_SIMD_FALLBACK 0
-#define FN_ARMV7 1
+#define FN_NEON 1
 #endif

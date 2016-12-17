@@ -1,4 +1,4 @@
-// FastNoiseSIMD_ARMv7.cpp
+// FastNoiseSIMD_NEON.cpp
 //
 // MIT License
 //
@@ -27,12 +27,12 @@
 //
 
 #include "FastNoiseSIMD.h"
-#ifdef FN_COMPILE_ARMV7
+#ifdef FN_COMPILE_NEON
 
-#define SIMD_LEVEL_H FN_ARMV7
+#define SIMD_LEVEL_H FN_NEON
 #include "FastNoiseSIMD_internal.h"
 #include <arm_neon.h>
 
-#define SIMD_LEVEL FN_ARMV7
+#define SIMD_LEVEL FN_NEON
 #include "FastNoiseSIMD_internal.cpp"
 #endif

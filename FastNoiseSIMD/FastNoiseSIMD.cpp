@@ -28,37 +28,45 @@
 
 #include "FastNoiseSIMD.h"
 #include <assert.h>
-#include <stdlib.h>
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
 #define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
 #include "FastNoiseSIMD_internal.h"
 #endif
 
-#ifdef FN_COMPILE_ARMV7
-#define SIMD_LEVEL_H FN_ARMV7
+#ifdef FN_COMPILE_NEON
+#define SIMD_LEVEL_H FN_NEON
 #include "FastNoiseSIMD_internal.h"
 #endif
 
 // CPUid
-
+#ifndef __aarch64__
+#include "cpu-features.h"
+#endif
 
 int FastNoiseSIMD::s_currentSIMDLevel = -1;
 
-
 int GetFastestSIMD()
 {
-	return 1;
-}
+#ifdef __aarch64__
+	return FN_NEON;
+#else
+	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM && (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON) != 0)
+		return FN_NEON;
 
+	return FN_NO_SIMD_FALLBACK;
+#endif
+}
 
 FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 {
 	GetSIMDLevel();
 
-#ifdef FN_COMPILE_ARMV7
-	if (s_currentSIMDLevel >= FN_ARMV7)
-		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_ARMV7)(seed);
+#ifdef FN_COMPILE_NEON
+#ifdef FN_COMPILE_NO_SIMD_FALLBACK
+	if (s_currentSIMDLevel >= FN_NEON)
+#endif
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)(seed);
 #endif
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
@@ -95,9 +103,9 @@ int FastNoiseSIMD::AlignedSize(int size)
 #ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
-#ifdef FN_COMPILE_ARMV7
-	if (s_currentSIMDLevel >= FN_ARMV7)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_ARMV7)::AlignedSize(size);
+#ifdef FN_COMPILE_NEON
+	if (s_currentSIMDLevel >= FN_NEON)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)::AlignedSize(size);
 #endif
 #endif
 	return size;
@@ -108,9 +116,9 @@ float* FastNoiseSIMD::GetEmptySet(int size)
 #ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
-#ifdef FN_COMPILE_ARMV7
-	if (s_currentSIMDLevel >= FN_ARMV7)
-		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_ARMV7)::GetEmptySet(size);
+#ifdef FN_COMPILE_NEON
+	if (s_currentSIMDLevel >= FN_NEON)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)::GetEmptySet(size);
 #endif
 #endif
 	return new float[size];

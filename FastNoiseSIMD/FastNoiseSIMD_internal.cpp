@@ -64,7 +64,7 @@
 #define SIMD_LEVEL_CLASS FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(SIMD_LEVEL)
 
 // Typedefs
-#if SIMD_LEVEL == FN_ARMV7
+#if SIMD_LEVEL == FN_NEON
 #define VECTOR_SIZE 4
 #define MEMORY_ALIGNMENT 16
 typedef float32x4_t SIMDf;
@@ -112,7 +112,7 @@ static SIMDi SIMDi_NUM(0xffffffff);
 static SIMDf SIMDf_NUM(1);
 
 // SIMD functions
-#if SIMD_LEVEL >= FN_ARMV7
+#if SIMD_LEVEL >= FN_NEON
 
 #ifdef FN_ALIGNED_SETS
 #define SIMDf_STORE(p,a) vst1q_f32(p, a)
@@ -140,7 +140,6 @@ static SIMDf FUNC(DIV)(const SIMDf& a, const SIMDf& b)
 	// application's accuracy requirements, you may be able to get away with only
 	// one refinement (instead of the two used here).  Be sure to test!
 	reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
-	reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
 
 	// and finally, compute a/b = a*(1/b)
 	return vmulq_f32(a, reciprocal);
@@ -159,6 +158,7 @@ static SIMDf FUNC(DIV)(const SIMDf& a, const SIMDf& b)
 #define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
 #define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(veorq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
 
+#ifndef __aarch64__
 static SIMDf FUNC(FLOOR)(const SIMDf& a)
 {
 	SIMDf fval = SIMDf_CONVERT_TO_FLOAT(SIMDi_CONVERT_TO_INT(a));
@@ -166,6 +166,10 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 	return vsubq_f32(fval, SIMDf_AND(SIMDf_LESS_THAN(a, fval), SIMDf_NUM(1)));
 }
 #define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
+#else
+#define SIMDf_FLOOR(a) vrndmq_f32(a)
+#endif
+
 #define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_f32(mask),b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
@@ -188,7 +192,6 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDi_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_s32(a,b))
 
 #else // Fallback
-
 static int FUNC(CAST_TO_INT)(float f) { return *reinterpret_cast<int*>(&f); }
 static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*>(&i); }
 #define SIMDi_CAST_TO_INT(a) FUNC(CAST_TO_INT)(a)
@@ -263,16 +266,12 @@ static float FUNC(INV_SQRT)(float x)
 #define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 #endif
 
-#if SIMD_LEVEL == FN_AVX2 && 0
-#define SIMD_ZERO_ALL() _mm256_zeroall()
-#else
 #define SIMD_ZERO_ALL()
-#endif
 
 // FMA3
-#if defined(FN_USE_FMA) && SIMD_LEVEL == FN_ARMV7
-#define SIMDf_MUL_ADD(a,b,c) vfmaq_f32(a,b,c)
-#define SIMDf_MUL_SUB(a,b,c) vfmsq_f32(a,b,c)
+#if defined(FN_USE_FMA) && SIMD_LEVEL == FN_NEON
+#define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (a,b,c)
+#define SIMDf_MUL_SUB(a,b,c) vmlsq_f32(a,b,c)
 #else
 #define SIMDf_MUL_ADD(a,b,c) SIMDf_ADD(SIMDf_MUL(a,b),c)
 #define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c)
@@ -301,14 +300,14 @@ static SIMDf SIMDf_NUM(G33);
 static SIMDf SIMDf_NUM(hash2Float);
 static SIMDf SIMDf_NUM(vectorSize);
 
-#if SIMD_LEVEL == FN_AVX2
+//#if SIMD_LEVEL == FN_AVX2
 //static SIMDf SIMDf_NUM(XY_GRAD_08);
-static SIMDf SIMDf_NUM(X_GRAD_8);
-static SIMDf SIMDf_NUM(Y_GRAD_0);
+//static SIMDf SIMDf_NUM(X_GRAD_8);
+//static SIMDf SIMDf_NUM(Y_GRAD_0);
 //static SIMDf SIMDf_NUM(Y_GRAD_8);
-static SIMDf SIMDf_NUM(Z_GRAD_0);
-static SIMDf SIMDf_NUM(Z_GRAD_8);
-#endif
+//static SIMDf SIMDf_NUM(Z_GRAD_0);
+//static SIMDf SIMDf_NUM(Z_GRAD_8);
+//#endif
 
 static SIMDi SIMDi_NUM(incremental);
 static SIMDi SIMDi_NUM(1);
@@ -831,13 +830,13 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 	return noiseSet;
 }
 
-#if defined(FN_MIN_Z_4) || !defined(FN_COMPILE_AVX2)
+#if defined(FN_MIN_Z_4) || 1
 #define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 4)
 #else
 #define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 8)
 #endif
 
-#if SIMD_LEVEL == FN_AVX2 && defined(FN_MIN_Z_4)
+#if VECTOR_SIZE > 4 && defined(FN_MIN_Z_4)
 #define AVX_DOUBLE_RESET {\
 SIMDi _zReset = SIMDi_GREATER_THAN(z, zEndV); \
 y = SIMDi_ADD(y, SIMDi_AND(SIMDi_NUM(1), _zReset)); \
