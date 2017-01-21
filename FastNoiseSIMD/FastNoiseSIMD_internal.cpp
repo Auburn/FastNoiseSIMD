@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2016 Jordan Peck
+// Copyright(c) 2017 Jordan Peck
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -61,6 +61,12 @@
 #define FUNC(x) VAR(FUNC_##x)
 
 #define SIMD_LEVEL_CLASS FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(SIMD_LEVEL)
+
+#if defined(_WIN32) && SIMD_LEVEL > FN_NO_SIMD_FALLBACK
+#define VECTORCALL //__vectorcall
+#else
+#define VECTORCALL
+#endif
 
 // Typedefs
 #if SIMD_LEVEL == FN_AVX2
@@ -209,7 +215,7 @@ static SIMDf SIMDf_NUM(1);
 #define SIMDf_FLOOR(a) _mm_floor_ps(a)
 #define SIMDf_BLENDV(a,b,mask) _mm_blendv_ps(a,b,mask)
 #else
-static SIMDi FUNC(MUL)(const SIMDi& a, const SIMDi& b)
+static SIMDi VECTORCALL FUNC(MUL)(const SIMDi& a, const SIMDi& b)
 {
 	__m128 tmp1 = _mm_castsi128_ps(_mm_mul_epu32(a, b)); /* mul 2,0*/
 	__m128 tmp2 = _mm_castsi128_ps(_mm_mul_epu32(_mm_srli_si128(a, 4), _mm_srli_si128(b, 4))); /* mul 3,1 */
@@ -217,7 +223,7 @@ static SIMDi FUNC(MUL)(const SIMDi& a, const SIMDi& b)
 }
 #define SIMDi_MUL(a,b) FUNC(MUL)(a,b)
 
-static SIMDf FUNC(FLOOR)(const SIMDf& a)
+static SIMDf VECTORCALL FUNC(FLOOR)(const SIMDf& a)
 {
 	__m128 fval = _mm_cvtepi32_ps(_mm_cvttps_epi32(a));
 
@@ -228,7 +234,7 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDf_BLENDV(a,b,mask) _mm_or_ps(_mm_andnot_ps(mask, a), _mm_and_ps(mask, b))
 #endif
 
-static SIMDf FUNC(GATHER)(const float* p, const SIMDi& a)
+static SIMDf VECTORCALL FUNC(GATHER)(const float* p, const SIMDi& a)
 {
 	const uSIMDi* m = reinterpret_cast<const uSIMDi*>(&a);
 	uSIMDf r;
@@ -472,7 +478,7 @@ void FUNC(InitSIMDValues)()
 	VAR(SIMD_Values_Set) = true;
 }
 
-static SIMDf FUNC(Lerp)(const SIMDf& a, const SIMDf& b, const SIMDf& t)
+static SIMDf VECTORCALL FUNC(Lerp)(const SIMDf& a, const SIMDf& b, const SIMDf& t)
 {
 	SIMDf r;
 	r = SIMDf_SUB(b, a);
@@ -480,7 +486,7 @@ static SIMDf FUNC(Lerp)(const SIMDf& a, const SIMDf& b, const SIMDf& t)
 	return r;
 }
 
-static SIMDf FUNC(InterpQuintic)(const SIMDf& t)
+static SIMDf VECTORCALL FUNC(InterpQuintic)(const SIMDf& t)
 {
 	SIMDf r;
 	r = SIMDf_MUL_SUB(t, SIMDf_NUM(6), SIMDf_NUM(15));
@@ -503,7 +509,7 @@ static SIMDf FUNC(InterpQuintic)(const SIMDf& t)
 //	return r;
 //}
 
-static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
+static SIMDi VECTORCALL FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
 	SIMDi hash = seed;
 
@@ -517,7 +523,7 @@ static SIMDi FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const
 	return hash;
 }
 
-static SIMDi FUNC(HashHB)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
+static SIMDi VECTORCALL FUNC(HashHB)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
 	SIMDi hash = seed;
 
@@ -531,7 +537,7 @@ static SIMDi FUNC(HashHB)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, con
 	return hash;
 }
 
-static SIMDf FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
+static SIMDf VECTORCALL FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, const SIMDi& z)
 {
 	// High bit hash
 	SIMDi hash = seed;
@@ -547,7 +553,7 @@ static SIMDf FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const SIMDi& y, c
 }
 
 #if SIMD_LEVEL == FN_AVX2
-static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDi hash = FUNC(Hash)(seed, xi, yi, zi);
 	SIMDf hashBit8 = SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(hash, 28));
@@ -561,7 +567,7 @@ static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi
 	return SIMDf_MUL_ADD(x, xGrad, SIMDf_MUL_ADD(y, yGrad, SIMDf_MUL(z, zGrad)));
 }
 #else
-static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDi hash = SIMDi_AND(FUNC(Hash)(seed, xi, yi, zi), SIMDi_NUM(15));
 
@@ -584,7 +590,7 @@ static SIMDf FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi
 }
 #endif
 
-static SIMDf FUNC(WhiteNoiseSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+static SIMDf VECTORCALL FUNC(WhiteNoiseSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	return FUNC(ValCoord)(seed,
 		SIMDi_XOR(SIMDi_CAST_TO_INT(x), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(x), 16)),
@@ -592,7 +598,7 @@ static SIMDf FUNC(WhiteNoiseSingle)(const SIMDi& seed, const SIMDf& x, const SIM
 		SIMDi_XOR(SIMDi_CAST_TO_INT(z), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(z), 16)));
 }
 
-static SIMDf FUNC(ValueSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+static SIMDf VECTORCALL FUNC(ValueSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDf xs = SIMDf_FLOOR(x);
 	SIMDf ys = SIMDf_FLOOR(y);
@@ -618,7 +624,7 @@ static SIMDf FUNC(ValueSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y
 			FUNC(Lerp)(FUNC(ValCoord)(seed, x0, y1, z1), FUNC(ValCoord)(seed, x1, y1, z1), xs), ys), zs);
 }
 
-static SIMDf FUNC(PerlinSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+static SIMDf VECTORCALL FUNC(PerlinSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDf xs = SIMDf_FLOOR(x);
 	SIMDf ys = SIMDf_FLOOR(y);
@@ -651,7 +657,7 @@ static SIMDf FUNC(PerlinSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& 
 			FUNC(Lerp)(FUNC(GradCoord)(seed, x0, y1, z1, xf0, yf1, zf1), FUNC(GradCoord)(seed, x1, y1, z1, xf1, yf1, zf1), xs), ys), zs);
 }
 
-static SIMDf FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+static SIMDf VECTORCALL FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDf f = SIMDf_MUL(SIMDf_NUM(F3), SIMDf_ADD(SIMDf_ADD(x, y), z));
 	SIMDf x0 = SIMDf_FLOOR(SIMDf_ADD(x, f));
@@ -723,7 +729,7 @@ static SIMDf FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf&
 #define Distance2Div_RETURN(_distance, _distance2) SIMDf_DIV(_distance, _distance2)
 
 #define CELLULAR_VALUE_SINGLE(distanceFunc)\
-static SIMDf FUNC(CellularValue##distanceFunc##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)\
+static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)\
 {\
 	SIMDf distance = SIMDf_NUM(999999);\
 	SIMDf cellValue = SIMDf_NUM(0);\
@@ -772,7 +778,7 @@ static SIMDf FUNC(CellularValue##distanceFunc##Single)(const SIMDi& seed, const 
 }
 
 #define CELLULAR_DISTANCE_SINGLE(distanceFunc)\
-static SIMDf FUNC(CellularDistance##distanceFunc##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)\
+static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)\
 {\
 	SIMDf distance = SIMDf_NUM(999999);\
 	\
@@ -816,7 +822,7 @@ static SIMDf FUNC(CellularDistance##distanceFunc##Single)(const SIMDi& seed, con
 }
 
 #define CELLULAR_DISTANCE2_SINGLE(distanceFunc, returnFunc)\
-static SIMDf FUNC(Cellular##returnFunc##distanceFunc##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)\
+static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)\
 {\
 	SIMDf distance = SIMDf_NUM(999999);\
 	SIMDf distance2 = SIMDf_NUM(999999);\
@@ -894,7 +900,7 @@ SIMDf z##_x##_y##_z = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(h
 //y##_x##_y##_z = SIMDf_MUL(y##_x##_y##_z, invMag##_x##_y##_z); 
 //z##_x##_y##_z = SIMDf_MUL(z##_x##_y##_z, invMag##_x##_y##_z);
 
-static void FUNC(GradientPerturbSingle)(const SIMDi& seed, const SIMDf& perturbAmp, const SIMDf& perturbFrequency, SIMDf& x, SIMDf& y, SIMDf& z)
+static void VECTORCALL FUNC(GradientPerturbSingle)(const SIMDi& seed, const SIMDf& perturbAmp, const SIMDf& perturbFrequency, SIMDf& x, SIMDf& y, SIMDf& z)
 {
 	SIMDf xf = SIMDf_MUL(x, perturbFrequency);
 	SIMDf yf = SIMDf_MUL(y, perturbFrequency);
