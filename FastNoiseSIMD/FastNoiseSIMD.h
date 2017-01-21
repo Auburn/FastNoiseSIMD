@@ -38,7 +38,7 @@
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 
 // SSE2 support is guaranteed on 64bit CPUs so no fallback is needed
-#if !(defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__))
+#if !(defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__)) || defined(_DEBUG)
 #define FN_COMPILE_NO_SIMD_FALLBACK
 #endif
 
@@ -89,8 +89,10 @@ struct FastNoiseVectorSet;
 class FastNoiseSIMD
 {
 public:
+
 	enum NoiseType { Value, ValueFractal, Perlin, PerlinFractal, Simplex, SimplexFractal, WhiteNoise, Cellular };
 	enum FractalType { FBM, Billow, RigidMulti };
+	enum PerturbType { None, Gradient, GradientFractal };
 
 	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
 	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div };
@@ -149,7 +151,7 @@ public:
 
 	// Sets octave count for all fractal noise types
 	// Default: 3
-	void SetFractalOctaves(int octaves) { m_octaves = octaves; }
+	void SetFractalOctaves(int octaves) { m_octaves = octaves; m_fractalBounding = CalculateFractalBounding(m_octaves, m_gain);	}
 
 	// Sets octave lacunarity for all fractal noise types
 	// Default: 2.0
@@ -157,7 +159,7 @@ public:
 
 	// Sets octave gain for all fractal noise types
 	// Default: 0.5
-	void SetFractalGain(float gain) { m_gain = gain; }
+	void SetFractalGain(float gain) { m_gain = gain; m_fractalBounding = CalculateFractalBounding(m_octaves, m_gain); }
 
 	// Sets method for combining octaves in all fractal noise types
 	// Default: FBM
@@ -171,6 +173,32 @@ public:
 	// Sets distance function used in cellular noise calculations
 	// Default: Euclidean
 	void SetCellularDistanceFunction(CellularDistanceFunction cellularDistanceFunction) { m_cellularDistanceFunction = cellularDistanceFunction; }
+
+
+	// Enables position perturbing for all noise types
+	// Default: None
+	void SetPerturbType(PerturbType perturbType) { m_perturbType = perturbType; }
+
+	// Sets the maximum distance the input position can be perturbed
+	// Default: 1.0
+	void SetPerturbAmp(float perturbAmp) { m_perturbAmp = perturbAmp / 511.5f; }
+
+	// Set the relative frequency for the perturb gradient
+	// Default: 0.5
+	void SetPerturbFrequency(float perturbFrequency) { m_perturbFrequency = perturbFrequency; }
+
+
+	// Sets octave count for perturb fractal types
+	// Default: 3
+	void SetPerturbFractalOctaves(int perturbOctaves) { m_perturbOctaves = perturbOctaves; m_perturbFractalBounding = CalculateFractalBounding(m_perturbOctaves, m_perturbGain); }
+
+	// Sets octave lacunarity for perturb fractal types 
+	// Default: 2.0
+	void SetPerturbFractalLacunarity(float perturbLacunarity) { m_perturbLacunarity = perturbLacunarity; }
+	
+	// Sets octave gain for perturb fractal types 
+	// Default: 0.5
+	void SetPerturbFractalGain(float perturbGain) { m_perturbGain = perturbGain; m_perturbFractalBounding = CalculateFractalBounding(m_perturbOctaves, m_perturbGain);	}
 
 	static FastNoiseVectorSet* GetVectorSet(int xSize, int ySize, int zSize);
 	static FastNoiseVectorSet* GetSamplingVectorSet(int sampleScale, int xSize, int ySize, int zSize);
@@ -214,6 +242,8 @@ public:
 	virtual void FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
 	virtual void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) = 0;
 
+	virtual ~FastNoiseSIMD() { }
+
 protected:
 	int m_seed = 1337;
 	float m_frequency = 0.01f;
@@ -226,12 +256,23 @@ protected:
 	int m_octaves = 3;
 	float m_lacunarity = 2.0f;
 	float m_gain = 0.5f;
-	FractalType m_fractalType = FBM;
+	FractalType m_fractalType = FBM;	
+	float m_fractalBounding;	
 
 	CellularDistanceFunction m_cellularDistanceFunction = Euclidean;
 	CellularReturnType m_cellularReturnType = Distance;
 
+	PerturbType m_perturbType = None;
+	float m_perturbAmp = 1.0f;
+	float m_perturbFrequency = 0.5f;
+
+	int m_perturbOctaves = 3;
+	float m_perturbLacunarity = 2.0f;
+	float m_perturbGain = 0.5f;
+	float m_perturbFractalBounding;
+
 	static int s_currentSIMDLevel;
+	static float CalculateFractalBounding(int octaves, float gain);
 };
 
 struct FastNoiseVectorSet

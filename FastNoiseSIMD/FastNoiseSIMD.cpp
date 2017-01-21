@@ -422,6 +422,18 @@ GET_SET(SimplexFractal)
 
 GET_SET(Cellular)
 
+float FastNoiseSIMD::CalculateFractalBounding(int octaves, float gain)
+{
+	float amp = gain;
+	float ampFractal = 1.0f;
+	for (int i = 1; i < octaves; i++)
+	{
+		ampFractal += amp;
+		amp *= gain;
+	}
+	return 1.0f / ampFractal;
+}
+
 void FastNoiseVectorSet::Free()
 {
 	size = -1;
