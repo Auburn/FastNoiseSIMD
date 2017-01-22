@@ -14,8 +14,10 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - White Noise 3D
 - Cellular Noise 3D
 - Large variety of cellular noise settings
+- Perturb input coordinates in 3D space
 
 ##Supported Instruction Sets
+- ARM NEON
 - AVX2 - FMA3
 - SSE4.1
 - SSE2
@@ -78,3 +80,7 @@ Comparision of different SIMD levels can be seen [here](https://github.com/Aubur
 
 ###White Noise
 ![White Noise](http://i.imgur.com/wcTlyek.png)
+
+###Perturb
+![Perturbed Cellular Noise](http://i.imgur.com/xBKGo1E.png)
+
