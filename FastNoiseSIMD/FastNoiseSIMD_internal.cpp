@@ -69,7 +69,17 @@
 #endif
 
 // Typedefs
-#if SIMD_LEVEL == FN_AVX2
+#if SIMD_LEVEL == FN_NEON
+#define VECTOR_SIZE 4
+#define MEMORY_ALIGNMENT 16
+typedef float32x4_t SIMDf;
+typedef int32x4_t SIMDi;
+#define SIMDf_SET(a) vdupq_n_f32(a)
+#define SIMDf_SET_ZERO() vdupq_n_f32(0)
+#define SIMDi_SET(a) vdupq_n_s32(a)
+#define SIMDi_SET_ZERO() vdupq_n_s32(0)
+
+#elif SIMD_LEVEL == FN_AVX2
 #define VECTOR_SIZE 8
 #define MEMORY_ALIGNMENT 32
 typedef __m256 SIMDf;
@@ -127,7 +137,80 @@ static SIMDi SIMDi_NUM(0xffffffff);
 static SIMDf SIMDf_NUM(1);
 
 // SIMD functions
-#if SIMD_LEVEL >= FN_AVX2
+#if SIMD_LEVEL == FN_NEON
+
+#define SIMDf_STORE(p,a) vst1q_f32(p, a)
+#define SIMDf_LOAD(p) vld1q_f32(p)
+
+#define SIMDf_CONVERT_TO_FLOAT(a) vcvtq_f32_s32(a)
+#define SIMDf_CAST_TO_FLOAT(a) vreinterpretq_f32_s32(a)
+#define SIMDi_CONVERT_TO_INT(a) vcvtq_s32_f32(a)
+#define SIMDi_CAST_TO_INT(a) vreinterpretq_s32_f32(a)
+
+#define SIMDf_ADD(a,b) vaddq_f32(a,b)
+#define SIMDf_SUB(a,b) vsubq_f32(a,b)
+#define SIMDf_MUL(a,b) vmulq_f32(a,b)
+#define SIMDf_DIV(a,b) FUNC(DIV)(a,b)
+
+static SIMDf FUNC(DIV)(const SIMDf& a, const SIMDf& b)
+{
+	SIMDf reciprocal = vrecpeq_f32(b);
+	// use a couple Newton-Raphson steps to refine the estimate.  Depending on your
+	// application's accuracy requirements, you may be able to get away with only
+	// one refinement (instead of the two used here).  Be sure to test!
+	reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
+
+	// and finally, compute a/b = a*(1/b)
+	return vmulq_f32(a, reciprocal);
+}
+
+#define SIMDf_MIN(a,b) vminq_f32(a,b)
+#define SIMDf_MAX(a,b) vmaxq_f32(a,b)
+#define SIMDf_INV_SQRT(a) vrsqrteq_f32(a)
+
+#define SIMDf_LESS_THAN(a,b) vreinterpretq_f32_u32(vcltq_f32(a,b))
+#define SIMDf_GREATER_THAN(a,b) vreinterpretq_f32_u32(vcgtq_f32(a,b))
+#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_f32_u32(vcleq_f32(a,b))
+#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_f32_u32(vcgeq_f32(a,b))
+
+#define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
+#define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
+#define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(veorq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
+
+#ifndef __aarch64__
+static SIMDf FUNC(FLOOR)(const SIMDf& a)
+{
+	SIMDf fval = SIMDf_CONVERT_TO_FLOAT(SIMDi_CONVERT_TO_INT(a));
+
+	return vsubq_f32(fval, SIMDf_AND(SIMDf_LESS_THAN(a, fval), SIMDf_NUM(1)));
+}
+#define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
+#else
+
+#define SIMDf_FLOOR(a) vrndmq_f32(a)
+#endif
+
+#define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_f32(mask),b,a)
+
+#define SIMDi_ADD(a,b) vaddq_s32(a,b)
+#define SIMDi_SUB(a,b) vsubq_s32(a,b)
+#define SIMDi_MUL(a,b) vmulq_s32(a,b)
+
+#define SIMDi_AND(a,b) vandq_s32(a,b)
+#define SIMDi_AND_NOT(a,b) vandq_s32(vmvnq_s32(a),b)
+#define SIMDi_OR(a,b) vorrq_s32(a,b)
+#define SIMDi_XOR(a,b) veorq_s32(a,b)
+#define SIMDi_NOT(a) vmvnq_s32(a)
+
+#define SIMDi_SHIFT_R(a, b) vshrq_n_s32(a, b)
+#define SIMDi_SHIFT_L(a, b) vshlq_n_s32(a, b)
+#define SIMDi_VSHIFT_L(a, b) vshlq_s32(a, b)
+
+#define SIMDi_EQUAL(a,b) vreinterpretq_s32_u32(vceqq_s32(a,b))
+#define SIMDi_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_s32(a,b))
+#define SIMDi_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_s32(a,b))
+
+#elif SIMD_LEVEL == FN_AVX2
 
 #ifdef FN_ALIGNED_SETS
 #define SIMDf_STORE(p,a) _mm256_store_ps(p,a)
@@ -349,7 +432,10 @@ static float FUNC(INV_SQRT)(float x)
 #endif
 
 // FMA3
-#if defined(FN_USE_FMA3) && SIMD_LEVEL == FN_AVX2
+#if defined(FN_USE_FMA) && SIMD_LEVEL == FN_NEON
+#define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (a,b,c)
+#define SIMDf_MUL_SUB(a,b,c) vmlsq_f32(a,b,c)
+#elif defined(FN_USE_FMA) && SIMD_LEVEL == FN_AVX2
 #define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
 #define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
 #else
@@ -981,7 +1067,7 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 #define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 8)
 #endif
 
-#if SIMD_LEVEL == FN_AVX2 && defined(FN_MIN_Z_4)
+#if VECTOR_SIZE > 4 && defined(FN_MIN_Z_4)
 #define AVX_DOUBLE_RESET {\
 SIMDi _zReset = SIMDi_GREATER_THAN(z, zEndV); \
 y = SIMDi_ADD(y, SIMDi_AND(SIMDi_NUM(1), _zReset)); \
@@ -1006,6 +1092,8 @@ y = SIMDi_SUB(y, SIMDi_AND(ySizeV, _yReset));}
 SIMDf perturbAmpV, perturbFreqV, perturbLacunarityV, perturbGainV;\
 switch (m_perturbType)\
 {\
+case None:\
+	break;\
 case Gradient:\
 	perturbAmpV = SIMDf_SET(m_perturbAmp);\
 	perturbFreqV = SIMDf_SET(m_perturbFrequency);\
@@ -1020,6 +1108,8 @@ case GradientFractal:\
 #define PERTURB_SWITCH()\
 switch (m_perturbType)\
 {\
+case None:\
+	break;\
 case Gradient:\
 	FUNC(GradientPerturbSingle)(SIMDi_SUB(seedV, SIMDi_NUM(1)), perturbAmpV, perturbFreqV, xF, yF, zF); \
 	break; \
@@ -1040,7 +1130,6 @@ case GradientFractal:\
 		\
 		FUNC(GradientPerturbSingle)(seedF, ampF, freqF, xF, yF, zF);\
 	}\
-	break;\
 }
 
 #define SET_BUILDER(f)\
@@ -1629,6 +1718,11 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 	SIMDi yBase = SIMDi_SET(-yOffset);
 	SIMDi zBase = SIMDi_SET(-zOffset);
 
+#if SIMD_LEVEL == FN_NEON
+	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
+	SIMDi sampleScale2V = SIMDi_MUL(sampleScaleV, SIMDi_NUM(2));
+#endif
+
 	for (int x = 0; x < xSizeSample - 1; x++)
 	{
 		SIMDi ySIMD = yBase;
@@ -1657,8 +1751,15 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 				while (localCount < (1 << (sampleScale * 3)))
 				{
 					uSIMDi xi, yi, zi;
+
+#if SIMD_LEVEL == FN_NEON
+					xi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScale2V), axisMask);
+					yi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScaleV), axisMask);
+#else
 					xi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale * 2), axisMask);
 					yi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale), axisMask);
+#endif
+
 					zi.m = SIMDi_AND(localCountSIMD, axisMask);
 
 					SIMDf xf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(xi.m), axisScale, axisOffset);
@@ -1756,6 +1857,11 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 	SIMDi sampleSizeSIMD = SIMDi_SET(sampleSize);
 	SIMDi xSIMD = SIMDi_SET_ZERO();
 
+#if SIMD_LEVEL == FN_NEON
+	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
+	SIMDi sampleScale2V = SIMDi_MUL(sampleScaleV, SIMDi_NUM(2));
+#endif
+
 	for (int x = 0; x < xSizeSample - 1; x++)
 	{
 		SIMDi ySIMD = SIMDi_SET_ZERO();
@@ -1784,8 +1890,15 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 				while (localCount < (1 << (sampleScale * 3)))
 				{
 					uSIMDi xi, yi, zi;
+
+#if SIMD_LEVEL == FN_NEON
+					xi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScale2V), axisMask);
+					yi.m = SIMDi_AND(SIMDi_VSHIFT_L(localCountSIMD, sampleScaleV), axisMask);
+#else
 					xi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale * 2), axisMask);
 					yi.m = SIMDi_AND(SIMDi_SHIFT_R(localCountSIMD, sampleScale), axisMask);
+#endif
+
 					zi.m = SIMDi_AND(localCountSIMD, axisMask);
 
 					SIMDf xf = SIMDf_MUL_ADD(SIMDf_CONVERT_TO_FLOAT(xi.m), axisScale, axisOffset);

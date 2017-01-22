@@ -50,16 +50,47 @@
 #include "FastNoiseSIMD_internal.h"
 #endif
 
+#ifdef FN_COMPILE_NEON
+#define SIMD_LEVEL_H FN_NEON
+#include "FastNoiseSIMD_internal.h"
+#endif
+
 // CPUid
 #ifdef _WIN32
 #include <algorithm>
 #include <cstdint>
+#elif defined(FN_ARM)
+#ifndef __aarch64__
+#include "ARM/cpu-features.h"
+#endif
 #else
 #include <cpuid.h>
 #include "inttypes.h"
 #endif
 
 int FastNoiseSIMD::s_currentSIMDLevel = -1;
+
+#ifdef FN_ARM
+int GetFastestSIMD()
+{
+#ifdef __aarch64__
+	return FN_NEON;
+#else
+	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM)
+	{
+		auto cpuFeatures = android_getCpuFeatures();
+		
+		if (cpuFeatures & ANDROID_CPU_ARM_FEATURE_NEON)
+#ifdef FN_USE_FMA
+			if (cpuFeatures & ANDROID_CPU_ARM_FEATURE_NEON_FMA)
+#endif
+				return FN_NEON;
+	}
+
+	return FN_NO_SIMD_FALLBACK;
+#endif
+}
+#else
 
 #ifdef _WIN32
 void cpuid(int32_t out[4], int32_t x) {
@@ -120,7 +151,7 @@ int GetFastestSIMD()
 	if (nIds < 0x00000007)
 		return FN_SSE41;
 
-#ifdef FN_USE_FMA3
+#ifdef FN_USE_FMA
 	bool cpuFMA3Support = (cpuInfo[2] & 1 << 12) != 0;
 #else
 	bool cpuFMA3Support = true;
@@ -135,11 +166,18 @@ int GetFastestSIMD()
 	else
 		return FN_SSE41;
 }
-
+#endif
 
 FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 {
 	GetSIMDLevel();
+
+#ifdef FN_COMPILE_NEON
+#ifdef FN_COMPILE_NO_SIMD_FALLBACK
+	if (s_currentSIMDLevel >= FN_NEON)
+#endif
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)(seed);
+#endif
 
 #ifdef FN_COMPILE_AVX2
 	if (s_currentSIMDLevel >= FN_AVX2)
@@ -192,6 +230,11 @@ int FastNoiseSIMD::AlignedSize(int size)
 #ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
 
+#ifdef FN_COMPILE_NEON
+	if (s_currentSIMDLevel >= FN_NEON)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)::AlignedSize(size);
+#endif
+
 #ifdef FN_COMPILE_AVX2
 	if (s_currentSIMDLevel >= FN_AVX2)
 		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)::AlignedSize(size);
@@ -209,6 +252,11 @@ float* FastNoiseSIMD::GetEmptySet(int size)
 {
 #ifdef FN_ALIGNED_SETS
 	GetSIMDLevel();
+
+#ifdef FN_COMPILE_NEON
+	if (s_currentSIMDLevel >= FN_NEON)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)::GetEmptySet(size);
+#endif
 
 #ifdef FN_COMPILE_AVX2
 	if (s_currentSIMDLevel >= FN_AVX2)
