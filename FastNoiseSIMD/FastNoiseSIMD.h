@@ -60,7 +60,7 @@
 
 // Reduced minimum of zSize from 8 to 4 when not using a vector set
 // Causes slightly performance loss on non-"mulitple of 8" zSize
-#define FN_MIN_Z_4
+//#define FN_MIN_Z_4
 
 /*
 Tested Compilers:
@@ -103,7 +103,7 @@ public:
 	enum PerturbType { None, Gradient, GradientFractal };
 
 	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
-	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div };
+	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup };
 
 	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
@@ -183,6 +183,14 @@ public:
 	// Sets distance function used in cellular noise calculations
 	// Default: Euclidean
 	void SetCellularDistanceFunction(CellularDistanceFunction cellularDistanceFunction) { m_cellularDistanceFunction = cellularDistanceFunction; }
+
+	// Sets the type of noise used if cellular return type is set the NoiseLookup
+	// Default: Simplex
+	void SetCellularNoiseLookupType(NoiseType cellularNoiseLookupType) { m_cellularNoiseLookupType = cellularNoiseLookupType; }
+
+	// Sets relative frequency on the cellular noise lookup return type
+	// Default: 0.2
+	void SetCellularNoiseLookupFrequency(float cellularNoiseLookupFrequency) { m_cellularNoiseLookupFrequency = cellularNoiseLookupFrequency; }
 
 
 	// Enables position perturbing for all noise types
@@ -271,6 +279,8 @@ protected:
 
 	CellularDistanceFunction m_cellularDistanceFunction = Euclidean;
 	CellularReturnType m_cellularReturnType = Distance;
+	NoiseType m_cellularNoiseLookupType = Simplex;
+	float m_cellularNoiseLookupFrequency = 0.2f;
 
 	PerturbType m_perturbType = None;
 	float m_perturbAmp = 1.0f;
