@@ -486,7 +486,6 @@ static SIMDi SIMDi_NUM(14);
 static SIMDi SIMDi_NUM(15);
 static SIMDi SIMDi_NUM(255);
 static SIMDi SIMDi_NUM(60493);
-static SIMDi SIMDi_NUM(0x40000000);
 static SIMDi SIMDi_NUM(0x7fffffff);
 
 static SIMDi SIMDi_NUM(xPrime);
@@ -528,7 +527,7 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(G3) = SIMDf_SET(1.f / 6.f);
 	SIMDf_NUM(G32) = SIMDf_SET(2.f / 6.f);
 	SIMDf_NUM(G33) = SIMDf_SET(3.f / 6.f);
-	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 1073741824.f);
+	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 2147483648.f);
 	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
 
 #if SIMD_LEVEL == FN_AVX2
@@ -550,7 +549,6 @@ void FUNC(InitSIMDValues)()
 	SIMDi_NUM(15) = SIMDi_SET(15);
 	SIMDi_NUM(255) = SIMDi_SET(255);
 	SIMDi_NUM(60493) = SIMDi_SET(60493);
-	SIMDi_NUM(0x40000000) = SIMDi_SET(0x40000000);
 	SIMDi_NUM(0x7fffffff) = SIMDi_SET(0x7fffffff);
 
 	SIMDi_NUM(xPrime) = SIMDi_SET(1619);
@@ -599,9 +597,9 @@ static SIMDi VECTORCALL FUNC(Hash)(const SIMDi& seed, const SIMDi& x, const SIMD
 {
 	SIMDi hash = seed;
 
-	hash = SIMDi_ADD(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
-	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
-	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
@@ -613,10 +611,10 @@ static SIMDi VECTORCALL FUNC(HashHB)(const SIMDi& seed, const SIMDi& x, const SI
 {
 	SIMDi hash = seed;
 
-	hash = SIMDi_ADD(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
-	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
-	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	//hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 
@@ -628,14 +626,14 @@ static SIMDf VECTORCALL FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const 
 	// High bit hash
 	SIMDi hash = seed;
 
-	hash = SIMDi_ADD(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
-	hash = SIMDi_ADD(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
-	hash = SIMDi_ADD(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
+	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	//hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
-	hash = SIMDi_AND(SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash), SIMDi_NUM(0x7fffffff));
+	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 
-	return SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(hash, SIMDi_NUM(0x40000000))));
+	return SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));
 }
 
 #if SIMD_LEVEL == FN_AVX2
@@ -1422,7 +1420,7 @@ static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(const SIMDi& s
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
 				zd = SIMDf_MUL_ADD(zd, invMag, SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zc), z));\
 				\
-				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(SIMDi_AND(hash, SIMDi_NUM(0x7fffffff)), SIMDi_NUM(0x40000000))));\
+				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
 				SIMDf closer = SIMDf_LESS_THAN(newDistance, distance);\
@@ -1516,7 +1514,7 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(const SIMDi& 
 				yCellNew = SIMDf_ADD(yCellNew, ycf); \
 				zCellNew = SIMDf_ADD(zCellNew, zcf); \
 				\
-				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(SIMDi_AND(hash, SIMDi_NUM(0x7fffffff)), SIMDi_NUM(0x40000000))));\
+				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
 				SIMDf closer = SIMDf_LESS_THAN(newDistance, distance);\
