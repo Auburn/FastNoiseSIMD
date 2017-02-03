@@ -1514,7 +1514,6 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(const SIMDi& 
 				yCellNew = SIMDf_ADD(yCellNew, ycf); \
 				zCellNew = SIMDf_ADD(zCellNew, zcf); \
 				\
-				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
 				SIMDf closer = SIMDf_LESS_THAN(newDistance, distance);\
@@ -1538,6 +1537,8 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(const SIMDi& 
 	\
 	switch(noiseLookupSettings.type)\
 	{\
+	default:\
+		break;\
 	case FastNoiseSIMD::Value:\
 		result = FUNC(ValueSingle)(seedV, xF, yF, zF); \
 		break;\
@@ -1699,7 +1700,7 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, int xStart, int yStart, 
 	SIMDi seedV = SIMDi_SET(m_seed);
 	INIT_PERTURB_VALUES
 
-	scaleModifier *= m_frequency;
+		scaleModifier *= m_frequency;
 
 	SIMDf xFreqV = SIMDf_SET(scaleModifier * m_xScale);
 	SIMDf yFreqV = SIMDf_SET(scaleModifier * m_yScale);
@@ -1743,13 +1744,13 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, int xStart, int yStart, 
 		{
 		case Euclidean:
 			SET_BUILDER(result = FUNC(CellularLookupEuclideanSingle)(seedV, xF, yF, zF, nls))
-			break;\
+				break; \
 		case Manhattan:
 			SET_BUILDER(result = FUNC(CellularLookupManhattanSingle)(seedV, xF, yF, zF, nls))
-			break;\
+				break; \
 		case Natural:
 			SET_BUILDER(result = FUNC(CellularLookupNaturalSingle)(seedV, xF, yF, zF, nls))
-			break;
+				break;
 		}
 		break;
 	}
@@ -1786,7 +1787,7 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);
 	INIT_PERTURB_VALUES
 
-	int index = 0;
+		int index = 0;
 	int loopMax = vectorSet->size SIZE_MASK;
 	NoiseLookupSettings nls;
 
@@ -2022,7 +2023,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 	zSizeSample = (zSizeSample >> sampleScale) + 1;
 
 	float* noiseSetSample = GetEmptySet(vectorSet->size);
-	FillNoiseSet(noiseSetSample, vectorSet, xOffset-0.5f, yOffset-0.5f, zOffset-0.5f);
+	FillNoiseSet(noiseSetSample, vectorSet, xOffset - 0.5f, yOffset - 0.5f, zOffset - 0.5f);
 
 	int yzSizeSample = ySizeSample * zSizeSample;
 	int yzSize = ySize * zSize;
