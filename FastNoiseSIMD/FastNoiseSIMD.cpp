@@ -60,7 +60,7 @@
 #include <algorithm>
 #include <cstdint>
 #elif defined(FN_ARM)
-#ifndef __aarch64__
+#if !defined(__aarch64__) && !defined(FN_IOS)
 #include "ARM/cpu-features.h"
 #endif
 #else
@@ -73,7 +73,7 @@ int FastNoiseSIMD::s_currentSIMDLevel = -1;
 #ifdef FN_ARM
 int GetFastestSIMD()
 {
-#ifdef __aarch64__
+#if defined(__aarch64__) || defined(FN_IOS)
 	return FN_NEON;
 #else
 	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM)
