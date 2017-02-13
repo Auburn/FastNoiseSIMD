@@ -26,6 +26,8 @@
 // off every 'zix'.)
 //
 
+// VERSION: 0.4.1
+
 #ifndef FASTNOISE_SIMD_H
 #define FASTNOISE_SIMD_H
 
@@ -43,14 +45,14 @@
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 #define FN_COMPILE_AVX2
 
-// Using aligned sets of memory for float arrays allows faster storing of SIMD data
-// Comment out to allow unaligned float arrays to be used as sets
-#define FN_ALIGNED_SETS
-
 // Using FMA instructions with AVX2/NEON provides a small performance increase but can cause 
 // minute variations in noise output compared to other SIMD levels due to higher calculation precision
 #define FN_USE_FMA
 #endif
+
+// Using aligned sets of memory for float arrays allows faster storing of SIMD data
+// Comment out to allow unaligned float arrays to be used as sets
+#define FN_ALIGNED_SETS
 
 // Reduced minimum of zSize from 8 to 4 when not using a vector set
 // Causes slightly performance loss on non-"mulitple of 8" zSize

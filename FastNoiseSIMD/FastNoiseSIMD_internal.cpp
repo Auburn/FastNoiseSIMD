@@ -433,8 +433,8 @@ static float FUNC(INV_SQRT)(float x)
 
 // FMA3
 #if defined(FN_USE_FMA) && SIMD_LEVEL == FN_NEON
-#define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (a,b,c)
-#define SIMDf_MUL_SUB(a,b,c) vmlsq_f32(a,b,c)
+#define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (b,c,a)
+#define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c) // Neon multiply sub swaps sides of minus compared to FMA
 #elif defined(FN_USE_FMA) && SIMD_LEVEL == FN_AVX2
 #define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
 #define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
@@ -915,7 +915,7 @@ y = SIMDi_SUB(y, SIMDi_AND(ySizeV, _yReset));}
 #define STORE_LAST_RESULT(_dest, _source) std::memcpy(_dest, &_source, (maxIndex - index) * 4)
 #endif
 
-#define INIT_PERTURB_VALUES \
+#define INIT_PERTURB_VALUES() \
 SIMDf perturbAmpV, perturbFreqV, perturbLacunarityV, perturbGainV;\
 switch (m_perturbType)\
 {\
@@ -1128,7 +1128,7 @@ void SIMD_LEVEL_CLASS::Fill##func##Set(float* noiseSet, int xStart, int yStart, 
 	Z_SIZE_ASSERT(zSize);\
 	SIMD_ZERO_ALL();\
 	SIMDi seedV = SIMDi_SET(m_seed); \
-	INIT_PERTURB_VALUES\
+	INIT_PERTURB_VALUES();\
 	\
 	scaleModifier *= m_frequency;\
 	\
@@ -1152,7 +1152,7 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, int xStart, int y
 	SIMDf lacunarityV = SIMDf_SET(m_lacunarity);\
 	SIMDf gainV = SIMDf_SET(m_gain);\
 	SIMDf fractalBoundingV = SIMDf_SET(m_fractalBounding);\
-	INIT_PERTURB_VALUES\
+	INIT_PERTURB_VALUES();\
 	\
 	scaleModifier *= m_frequency;\
 	\
@@ -1242,7 +1242,7 @@ void SIMD_LEVEL_CLASS::Fill##func##Set(float* noiseSet, FastNoiseVectorSet* vect
 	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV);\
 	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV);\
 	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);\
-	INIT_PERTURB_VALUES\
+	INIT_PERTURB_VALUES();\
 	\
 	int index = 0;\
 	int loopMax = vectorSet->size SIZE_MASK;\
@@ -1269,7 +1269,7 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV);\
 	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV);\
 	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);\
-	INIT_PERTURB_VALUES\
+	INIT_PERTURB_VALUES();\
 	\
 	int index = 0;\
 	int loopMax = vectorSet->size SIZE_MASK;\
@@ -1698,9 +1698,9 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, int xStart, int yStart, 
 	Z_SIZE_ASSERT(zSize);
 	SIMD_ZERO_ALL();
 	SIMDi seedV = SIMDi_SET(m_seed);
-	INIT_PERTURB_VALUES
+	INIT_PERTURB_VALUES();
 
-		scaleModifier *= m_frequency;
+	scaleModifier *= m_frequency;
 
 	SIMDf xFreqV = SIMDf_SET(scaleModifier * m_xScale);
 	SIMDf yFreqV = SIMDf_SET(scaleModifier * m_yScale);
@@ -1785,9 +1785,9 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 	SIMDf xOffsetV = SIMDf_MUL(SIMDf_SET(xOffset), xFreqV);
 	SIMDf yOffsetV = SIMDf_MUL(SIMDf_SET(yOffset), yFreqV);
 	SIMDf zOffsetV = SIMDf_MUL(SIMDf_SET(zOffset), zFreqV);
-	INIT_PERTURB_VALUES
+	INIT_PERTURB_VALUES();
 
-		int index = 0;
+	int index = 0;
 	int loopMax = vectorSet->size SIZE_MASK;
 	NoiseLookupSettings nls;
 
@@ -1826,14 +1826,14 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 		switch (m_cellularDistanceFunction)
 		{
 		case Euclidean:
-			VECTOR_SET_BUILDER(result = FUNC(CellularLookupEuclideanSingle)(seedV, xF, yF, zF, nls))
-				break; \
+			VECTOR_SET_BUILDER(result = FUNC(CellularLookupEuclideanSingle)(seedV, xF, yF, zF, nls));
+			break;
 		case Manhattan:
-			VECTOR_SET_BUILDER(result = FUNC(CellularLookupManhattanSingle)(seedV, xF, yF, zF, nls))
-				break; \
+			VECTOR_SET_BUILDER(result = FUNC(CellularLookupManhattanSingle)(seedV, xF, yF, zF, nls));
+			break;
 		case Natural:
-			VECTOR_SET_BUILDER(result = FUNC(CellularLookupNaturalSingle)(seedV, xF, yF, zF, nls))
-				break;
+			VECTOR_SET_BUILDER(result = FUNC(CellularLookupNaturalSingle)(seedV, xF, yF, zF, nls));
+			break;
 		}
 		break;
 	}
