@@ -29,6 +29,7 @@
 #include "FastNoiseSIMD.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <cstdint>
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
 #define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
@@ -57,8 +58,7 @@
 
 // CPUid
 #ifdef _WIN32
-#include <algorithm>
-#include <cstdint>
+#include <intrin.h>
 #elif defined(FN_ARM)
 #if !defined(__aarch64__) && !defined(FN_IOS)
 #include "ARM/cpu-features.h"
@@ -161,10 +161,10 @@ int GetFastestSIMD()
 
 	bool cpuAVX2Support = (cpuInfo[1] & 1 << 5) != 0;
 
-	if (cpuFMA3Support && cpuAVX2Support)
-		return FN_AVX2;
-	else
+	if (!cpuFMA3Support || !cpuAVX2Support)
 		return FN_SSE41;
+
+	return FN_AVX2;	
 }
 #endif
 
