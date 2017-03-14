@@ -18,6 +18,8 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Perturb input coordinates in 3D space
 - Integrated noise sampling
 
+Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noise algorithm
+
 ## Supported Instruction Sets
 - ARM NEON
 - AVX512
