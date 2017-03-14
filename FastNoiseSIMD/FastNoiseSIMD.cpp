@@ -51,6 +51,11 @@
 #include "FastNoiseSIMD_internal.h"
 #endif
 
+#ifdef FN_COMPILE_AVX512
+#define SIMD_LEVEL_H FN_AVX512
+#include "FastNoiseSIMD_internal.h"
+#endif
+
 #ifdef FN_COMPILE_NEON
 #define SIMD_LEVEL_H FN_NEON
 #include "FastNoiseSIMD_internal.h"
@@ -164,7 +169,14 @@ int GetFastestSIMD()
 	if (!cpuFMA3Support || !cpuAVX2Support)
 		return FN_SSE41;
 
-	return FN_AVX2;	
+	// AVX512
+	bool cpuAVX512Support = (cpuInfo[1] & 1 << 16) != 0;		
+	bool oxAVX512Support = (xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 0xe6) == 0xe6;
+
+	if (!cpuAVX512Support || !oxAVX512Support)
+		return FN_AVX2;
+
+	return FN_AVX512;	
 }
 #endif
 
@@ -177,6 +189,11 @@ FastNoiseSIMD* FastNoiseSIMD::NewFastNoiseSIMD(int seed)
 	if (s_currentSIMDLevel >= FN_NEON)
 #endif
 		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)(seed);
+#endif
+
+#ifdef FN_COMPILE_AVX512
+	if (s_currentSIMDLevel >= FN_AVX512)
+		return new FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX512)(seed);
 #endif
 
 #ifdef FN_COMPILE_AVX2
@@ -235,6 +252,11 @@ int FastNoiseSIMD::AlignedSize(int size)
 		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)::AlignedSize(size);
 #endif
 
+#ifdef FN_COMPILE_AVX512
+	if (s_currentSIMDLevel >= FN_AVX512)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX512)::AlignedSize(size);
+#endif
+
 #ifdef FN_COMPILE_AVX2
 	if (s_currentSIMDLevel >= FN_AVX2)
 		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX2)::AlignedSize(size);
@@ -256,6 +278,11 @@ float* FastNoiseSIMD::GetEmptySet(int size)
 #ifdef FN_COMPILE_NEON
 	if (s_currentSIMDLevel >= FN_NEON)
 		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_NEON)::GetEmptySet(size);
+#endif
+
+#ifdef FN_COMPILE_AVX512
+	if (s_currentSIMDLevel >= FN_AVX512)
+		return FastNoiseSIMD_internal::FASTNOISE_SIMD_CLASS(FN_AVX512)::GetEmptySet(size);
 #endif
 
 #ifdef FN_COMPILE_AVX2
@@ -400,6 +427,12 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, int xStart, int yStart, int zS
 	case Cellular:
 		FillCellularSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
+	case Cubic:
+		FillCubicSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+		break;
+	case CubicFractal:
+		FillCubicFractalSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+		break;
 	default:
 		break;
 	}
@@ -432,6 +465,12 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet,
 		break;
 	case Cellular:
 		FillCellularSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
+		break;
+	case Cubic:
+		FillCubicSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
+		break;
+	case CubicFractal:
+		FillCubicFractalSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
 		break;
 	default:
 		break;
@@ -469,6 +508,9 @@ GET_SET(Simplex)
 GET_SET(SimplexFractal)
 
 GET_SET(Cellular)
+
+GET_SET(Cubic)
+GET_SET(CubicFractal)
 
 float FastNoiseSIMD::CalculateFractalBounding(int octaves, float gain)
 {

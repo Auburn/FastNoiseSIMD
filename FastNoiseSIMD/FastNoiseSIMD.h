@@ -45,6 +45,8 @@
 // Note: This does not break support for pre AVX CPUs, AVX code is only run if support is detected
 #define FN_COMPILE_AVX2
 
+#define FN_COMPILE_AVX512
+
 // Using FMA instructions with AVX2/NEON provides a small performance increase but can cause 
 // minute variations in noise output compared to other SIMD levels due to higher calculation precision
 #define FN_USE_FMA
@@ -99,9 +101,9 @@ class FastNoiseSIMD
 {
 public:
 
-	enum NoiseType { Value, ValueFractal, Perlin, PerlinFractal, Simplex, SimplexFractal, WhiteNoise, Cellular };
+	enum NoiseType { Value, ValueFractal, Perlin, PerlinFractal, Simplex, SimplexFractal, WhiteNoise, Cellular, Cubic, CubicFractal };
 	enum FractalType { FBM, Billow, RigidMulti };
-	enum PerturbType { None, Gradient, GradientFractal };
+	enum PerturbType { None, Gradient, GradientFractal, Normalise, Gradient_Normalise, GradientFractal_Normalise };
 
 	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
 	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup };
@@ -111,6 +113,7 @@ public:
 
 	// Returns highest detected level of CPU support
 	// 5: ARM NEON
+	// 4: AVX512
 	// 3: AVX2 & FMA3
 	// 2: SSE4.1
 	// 1: SSE2
@@ -119,6 +122,7 @@ public:
 
 	// Sets the SIMD level for newly created FastNoiseSIMD objects
 	// 5: ARM NEON
+	// 4: AVX512
 	// 3: AVX2 & FMA3
 	// 2: SSE4.1
 	// 1: SSE2
@@ -219,6 +223,11 @@ public:
 	// Default: 0.5
 	void SetPerturbFractalGain(float perturbGain) { m_perturbGain = perturbGain; m_perturbFractalBounding = CalculateFractalBounding(m_perturbOctaves, m_perturbGain);	}
 
+	// Sets the length for vectors after perturb normalising 
+	// Default: 1.0
+	void SetPerturbNormaliseLength(float perturbNormaliseLength) { m_perturbNormaliseLength = perturbNormaliseLength; }
+
+
 	static FastNoiseVectorSet* GetVectorSet(int xSize, int ySize, int zSize);
 	static FastNoiseVectorSet* GetSamplingVectorSet(int sampleScale, int xSize, int ySize, int zSize);
 	static void FillVectorSet(FastNoiseVectorSet* vectorSet, int xSize, int ySize, int zSize);
@@ -260,6 +269,13 @@ public:
 	float* GetCellularSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f);
 	virtual void FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
 	virtual void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) = 0;
+	
+	float* GetCubicSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f);
+	float* GetCubicFractalSet(int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f);
+	virtual void FillCubicSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
+	virtual void FillCubicFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) = 0;
+	virtual void FillCubicSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) = 0;
+	virtual void FillCubicFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) = 0;
 
 	virtual ~FastNoiseSIMD() { }
 
@@ -291,6 +307,7 @@ protected:
 	float m_perturbLacunarity = 2.0f;
 	float m_perturbGain = 0.5f;
 	float m_perturbFractalBounding;
+	float m_perturbNormaliseLength = 1.0f;
 
 	static int s_currentSIMDLevel;
 	static float CalculateFractalBounding(int octaves, float gain);

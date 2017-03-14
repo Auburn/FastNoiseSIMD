@@ -66,7 +66,11 @@ namespace FastNoiseSIMD_internal
 
 		void FillCellularSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
 		void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
-	
+
+		void FillCubicSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
+		void FillCubicFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
+		void FillCubicSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+		void FillCubicFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
 	};
 }
 #undef SIMD_LEVEL_H

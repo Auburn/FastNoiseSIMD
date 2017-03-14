@@ -79,6 +79,16 @@ typedef int32x4_t SIMDi;
 #define SIMDi_SET(a) vdupq_n_s32(a)
 #define SIMDi_SET_ZERO() vdupq_n_s32(0)
 
+#elif SIMD_LEVEL == FN_AVX512
+#define VECTOR_SIZE 16
+#define MEMORY_ALIGNMENT 64
+typedef __m512 SIMDf;
+typedef __m512i SIMDi;
+#define SIMDf_SET(a) _mm512_set1_ps(a)
+#define SIMDf_SET_ZERO() _mm512_setzero_ps()
+#define SIMDi_SET(a) _mm512_set1_epi32(a)
+#define SIMDi_SET_ZERO() _mm512_setzero_si512()
+
 #elif SIMD_LEVEL == FN_AVX2
 #define VECTOR_SIZE 8
 #define MEMORY_ALIGNMENT 32
@@ -132,6 +142,13 @@ union uSIMDi
 	SIMDi m;
 	int a[VECTOR_SIZE];
 };
+
+#if SIMD_LEVEL == FN_AVX512
+typedef __mmask16 MASK;
+#else
+typedef SIMDi MASK;
+#endif
+
 
 static SIMDi SIMDi_NUM(0xffffffff);
 static SIMDf SIMDf_NUM(1);
@@ -190,7 +207,7 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDf_FLOOR(a) vrndmq_f32(a)
 #endif
 
-#define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_f32(mask),b,a)
+#define SIMDf_BLENDV(a,b,mask) vbslq_f32(mask,b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
 #define SIMDi_SUB(a,b) vsubq_s32(a,b)
@@ -210,6 +227,64 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDi_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_s32(a,b))
 #define SIMDi_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_s32(a,b))
 
+#elif SIMD_LEVEL == FN_AVX512
+
+#ifdef FN_ALIGNED_SETS
+#define SIMDf_STORE(p,a) _mm512_store_ps(p,a)
+#define SIMDf_LOAD(p) _mm512_load_ps(p)
+#else
+#define SIMDf_STORE(p,a) _mm512_storeu_ps(p,a)
+#define SIMDf_LOAD(p) _mm512_loadu_ps(p)
+#endif
+
+#define SIMDf_ADD(a,b) _mm512_add_ps(a,b)
+#define SIMDf_SUB(a,b) _mm512_sub_ps(a,b)
+#define SIMDf_MUL(a,b) _mm512_mul_ps(a,b)
+#define SIMDf_DIV(a,b) _mm512_div_ps(a,b)
+
+#define SIMDf_MIN(a,b) _mm512_min_ps(a,b)
+#define SIMDf_MAX(a,b) _mm512_max_ps(a,b)
+#define SIMDf_INV_SQRT(a) _mm512_rsqrt14_ps(a)
+
+#define SIMDf_LESS_THAN(a,b) _mm512_cmp_ps_mask(a,b,_CMP_LT_OQ)
+#define SIMDf_GREATER_THAN(a,b) _mm512_cmp_ps_mask(a,b,_CMP_GT_OQ)
+#define SIMDf_LESS_EQUAL(a,b) _mm512_cmp_ps_mask(a,b,_CMP_LE_OQ)
+#define SIMDf_GREATER_EQUAL(a,b) _mm512_cmp_ps_mask(a,b,_CMP_GE_OQ)
+
+#define SIMDf_AND(a,b) _mm512_and_ps(a,b)
+#define SIMDf_AND_NOT(a,b) _mm512_andnot_ps(a,b)
+#define SIMDf_XOR(a,b) _mm512_xor_ps(a,b)
+
+#define SIMDf_FLOOR(a) _mm512_floor_ps(a)
+#define SIMDf_BLENDV(a,b,mask) _mm512_mask_blend_ps(mask,a,b)
+#define SIMDf_GATHER(p,a) _mm512_i32gather_ps(a,p,4)
+#define SIMDf_PERMUTE(a,b) _mm512_permutexvar_ps(b,a)
+
+#define SIMDi_ADD(a,b) _mm512_add_epi32(a,b)
+#define SIMDi_SUB(a,b) _mm512_sub_epi32(a,b)
+#define SIMDi_MUL(a,b) _mm512_mullo_epi32(a,b)
+
+#define SIMDi_AND(a,b) _mm512_and_si512(a,b)
+#define SIMDi_AND_NOT(a,b) _mm512_andnot_si512(a,b)
+#define SIMDi_OR(a,b) _mm512_or_si512(a,b)
+#define SIMDi_XOR(a,b) _mm512_xor_si512(a,b)
+#define SIMDi_NOT(a) SIMDi_XOR(a,SIMDi_NUM(0xffffffff))
+
+#define SIMDi_SHIFT_R(a, b) _mm512_srai_epi32(a, b)
+#define SIMDi_SHIFT_L(a, b) _mm512_slli_epi32(a, b)
+
+#define SIMDi_VSHIFT_R(a,b) _mm512_srl_epi32(a, b)
+#define SIMDi_VSHIFT_L(a,b) _mm512_sll_epi32(a, b)
+
+#define SIMDi_EQUAL(a,b) _mm512_cmpeq_epi32_mask(a,b)
+#define SIMDi_GREATER_THAN(a,b) _mm512_cmpgt_epi32_mask(a,b)
+#define SIMDi_LESS_THAN(a,b) _mm512_cmpgt_epi32_mask(b,a)
+
+#define SIMDf_CONVERT_TO_FLOAT(a) _mm512_cvtepi32_ps(a)
+#define SIMDf_CAST_TO_FLOAT(a) _mm512_castsi512_ps(a)
+#define SIMDi_CONVERT_TO_INT(a) _mm512_cvtps_epi32(a)
+#define SIMDi_CAST_TO_INT(a) _mm512_castps_si512(a)
+
 #elif SIMD_LEVEL == FN_AVX2
 
 #ifdef FN_ALIGNED_SETS
@@ -220,6 +295,11 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDf_LOAD(p) _mm256_loadu_ps(p)
 #endif
 
+#define SIMDf_CONVERT_TO_FLOAT(a) _mm256_cvtepi32_ps(a)
+#define SIMDf_CAST_TO_FLOAT(a) _mm256_castsi256_ps(a)
+#define SIMDi_CONVERT_TO_INT(a) _mm256_cvtps_epi32(a)
+#define SIMDi_CAST_TO_INT(a) _mm256_castps_si256(a)
+
 #define SIMDf_ADD(a,b) _mm256_add_ps(a,b)
 #define SIMDf_SUB(a,b) _mm256_sub_ps(a,b)
 #define SIMDf_MUL(a,b) _mm256_mul_ps(a,b)
@@ -229,17 +309,17 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDf_MAX(a,b) _mm256_max_ps(a,b)
 #define SIMDf_INV_SQRT(a) _mm256_rsqrt_ps(a)
 
-#define SIMDf_LESS_THAN(a,b) _mm256_cmp_ps(a,b,_CMP_LT_OQ)
-#define SIMDf_GREATER_THAN(a,b) _mm256_cmp_ps(a,b,_CMP_GT_OQ)
-#define SIMDf_LESS_EQUAL(a,b) _mm256_cmp_ps(a,b,_CMP_LE_OQ)
-#define SIMDf_GREATER_EQUAL(a,b) _mm256_cmp_ps(a,b,_CMP_GE_OQ)
+#define SIMDf_LESS_THAN(a,b) SIMDi_CAST_TO_INT(_mm256_cmp_ps(a,b,_CMP_LT_OQ))
+#define SIMDf_GREATER_THAN(a,b) SIMDi_CAST_TO_INT(_mm256_cmp_ps(a,b,_CMP_GT_OQ))
+#define SIMDf_LESS_EQUAL(a,b) SIMDi_CAST_TO_INT(_mm256_cmp_ps(a,b,_CMP_LE_OQ))
+#define SIMDf_GREATER_EQUAL(a,b) SIMDi_CAST_TO_INT( _mm256_cmp_ps(a,b,_CMP_GE_OQ))
 
 #define SIMDf_AND(a,b) _mm256_and_ps(a,b)
 #define SIMDf_AND_NOT(a,b) _mm256_andnot_ps(a,b)
 #define SIMDf_XOR(a,b) _mm256_xor_ps(a,b)
 
 #define SIMDf_FLOOR(a) _mm256_floor_ps(a)
-#define SIMDf_BLENDV(a,b,mask) _mm256_blendv_ps(a,b,mask)
+#define SIMDf_BLENDV(a,b,mask) _mm256_blendv_ps(a,b,SIMDf_CAST_TO_FLOAT(mask))
 #define SIMDf_GATHER(p,a) _mm256_i32gather_ps(p,a,4)
 #define SIMDf_PERMUTE(a,b) _mm256_permutevar8x32_ps(a,b)
 
@@ -260,11 +340,6 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDi_GREATER_THAN(a,b) _mm256_cmpgt_epi32(a,b)
 #define SIMDi_LESS_THAN(a,b) _mm256_cmpgt_epi32(b,a)
 
-#define SIMDf_CONVERT_TO_FLOAT(a) _mm256_cvtepi32_ps(a)
-#define SIMDf_CAST_TO_FLOAT(a) _mm256_castsi256_ps(a)
-#define SIMDi_CONVERT_TO_INT(a) _mm256_cvtps_epi32(a)
-#define SIMDi_CAST_TO_INT(a) _mm256_castps_si256(a)
-
 #elif SIMD_LEVEL >= FN_SSE2
 
 #ifdef FN_ALIGNED_SETS
@@ -275,6 +350,11 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDf_LOAD(p) _mm_loadu_ps(p)
 #endif
 
+#define SIMDf_CONVERT_TO_FLOAT(a) _mm_cvtepi32_ps(a)
+#define SIMDf_CAST_TO_FLOAT(a) _mm_castsi128_ps(a)
+#define SIMDi_CONVERT_TO_INT(a) _mm_cvtps_epi32(a)
+#define SIMDi_CAST_TO_INT(a) _mm_castps_si128(a)
+
 #define SIMDf_ADD(a,b) _mm_add_ps(a,b)
 #define SIMDf_SUB(a,b) _mm_sub_ps(a,b)
 #define SIMDf_MUL(a,b) _mm_mul_ps(a,b)
@@ -284,10 +364,10 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #define SIMDf_MAX(a,b) _mm_max_ps(a,b)
 #define SIMDf_INV_SQRT(a) _mm_rsqrt_ps(a)
 
-#define SIMDf_LESS_THAN(a,b) _mm_cmplt_ps(a,b)
-#define SIMDf_GREATER_THAN(a,b) _mm_cmpgt_ps(a,b)
-#define SIMDf_LESS_EQUAL(a,b) _mm_cmple_ps(a,b)
-#define SIMDf_GREATER_EQUAL(a,b) _mm_cmpge_ps(a,b)
+#define SIMDf_LESS_THAN(a,b) SIMDi_CAST_TO_INT(_mm_cmplt_ps(a,b))
+#define SIMDf_GREATER_THAN(a,b) SIMDi_CAST_TO_INT(_mm_cmpgt_ps(a,b))
+#define SIMDf_LESS_EQUAL(a,b) SIMDi_CAST_TO_INT(_mm_cmple_ps(a,b))
+#define SIMDf_GREATER_EQUAL(a,b) SIMDi_CAST_TO_INT(_mm_cmpge_ps(a,b))
 
 #define SIMDf_AND(a,b) _mm_and_ps(a,b)
 #define SIMDf_AND_NOT(a,b) _mm_andnot_ps(a,b)
@@ -296,7 +376,7 @@ static SIMDf FUNC(FLOOR)(const SIMDf& a)
 #if SIMD_LEVEL == FN_SSE41
 #define SIMDi_MUL(a,b) _mm_mullo_epi32(a,b)
 #define SIMDf_FLOOR(a) _mm_floor_ps(a)
-#define SIMDf_BLENDV(a,b,mask) _mm_blendv_ps(a,b,mask)
+#define SIMDf_BLENDV(a,b,mask) _mm_blendv_ps(a,b,SIMDf_CAST_TO_FLOAT(mask))
 #else
 static SIMDi VECTORCALL FUNC(MUL)(const SIMDi& a, const SIMDi& b)
 {
@@ -314,7 +394,7 @@ static SIMDf VECTORCALL FUNC(FLOOR)(const SIMDf& a)
 }
 #define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
 
-#define SIMDf_BLENDV(a,b,mask) _mm_or_ps(_mm_andnot_ps(mask, a), _mm_and_ps(mask, b))
+#define SIMDf_BLENDV(a,b,mask) _mm_or_ps(_mm_andnot_ps(SIMDf_CAST_TO_FLOAT(mask), a), _mm_and_ps(SIMDf_CAST_TO_FLOAT(mask), b))
 #endif
 
 static SIMDf VECTORCALL FUNC(GATHER)(const float* p, const SIMDi& a)
@@ -346,11 +426,6 @@ static SIMDf VECTORCALL FUNC(GATHER)(const float* p, const SIMDi& a)
 #define SIMDi_GREATER_THAN(a,b) _mm_cmpgt_epi32(a,b)
 #define SIMDi_LESS_THAN(a,b) _mm_cmpgt_epi32(b,a)
 
-#define SIMDf_CONVERT_TO_FLOAT(a) _mm_cvtepi32_ps(a)
-#define SIMDf_CAST_TO_FLOAT(a) _mm_castsi128_ps(a)
-#define SIMDi_CONVERT_TO_INT(a) _mm_cvtps_epi32(a)
-#define SIMDi_CAST_TO_INT(a) _mm_castps_si128(a)
-
 #else // Fallback
 
 static int FUNC(CAST_TO_INT)(float f) { return *reinterpret_cast<int*>(&f); }
@@ -380,17 +455,17 @@ static float FUNC(INV_SQRT)(float x)
 }
 #define SIMDf_INV_SQRT(a) FUNC(INV_SQRT)(a)
 
-#define SIMDf_LESS_THAN(a,b) (((a) < (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
-#define SIMDf_GREATER_THAN(a,b) (((a) > (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
-#define SIMDf_LESS_EQUAL(a,b) (((a) <= (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
-#define SIMDf_GREATER_EQUAL(a,b) (((a) >= (b)) ? SIMDf_CAST_TO_FLOAT(0xFFFFFFFF) : 0)
+#define SIMDf_LESS_THAN(a,b) (((a) < (b)) ? 0xFFFFFFFF : 0)
+#define SIMDf_GREATER_THAN(a,b) (((a) > (b)) ? 0xFFFFFFFF : 0)
+#define SIMDf_LESS_EQUAL(a,b) (((a) <= (b)) ? 0xFFFFFFFF : 0)
+#define SIMDf_GREATER_EQUAL(a,b) (((a) >= (b)) ? 0xFFFFFFFF : 0)
 
 #define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(SIMDi_CAST_TO_INT(a) & SIMDi_CAST_TO_INT(b))
 #define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(~SIMDi_CAST_TO_INT(a) & SIMDi_CAST_TO_INT(b))
 #define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(SIMDi_CAST_TO_INT(a) ^ SIMDi_CAST_TO_INT(b))
 
 #define SIMDf_FLOOR(a) floorf(a)
-#define SIMDf_BLENDV(a,b,mask) (SIMDi_CAST_TO_INT(mask) ? (b) : (a))
+#define SIMDf_BLENDV(a,b,mask) (mask ? (b) : (a))
 #define SIMDf_GATHER(p,a) (*(reinterpret_cast<const float*>(p)+(a)))
 
 #define SIMDi_ADD(a,b) ((a) + (b))
@@ -419,6 +494,36 @@ static float FUNC(INV_SQRT)(float x)
 //#define SIMDi_LESS_EQUAL(a,b) SIMDi_NOT(SIMDi_GREATER_THAN(a,b))
 //#define SIMDi_BLENDV(a,b, mask) SIMDi_CAST_TO_INT(SIMDf_BLENDV(SIMDf_CAST_TO_FLOAT(a),SIMDf_CAST_TO_FLOAT(b),SIMDf_CAST_TO_FLOAT(mask)))
 
+#if SIMD_LEVEL == FN_AVX512
+
+#define MASK_OR(a,b) ((a)|(b))
+#define MASK_AND(a,b) ((a)&(b))
+#define MASK_AND_NOT(a,b) (~(a)&(b))
+#define MASK_NOT(a) (~(a))
+
+#define SIMDf_MASK(m,a) _mm512_maskz_mov_ps(m,a)
+#define SIMDf_MASK_ADD(m,a,b) _mm512_mask_add_ps(a,m,a,b)
+#define SIMDf_MASK_SUB(m,a,b) _mm512_mask_sub_ps(a,m,a,b)
+
+#define SIMDi_MASK_ADD(m,a,b) _mm512_mask_add_epi32(a,m,a,b)
+#define SIMDi_MASK_SUB(m,a,b) _mm512_mask_sub_epi32(a,m,a,b)
+
+#else
+
+#define MASK_OR(a,b) SIMDi_OR(a,b)
+#define MASK_AND(a,b) SIMDi_AND(a,b)
+#define MASK_AND_NOT(a,b) SIMDi_AND_NOT(a,b)
+#define MASK_NOT(a) SIMDi_NOT(a)
+
+#define SIMDf_MASK(m,a) SIMDf_AND(SIMDf_CAST_TO_FLOAT(m),a)
+#define SIMDf_MASK_ADD(m,a,b) SIMDf_ADD(a,SIMDf_AND(SIMDf_CAST_TO_FLOAT(m),b))
+#define SIMDf_MASK_SUB(m,a,b) SIMDf_SUB(a,SIMDf_AND(SIMDf_CAST_TO_FLOAT(m),b))
+
+#define SIMDi_MASK_ADD(m,a,b) SIMDi_ADD(a,SIMDi_AND(m,b))
+#define SIMDi_MASK_SUB(m,a,b) SIMDi_SUB(a,SIMDi_AND(m,b))
+
+#endif
+
 #if SIMD_LEVEL == FN_NO_SIMD_FALLBACK
 #define SIMDf_ABS(a) fabsf(a)
 #else
@@ -432,13 +537,20 @@ static float FUNC(INV_SQRT)(float x)
 #endif
 
 // FMA3
-#if defined(FN_USE_FMA) && SIMD_LEVEL == FN_NEON
+#ifdef FN_USE_FMA
+#if SIMD_LEVEL == FN_NEON
 #define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (b,c,a)
-#define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c) // Neon multiply sub swaps sides of minus compared to FMA
-#elif defined(FN_USE_FMA) && SIMD_LEVEL == FN_AVX2
+#define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c) // Neon multiply sub swaps sides of minus compared to FMA making it unusable
+#elif SIMD_LEVEL == FN_AVX512
+#define SIMDf_MUL_ADD(a,b,c) _mm512_fmadd_ps(a,b,c)
+#define SIMDf_MUL_SUB(a,b,c) _mm512_fmsub_ps(a,b,c)
+#elif SIMD_LEVEL == FN_AVX2
 #define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
 #define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
-#else
+#endif
+#endif
+
+#ifndef SIMDf_MUL_ADD
 #define SIMDf_MUL_ADD(a,b,c) SIMDf_ADD(SIMDf_MUL(a,b),c)
 #define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c)
 #endif
@@ -465,8 +577,14 @@ static SIMDf SIMDf_NUM(G32);
 static SIMDf SIMDf_NUM(G33);
 static SIMDf SIMDf_NUM(hash2Float);
 static SIMDf SIMDf_NUM(vectorSize);
+static SIMDf SIMDf_NUM(cubicBounding);
 
-#if SIMD_LEVEL == FN_AVX2
+#if SIMD_LEVEL == FN_AVX512
+static SIMDf SIMDf_NUM(X_GRAD);
+static SIMDf SIMDf_NUM(Y_GRAD);
+static SIMDf SIMDf_NUM(Z_GRAD);
+
+#elif SIMD_LEVEL == FN_AVX2
 //static SIMDf SIMDf_NUM(XY_GRAD_08);
 static SIMDf SIMDf_NUM(X_GRAD_8);
 static SIMDf SIMDf_NUM(Y_GRAD_0);
@@ -487,6 +605,10 @@ static SIMDi SIMDi_NUM(15);
 static SIMDi SIMDi_NUM(255);
 static SIMDi SIMDi_NUM(60493);
 static SIMDi SIMDi_NUM(0x7fffffff);
+
+//static SIMDi SIMDi_NUM(xGradBits);
+//static SIMDi SIMDi_NUM(yGradBits);
+//static SIMDi SIMDi_NUM(zGradBits);
 
 static SIMDi SIMDi_NUM(xPrime);
 static SIMDi SIMDi_NUM(yPrime);
@@ -529,8 +651,14 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(G33) = SIMDf_SET(3.f / 6.f);
 	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 2147483648.f);
 	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
+	SIMDf_NUM(cubicBounding) = SIMDf_SET(1.f / (1.5f*1.5f*1.5f));
 
-#if SIMD_LEVEL == FN_AVX2
+#if SIMD_LEVEL == FN_AVX512
+	SIMDf_NUM(X_GRAD) = _mm512_set_ps(0, -1, 0, 1, 0, 0, 0, 0, -1, 1, -1, 1, -1, 1, -1, 1);
+	SIMDf_NUM(Y_GRAD) = _mm512_set_ps(-1, 1, -1, 1, -1, 1, -1, 1, 0, 0, 0, 0, -1, -1, 1, 1);
+	SIMDf_NUM(Z_GRAD) = _mm512_set_ps(-1, 0, 1, 0, -1, -1, 1, 1, -1, -1, 1, 1, 0, 0, 0, 0);
+
+#elif SIMD_LEVEL == FN_AVX2
 	//SIMDf_NUM(X_GRAD_0) = _mm256_set_ps(-1, 1, -1, 1, -1, 1, -1, 1);
 	SIMDf_NUM(X_GRAD_8) = _mm256_set_ps(0, -1, 0, 1, 0, 0, 0, 0);
 	SIMDf_NUM(Y_GRAD_0) = _mm256_set_ps(0, 0, 0, 0, -1, -1, 1, 1);
@@ -551,13 +679,17 @@ void FUNC(InitSIMDValues)()
 	SIMDi_NUM(60493) = SIMDi_SET(60493);
 	SIMDi_NUM(0x7fffffff) = SIMDi_SET(0x7fffffff);
 
+	//SIMDi_NUM(xGradBits) = SIMDi_SET(1683327112);
+	//SIMDi_NUM(yGradBits) = SIMDi_SET(-2004331104);
+	//SIMDi_NUM(zGradBits) = SIMDi_SET(-1851744171);
+
 	SIMDi_NUM(xPrime) = SIMDi_SET(1619);
 	SIMDi_NUM(yPrime) = SIMDi_SET(31337);
 	SIMDi_NUM(zPrime) = SIMDi_SET(6971);
 	SIMDi_NUM(bit10Mask) = SIMDi_SET(1023);
 	SIMDi_NUM(vectorSize) = SIMDi_SET(VECTOR_SIZE);
 
-	SIMDi_NUM(0xffffffff) = SIMDi_EQUAL(SIMDi_SET_ZERO(), SIMDi_SET_ZERO());
+	SIMDi_NUM(0xffffffff) = SIMDi_SET(-1);
 
 	VAR(SIMD_Values_Set) = true;
 }
@@ -580,6 +712,12 @@ static SIMDf VECTORCALL FUNC(InterpQuintic)(const SIMDf& t)
 	r = SIMDf_MUL(r, t);
 
 	return r;
+}
+
+static SIMDf FUNC(CubicLerp)(const SIMDf& a, const SIMDf& b, const SIMDf& c, const SIMDf& d, const SIMDf& t)
+{
+	SIMDf p = SIMDf_SUB(SIMDf_SUB(d, c), SIMDf_SUB(a, b));
+	return SIMDf_MUL_ADD(t, SIMDf_MUL(t, SIMDf_MUL(t, p)), SIMDf_MUL_ADD(t, SIMDf_MUL(t, SIMDf_SUB(SIMDf_SUB(a, b), p)), SIMDf_MUL_ADD(t, SIMDf_SUB(c, a), b)));
 }
 
 //static SIMDf FUNC(InterpHermite)(const SIMDf& t)
@@ -629,18 +767,29 @@ static SIMDf VECTORCALL FUNC(ValCoord)(const SIMDi& seed, const SIMDi& x, const 
 	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
 	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
 	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
-	//hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
+	//hash = SIMDi_XOR(SIMDi_SHIFT_L(hash, 13), hash);
 
 	return SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));
 }
 
-#if SIMD_LEVEL == FN_AVX2
+#if SIMD_LEVEL == FN_AVX512
 static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDi hash = FUNC(Hash)(seed, xi, yi, zi);
-	SIMDf hashBit8 = SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(hash, 28));
+
+	SIMDf xGrad = SIMDf_PERMUTE(SIMDf_NUM(X_GRAD), hash);
+	SIMDf yGrad = SIMDf_PERMUTE(SIMDf_NUM(Y_GRAD), hash);
+	SIMDf zGrad = SIMDf_PERMUTE(SIMDf_NUM(Z_GRAD), hash);
+
+	return SIMDf_MUL_ADD(x, xGrad, SIMDf_MUL_ADD(y, yGrad, SIMDf_MUL(z, zGrad)));
+}
+#elif SIMD_LEVEL == FN_AVX2
+static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+{
+	SIMDi hash = FUNC(Hash)(seed, xi, yi, zi);
+	MASK hashBit8 = SIMDi_SHIFT_L(hash, 28);
 
 	SIMDf x0y8Perm = SIMDf_XOR(SIMDf_CAST_TO_FLOAT(SIMDi_SHIFT_L(hash, 31)), SIMDf_NUM(1));
 
@@ -650,20 +799,31 @@ static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, cons
 
 	return SIMDf_MUL_ADD(x, xGrad, SIMDf_MUL_ADD(y, yGrad, SIMDf_MUL(z, zGrad)));
 }
+/* Other AVX version, slower
+#elif SIMD_LEVEL == FN_AVX2
+static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+{
+	SIMDi hash = SIMDi_SHIFT_L(SIMDi_AND(FUNC(Hash)(seed, xi, yi, zi), SIMDi_NUM(15)), 1);
+
+	SIMDf xGrad = SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(SIMDi_NUM(1), SIMDi_AND(SIMDi_VSHIFT_R(SIMDi_NUM(xGradBits), hash), SIMDi_NUM(3))));
+	SIMDf yGrad = SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(SIMDi_NUM(1), SIMDi_AND(SIMDi_VSHIFT_R(SIMDi_NUM(yGradBits), hash), SIMDi_NUM(3))));
+	SIMDf zGrad = SIMDf_CONVERT_TO_FLOAT(SIMDi_SUB(SIMDi_NUM(1), SIMDi_AND(SIMDi_VSHIFT_R(SIMDi_NUM(zGradBits), hash), SIMDi_NUM(3))));
+
+	return SIMDf_MUL_ADD(x, xGrad, SIMDf_MUL_ADD(y, yGrad, SIMDf_MUL(z, zGrad)));
+}*/
 #else
 static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
 	SIMDi hash = SIMDi_AND(FUNC(Hash)(seed, xi, yi, zi), SIMDi_NUM(15));
 
 	//if h < 8 then x, else y
-	SIMDf u = SIMDf_CAST_TO_FLOAT(SIMDi_LESS_THAN(hash, SIMDi_NUM(8)));
-	u = SIMDf_BLENDV(y, x, u);
+	MASK l8 = SIMDi_LESS_THAN(hash, SIMDi_NUM(8));
+	SIMDf u = SIMDf_BLENDV(y, x, l8);
 
 	//if h < 4 then y else if h is 12 or 14 then x else z
-	SIMDf v = SIMDf_CAST_TO_FLOAT(SIMDi_LESS_THAN(hash, SIMDi_NUM(4)));
-	SIMDf h12o14 = SIMDf_CAST_TO_FLOAT(SIMDi_OR(SIMDi_EQUAL(hash, SIMDi_NUM(12)), SIMDi_EQUAL(hash, SIMDi_NUM(14))));
-	h12o14 = SIMDf_BLENDV(z, x, h12o14);
-	v = SIMDf_BLENDV(h12o14, y, v);
+	SIMDi l4 = SIMDi_LESS_THAN(hash, SIMDi_NUM(4));
+	SIMDi h12o14 = SIMDi_OR(SIMDi_EQUAL(hash, SIMDi_NUM(12)), SIMDi_EQUAL(hash, SIMDi_NUM(14)));
+	SIMDf v = SIMDf_BLENDV(SIMDf_BLENDV(z, x, h12o14), y, l4);
 
 	//if h1 then -u else u
 	//if h2 then -v else v
@@ -757,24 +917,24 @@ static SIMDf VECTORCALL FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, c
 	y0 = SIMDf_SUB(y, SIMDf_SUB(y0, g));
 	z0 = SIMDf_SUB(z, SIMDf_SUB(z0, g));
 
-	SIMDi x0_ge_y0 = SIMDi_CAST_TO_INT(SIMDf_GREATER_EQUAL(x0, y0));
-	SIMDi y0_ge_z0 = SIMDi_CAST_TO_INT(SIMDf_GREATER_EQUAL(y0, z0));
-	SIMDi x0_ge_z0 = SIMDi_CAST_TO_INT(SIMDf_GREATER_EQUAL(x0, z0));
+	MASK x0_ge_y0 = SIMDf_GREATER_EQUAL(x0, y0);
+	MASK y0_ge_z0 = SIMDf_GREATER_EQUAL(y0, z0);
+	MASK x0_ge_z0 = SIMDf_GREATER_EQUAL(x0, z0);
 
-	SIMDi i1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND(x0_ge_y0, x0_ge_z0));
-	SIMDi j1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND_NOT(x0_ge_y0, y0_ge_z0));
-	SIMDi k1 = SIMDi_AND(SIMDi_NUM(1), SIMDi_AND_NOT(x0_ge_z0, SIMDi_NOT(y0_ge_z0)));
+	MASK i1 = MASK_AND(x0_ge_y0, x0_ge_z0);
+	MASK j1 = MASK_AND_NOT(x0_ge_y0, y0_ge_z0);
+	MASK k1 = MASK_AND_NOT(x0_ge_z0, MASK_NOT(y0_ge_z0));
+	
+	MASK i2 = MASK_OR(x0_ge_y0, x0_ge_z0);
+	MASK j2 = MASK_OR(MASK_NOT(x0_ge_y0), y0_ge_z0);
+	MASK k2 = MASK_NOT(MASK_AND(x0_ge_z0, y0_ge_z0));
 
-	SIMDi i2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_OR(x0_ge_y0, x0_ge_z0));
-	SIMDi j2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_OR(SIMDi_NOT(x0_ge_y0), y0_ge_z0));
-	SIMDi k2 = SIMDi_AND(SIMDi_NUM(1), SIMDi_NOT(SIMDi_AND(x0_ge_z0, y0_ge_z0)));
-
-	SIMDf x1 = SIMDf_ADD(SIMDf_SUB(x0, SIMDf_CONVERT_TO_FLOAT(i1)), SIMDf_NUM(G3));
-	SIMDf y1 = SIMDf_ADD(SIMDf_SUB(y0, SIMDf_CONVERT_TO_FLOAT(j1)), SIMDf_NUM(G3));
-	SIMDf z1 = SIMDf_ADD(SIMDf_SUB(z0, SIMDf_CONVERT_TO_FLOAT(k1)), SIMDf_NUM(G3));
-	SIMDf x2 = SIMDf_ADD(SIMDf_SUB(x0, SIMDf_CONVERT_TO_FLOAT(i2)), SIMDf_NUM(G32));
-	SIMDf y2 = SIMDf_ADD(SIMDf_SUB(y0, SIMDf_CONVERT_TO_FLOAT(j2)), SIMDf_NUM(G32));
-	SIMDf z2 = SIMDf_ADD(SIMDf_SUB(z0, SIMDf_CONVERT_TO_FLOAT(k2)), SIMDf_NUM(G32));
+	SIMDf x1 = SIMDf_ADD(SIMDf_MASK_SUB(i1, x0, SIMDf_NUM(1)), SIMDf_NUM(G3));
+	SIMDf y1 = SIMDf_ADD(SIMDf_MASK_SUB(j1, y0, SIMDf_NUM(1)), SIMDf_NUM(G3));
+	SIMDf z1 = SIMDf_ADD(SIMDf_MASK_SUB(k1, z0, SIMDf_NUM(1)), SIMDf_NUM(G3));
+	SIMDf x2 = SIMDf_ADD(SIMDf_MASK_SUB(i2, x0, SIMDf_NUM(1)), SIMDf_NUM(G32));
+	SIMDf y2 = SIMDf_ADD(SIMDf_MASK_SUB(j2, y0, SIMDf_NUM(1)), SIMDf_NUM(G32));
+	SIMDf z2 = SIMDf_ADD(SIMDf_MASK_SUB(k2, z0, SIMDf_NUM(1)), SIMDf_NUM(G32));
 	SIMDf x3 = SIMDf_ADD(SIMDf_SUB(x0, SIMDf_NUM(1)), SIMDf_NUM(G33));
 	SIMDf y3 = SIMDf_ADD(SIMDf_SUB(y0, SIMDf_NUM(1)), SIMDf_NUM(G33));
 	SIMDf z3 = SIMDf_ADD(SIMDf_SUB(z0, SIMDf_NUM(1)), SIMDf_NUM(G33));
@@ -784,22 +944,74 @@ static SIMDf VECTORCALL FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, c
 	SIMDf t2 = SIMDf_SUB(SIMDf_SUB(SIMDf_SUB(SIMDf_NUM(0_6), SIMDf_MUL(x2, x2)), SIMDf_MUL(y2, y2)), SIMDf_MUL(z2, z2));
 	SIMDf t3 = SIMDf_SUB(SIMDf_SUB(SIMDf_SUB(SIMDf_NUM(0_6), SIMDf_MUL(x3, x3)), SIMDf_MUL(y3, y3)), SIMDf_MUL(z3, z3));
 
-	SIMDf n0 = SIMDf_GREATER_EQUAL(t0, SIMDf_NUM(0));
-	SIMDf n1 = SIMDf_GREATER_EQUAL(t1, SIMDf_NUM(0));
-	SIMDf n2 = SIMDf_GREATER_EQUAL(t2, SIMDf_NUM(0));
-	SIMDf n3 = SIMDf_GREATER_EQUAL(t3, SIMDf_NUM(0));
+	MASK n0 = SIMDf_GREATER_EQUAL(t0, SIMDf_NUM(0));
+	MASK n1 = SIMDf_GREATER_EQUAL(t1, SIMDf_NUM(0));
+	MASK n2 = SIMDf_GREATER_EQUAL(t2, SIMDf_NUM(0));
+	MASK n3 = SIMDf_GREATER_EQUAL(t3, SIMDf_NUM(0));
 
 	t0 = SIMDf_MUL(t0, t0);
 	t1 = SIMDf_MUL(t1, t1);
 	t2 = SIMDf_MUL(t2, t2);
 	t3 = SIMDf_MUL(t3, t3);
 
-	n0 = SIMDf_AND(n0, SIMDf_MUL(SIMDf_MUL(t0, t0), FUNC(GradCoord)(seed, i, j, k, x0, y0, z0)));
-	n1 = SIMDf_AND(n1, SIMDf_MUL(SIMDf_MUL(t1, t1), FUNC(GradCoord)(seed, SIMDi_ADD(i, i1), SIMDi_ADD(j, j1), SIMDi_ADD(k, k1), x1, y1, z1)));
-	n2 = SIMDf_AND(n2, SIMDf_MUL(SIMDf_MUL(t2, t2), FUNC(GradCoord)(seed, SIMDi_ADD(i, i2), SIMDi_ADD(j, j2), SIMDi_ADD(k, k2), x2, y2, z2)));
-	n3 = SIMDf_AND(n3, SIMDf_MUL(SIMDf_MUL(t3, t3), FUNC(GradCoord)(seed, SIMDi_ADD(i, SIMDi_NUM(1)), SIMDi_ADD(j, SIMDi_NUM(1)), SIMDi_ADD(k, SIMDi_NUM(1)), x3, y3, z3)));
+	SIMDf v0 = SIMDf_MUL(SIMDf_MUL(t0, t0), FUNC(GradCoord)(seed, i, j, k, x0, y0, z0));
+	SIMDf v1 = SIMDf_MUL(SIMDf_MUL(t1, t1), FUNC(GradCoord)(seed, SIMDi_MASK_ADD(i1, i, SIMDi_NUM(1)), SIMDi_MASK_ADD(j1, j, SIMDi_NUM(1)), SIMDi_MASK_ADD(k1, k, SIMDi_NUM(1)), x1, y1, z1));
+	SIMDf v2 = SIMDf_MUL(SIMDf_MUL(t2, t2), FUNC(GradCoord)(seed, SIMDi_MASK_ADD(i2, i, SIMDi_NUM(1)), SIMDi_MASK_ADD(j2, j, SIMDi_NUM(1)), SIMDi_MASK_ADD(k2, k, SIMDi_NUM(1)), x2, y2, z2));
+	SIMDf v3 = SIMDf_MASK(n3, SIMDf_MUL(SIMDf_MUL(t3, t3), FUNC(GradCoord)(seed, SIMDi_ADD(i, SIMDi_NUM(1)), SIMDi_ADD(j, SIMDi_NUM(1)), SIMDi_ADD(k, SIMDi_NUM(1)), x3, y3, z3)));
 
-	return SIMDf_MUL(SIMDf_NUM(32), SIMDf_ADD(n0, SIMDf_ADD(n1, SIMDf_ADD(n2, n3))));
+	return SIMDf_MUL(SIMDf_NUM(32), SIMDf_MASK_ADD(n0, SIMDf_MASK_ADD(n1, SIMDf_MASK_ADD(n2, v3, v2), v1), v0));
+}
+
+static SIMDf VECTORCALL FUNC(CubicSingle)(const SIMDi& seed, const SIMDf& x, const SIMDf& y, const SIMDf& z)
+{
+	SIMDf xf1 = SIMDf_FLOOR(x);
+	SIMDf yf1 = SIMDf_FLOOR(y);
+	SIMDf zf1 = SIMDf_FLOOR(z);
+
+	SIMDi x1 = SIMDi_CONVERT_TO_INT(xf1);
+	SIMDi y1 = SIMDi_CONVERT_TO_INT(yf1);
+	SIMDi z1 = SIMDi_CONVERT_TO_INT(zf1);
+
+	SIMDi x0 = SIMDi_SUB(x1, SIMDi_NUM(1));
+	SIMDi y0 = SIMDi_SUB(y1, SIMDi_NUM(1));
+	SIMDi z0 = SIMDi_SUB(z1, SIMDi_NUM(1));
+	SIMDi x2 = SIMDi_ADD(x1, SIMDi_NUM(1));
+	SIMDi y2 = SIMDi_ADD(y1, SIMDi_NUM(1));
+	SIMDi z2 = SIMDi_ADD(z1, SIMDi_NUM(1));
+	SIMDi x3 = SIMDi_ADD(x1, SIMDi_NUM(2));
+	SIMDi y3 = SIMDi_ADD(y1, SIMDi_NUM(2));
+	SIMDi z3 = SIMDi_ADD(z1, SIMDi_NUM(2));
+
+	SIMDf xs = SIMDf_SUB(x, xf1);
+	SIMDf ys = SIMDf_SUB(y, yf1);
+	SIMDf zs = SIMDf_SUB(z, zf1);
+
+	return SIMDf_MUL(FUNC(CubicLerp)(
+		FUNC(CubicLerp)(
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y0, z0), FUNC(ValCoord)(seed, x1, y0, z0), FUNC(ValCoord)(seed, x2, y0, z0), FUNC(ValCoord)(seed, x3, y0, z0), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y1, z0), FUNC(ValCoord)(seed, x1, y1, z0), FUNC(ValCoord)(seed, x2, y1, z0), FUNC(ValCoord)(seed, x3, y1, z0), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y2, z0), FUNC(ValCoord)(seed, x1, y2, z0), FUNC(ValCoord)(seed, x2, y2, z0), FUNC(ValCoord)(seed, x3, y2, z0), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y3, z0), FUNC(ValCoord)(seed, x1, y3, z0), FUNC(ValCoord)(seed, x2, y3, z0), FUNC(ValCoord)(seed, x3, y3, z0), xs),
+			ys),			
+		FUNC(CubicLerp)(	
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y0, z1), FUNC(ValCoord)(seed, x1, y0, z1), FUNC(ValCoord)(seed, x2, y0, z1), FUNC(ValCoord)(seed, x3, y0, z1), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y1, z1), FUNC(ValCoord)(seed, x1, y1, z1), FUNC(ValCoord)(seed, x2, y1, z1), FUNC(ValCoord)(seed, x3, y1, z1), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y2, z1), FUNC(ValCoord)(seed, x1, y2, z1), FUNC(ValCoord)(seed, x2, y2, z1), FUNC(ValCoord)(seed, x3, y2, z1), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y3, z1), FUNC(ValCoord)(seed, x1, y3, z1), FUNC(ValCoord)(seed, x2, y3, z1), FUNC(ValCoord)(seed, x3, y3, z1), xs),
+			ys),			
+		FUNC(CubicLerp)(	
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y0, z2), FUNC(ValCoord)(seed, x1, y0, z2), FUNC(ValCoord)(seed, x2, y0, z2), FUNC(ValCoord)(seed, x3, y0, z2), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y1, z2), FUNC(ValCoord)(seed, x1, y1, z2), FUNC(ValCoord)(seed, x2, y1, z2), FUNC(ValCoord)(seed, x3, y1, z2), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y2, z2), FUNC(ValCoord)(seed, x1, y2, z2), FUNC(ValCoord)(seed, x2, y2, z2), FUNC(ValCoord)(seed, x3, y2, z2), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y3, z2), FUNC(ValCoord)(seed, x1, y3, z2), FUNC(ValCoord)(seed, x2, y3, z2), FUNC(ValCoord)(seed, x3, y3, z2), xs),
+			ys),			
+		FUNC(CubicLerp)(	
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y0, z3), FUNC(ValCoord)(seed, x1, y0, z3), FUNC(ValCoord)(seed, x2, y0, z3), FUNC(ValCoord)(seed, x3, y0, z3), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y1, z3), FUNC(ValCoord)(seed, x1, y1, z3), FUNC(ValCoord)(seed, x2, y1, z3), FUNC(ValCoord)(seed, x3, y1, z3), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y2, z3), FUNC(ValCoord)(seed, x1, y2, z3), FUNC(ValCoord)(seed, x2, y2, z3), FUNC(ValCoord)(seed, x3, y2, z3), xs),
+			FUNC(CubicLerp)(FUNC(ValCoord)(seed, x0, y3, z3), FUNC(ValCoord)(seed, x1, y3, z3), FUNC(ValCoord)(seed, x2, y3, z3), FUNC(ValCoord)(seed, x3, y3, z3), xs),
+			ys),
+		zs), SIMDf_NUM(cubicBounding));
 }
 
 #define GRADIENT_COORD(_x,_y,_z)\
@@ -888,21 +1100,22 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 	return noiseSet;
 }
 
-#if defined(FN_MIN_Z_4) || !defined(FN_COMPILE_AVX2)
+#if defined(FN_MIN_Z_4) || (!defined(FN_COMPILE_AVX2) && !defined(FN_COMPILE_AVX512))
 #define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 4)
 #else
 #define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 8)
 #endif
 
+// TODO AVX512
 #if VECTOR_SIZE > 4 && defined(FN_MIN_Z_4)
 #define AVX_DOUBLE_RESET {\
-SIMDi _zReset = SIMDi_GREATER_THAN(z, zEndV); \
-y = SIMDi_ADD(y, SIMDi_AND(SIMDi_NUM(1), _zReset)); \
-z = SIMDi_SUB(z, SIMDi_AND(zSizeV, _zReset)); \
+MASK _zReset = SIMDi_GREATER_THAN(z, zEndV);\
+y = SIMDi_MASK_ADD(_zReset, y, SIMDi_NUM(1));\
+z = SIMDi_MASK_SUB(_zReset, z, zSizeV);\
 \
-SIMDi _yReset = SIMDi_GREATER_THAN(y, yEndV); \
-x = SIMDi_ADD(x, SIMDi_AND(SIMDi_NUM(1), _yReset)); \
-y = SIMDi_SUB(y, SIMDi_AND(ySizeV, _yReset));}
+MASK _yReset = SIMDi_GREATER_THAN(y, yEndV);\
+x = SIMDi_MASK_ADD(_yReset, x, SIMDi_NUM(1));\
+y = SIMDi_MASK_SUB(_yReset, y, ySizeV);\}
 
 #else
 #define AVX_DOUBLE_RESET
@@ -916,20 +1129,28 @@ y = SIMDi_SUB(y, SIMDi_AND(ySizeV, _yReset));}
 #endif
 
 #define INIT_PERTURB_VALUES() \
-SIMDf perturbAmpV, perturbFreqV, perturbLacunarityV, perturbGainV;\
+SIMDf perturbAmpV, perturbFreqV, perturbLacunarityV, perturbGainV, perturbNormaliseLengthV;\
 switch (m_perturbType)\
 {\
 case None:\
 	break;\
+case Gradient_Normalise:\
+	perturbNormaliseLengthV = SIMDf_SET(m_perturbNormaliseLength*m_frequency);\
 case Gradient:\
 	perturbAmpV = SIMDf_SET(m_perturbAmp);\
 	perturbFreqV = SIMDf_SET(m_perturbFrequency);\
 	break;\
+case GradientFractal_Normalise:\
+	perturbNormaliseLengthV = SIMDf_SET(m_perturbNormaliseLength*m_frequency);\
 case GradientFractal:\
 	perturbAmpV = SIMDf_SET(m_perturbAmp*m_fractalBounding);\
 	perturbFreqV = SIMDf_SET(m_perturbFrequency);\
 	perturbLacunarityV = SIMDf_SET(m_perturbLacunarity);\
 	perturbGainV = SIMDf_SET(m_perturbGain);\
+	break;\
+case Normalise:\
+	perturbNormaliseLengthV = SIMDf_SET(m_perturbNormaliseLength*m_frequency);\
+	break;\
 }
 
 #define PERTURB_SWITCH()\
@@ -941,6 +1162,35 @@ case Gradient:\
 	FUNC(GradientPerturbSingle)(SIMDi_SUB(seedV, SIMDi_NUM(1)), perturbAmpV, perturbFreqV, xF, yF, zF); \
 	break; \
 case GradientFractal:\
+	{\
+	SIMDi seedF = SIMDi_SUB(seedV, SIMDi_NUM(1));\
+	SIMDf freqF = perturbFreqV;\
+	SIMDf ampF = perturbAmpV;\
+	\
+	FUNC(GradientPerturbSingle)(seedF, ampF, freqF, xF, yF, zF);\
+	\
+	int octaveIndex = 0;\
+	\
+	while (++octaveIndex < m_perturbOctaves)\
+	{\
+		freqF = SIMDf_MUL(freqF, perturbLacunarityV);\
+		seedF = SIMDi_SUB(seedF, SIMDi_NUM(1));\
+		ampF = SIMDf_MUL(ampF, perturbGainV);\
+		\
+		FUNC(GradientPerturbSingle)(seedF, ampF, freqF, xF, yF, zF);\
+	}}\
+	break;\
+case Gradient_Normalise:\
+	FUNC(GradientPerturbSingle)(SIMDi_SUB(seedV, SIMDi_NUM(1)), perturbAmpV, perturbFreqV, xF, yF, zF); \
+case Normalise:\
+	{\
+	SIMDf invMag = SIMDf_MUL(perturbNormaliseLengthV, SIMDf_INV_SQRT(SIMDf_MUL_ADD(xF, xF, SIMDf_MUL_ADD(yF, yF, SIMDf_MUL(zF, zF)))));\
+	xF = SIMDf_MUL(xF, invMag);\
+	yF = SIMDf_MUL(yF, invMag);\
+	zF = SIMDf_MUL(zF, invMag);\
+	}break;\
+case GradientFractal_Normalise:\
+	{\
 	SIMDi seedF = SIMDi_SUB(seedV, SIMDi_NUM(1));\
 	SIMDf freqF = perturbFreqV;\
 	SIMDf ampF = perturbAmpV;\
@@ -957,6 +1207,11 @@ case GradientFractal:\
 		\
 		FUNC(GradientPerturbSingle)(seedF, ampF, freqF, xF, yF, zF);\
 	}\
+	SIMDf invMag = SIMDf_MUL(perturbNormaliseLengthV, SIMDf_INV_SQRT(SIMDf_MUL_ADD(xF, xF, SIMDf_MUL_ADD(yF, yF, SIMDf_MUL(zF, zF)))));\
+	xF = SIMDf_MUL(xF, invMag);\
+	yF = SIMDf_MUL(yF, invMag);\
+	zF = SIMDf_MUL(zF, invMag);\
+	}break;\
 }
 
 #define SET_BUILDER(f)\
@@ -1038,13 +1293,13 @@ else\
 		\
 		z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));\
 		\
-		SIMDi zReset = SIMDi_GREATER_THAN(z, zEndV);\
-		y = SIMDi_ADD(y, SIMDi_AND(SIMDi_NUM(1), zReset));\
-		z = SIMDi_SUB(z, SIMDi_AND(zSizeV, zReset));\
+		MASK zReset = SIMDi_GREATER_THAN(z, zEndV);\
+		y = SIMDi_MASK_ADD(zReset, y, SIMDi_NUM(1));\
+		z = SIMDi_MASK_SUB(zReset, z, zSizeV);\
 		\
-		SIMDi yReset = SIMDi_GREATER_THAN(y, yEndV);\
-		x = SIMDi_ADD(x, SIMDi_AND(SIMDi_NUM(1), yReset));\
-		y = SIMDi_SUB(y, SIMDi_AND(ySizeV, yReset));\
+		MASK yReset = SIMDi_GREATER_THAN(y, yEndV);\
+		x = SIMDi_MASK_ADD(yReset, x, SIMDi_NUM(1));\
+		y = SIMDi_MASK_SUB(yReset, y, ySizeV);\
 		\
 		AVX_DOUBLE_RESET;\
 	}\
@@ -1184,6 +1439,9 @@ FILL_FRACTAL_SET(Perlin)
 FILL_SET(Simplex)
 FILL_FRACTAL_SET(Simplex)
 
+FILL_SET(Cubic)
+FILL_FRACTAL_SET(Cubic)
+
 #ifdef FN_ALIGNED_SETS
 #define SIZE_MASK
 #define SAFE_LAST(f)
@@ -1300,6 +1558,9 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 
 	FILL_VECTOR_SET(WhiteNoise)
 
+	FILL_VECTOR_SET(Cubic)
+	FILL_FRACTAL_VECTOR_SET(Cubic)
+
 	void SIMD_LEVEL_CLASS::FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
 {
 	assert(noiseSet);
@@ -1364,13 +1625,13 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 
 			z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));
 
-			SIMDi zReset = SIMDi_GREATER_THAN(z, zEndV);
-			y = SIMDi_ADD(y, SIMDi_AND(SIMDi_NUM(1), zReset));
-			z = SIMDi_SUB(z, SIMDi_AND(zSizeV, zReset));
-
-			SIMDi yReset = SIMDi_GREATER_THAN(y, yEndV);
-			x = SIMDi_ADD(x, SIMDi_AND(SIMDi_NUM(1), yReset));
-			y = SIMDi_SUB(y, SIMDi_AND(ySizeV, yReset));
+			MASK zReset = SIMDi_GREATER_THAN(z, zEndV);
+			y = SIMDi_MASK_ADD(zReset, y, SIMDi_NUM(1));
+			z = SIMDi_MASK_SUB(zReset, z, zSizeV);
+			
+			MASK yReset = SIMDi_GREATER_THAN(y, yEndV);
+			x = SIMDi_MASK_ADD(yReset, x, SIMDi_NUM(1));
+			y = SIMDi_MASK_SUB(yReset, y, ySizeV);
 
 			AVX_DOUBLE_RESET;
 		}
@@ -1423,7 +1684,7 @@ static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(const SIMDi& s
 				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
-				SIMDf closer = SIMDf_LESS_THAN(newDistance, distance);\
+				MASK closer = SIMDf_LESS_THAN(newDistance, distance);\
 				\
 				distance = SIMDf_MIN(newDistance, distance);\
 				cellValue = SIMDf_BLENDV(cellValue, newCellValue, closer);\
@@ -1516,7 +1777,7 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(const SIMDi& 
 				\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
-				SIMDf closer = SIMDf_LESS_THAN(newDistance, distance);\
+				MASK closer = SIMDf_LESS_THAN(newDistance, distance);\
 				\
 				distance = SIMDf_MIN(newDistance, distance);\
 				xCell = SIMDf_BLENDV(xCell, xCellNew, closer);\
@@ -1556,6 +1817,12 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(const SIMDi& 
 		break;\
 	case FastNoiseSIMD::SimplexFractal:\
 		CELLULAR_LOOKUP_FRACTAL_VALUE(Simplex);\
+		break; \
+	case FastNoiseSIMD::Cubic:\
+		result = FUNC(CubicSingle)(seedV, xF, yF, zF); \
+		break;\
+	case FastNoiseSIMD::CubicFractal:\
+		CELLULAR_LOOKUP_FRACTAL_VALUE(Cubic);\
 		break; \
 	}\
 	\
