@@ -5,7 +5,7 @@ After releasing FastNoise I got in contact with the author of [FastNoise SIMD](h
 
 Runtime detection of highest supported instruction set ensures the fastest possible performance with only 1 compile needed. If no support is found it will fallback to standard types (float/int).
 
-##Features
+## Features
 
 - Value Noise 3D
 - Perlin Noise 3D
@@ -18,25 +18,25 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Perturb input coordinates in 3D space
 - Integrated noise sampling
 
-##Supported Instruction Sets
+## Supported Instruction Sets
 - ARM NEON
 - AVX512
 - AVX2 - FMA3
 - SSE4.1
 - SSE2
 
-##Tested Compilers
+## Tested Compilers
 - MSVC v120/v140
 - Intel 16.0
 - GCC 4.7 Linux
 - Clang MacOSX
 
-##Wiki
+## Wiki
 [Getting Started](https://github.com/Auburns/FastNoiseSIMD/wiki)
 
 More documentation coming soon.
 
-#FastNoise SIMD Preview
+# FastNoise SIMD Preview
 
 I have written a compact testing application for all the features included in FastNoiseSIMD with a visual representation. I use this for development purposes and testing noise settings used in terrain generation. The fastest supported instruction set is also reported.
 
@@ -44,7 +44,7 @@ Download links can be found in the [Releases Section](https://github.com/Auburns
 
 ![Simplex Fractal](http://i.imgur.com/45JkT5j.png)
 
-#Performance Comparisons
+# Performance Comparisons
 Using default noise settings on FastNoise SIMD and matching those settings across the other libraries where possible.
 
 Timings below are x1000 ns to generate 32x32x32 points of noise.
@@ -63,25 +63,25 @@ Timings below are x1000 ns to generate 32x32x32 points of noise.
 
 Comparision of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
-#Examples
-###Cellular Noise
+# Examples
+### Cellular Noise
 ![Cellular Noise](http://i.imgur.com/RshUkoe.png)
 
 ![Cellular Noise](http://i.imgur.com/PjPYBXu.png)
 
 ![Cellular Noise](http://i.imgur.com/hyKjIuH.png)
 
-###Fractal Noise
+### Fractal Noise
 ![Simplex Fractal Billow](http://i.imgur.com/gURJtpc.png)
 
 ![Perlin Fractal Billow](http://i.imgur.com/IcjbpYz.png)
 
-###Value Noise
+### Value Noise
 ![Value Noise](http://i.imgur.com/Ss22zRs.png)
 
-###White Noise
+### White Noise
 ![White Noise](http://i.imgur.com/wcTlyek.png)
 
-###Perturb
+### Perturb
 ![Perturbed Cellular Noise](http://i.imgur.com/xBKGo1E.png)
 
