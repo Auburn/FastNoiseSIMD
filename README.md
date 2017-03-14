@@ -10,10 +10,10 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Value Noise 3D
 - Perlin Noise 3D
 - Simplex Noise 3D
+- Cubic Noise 3D
 - Multiple fractal options for all of the above
 - White Noise 3D
 - Cellular Noise 3D
-- Cubic Noise 3D
 - Large variety of cellular noise settings
 - Perturb input coordinates in 3D space
 - Integrated noise sampling
