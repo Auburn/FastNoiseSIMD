@@ -34,9 +34,7 @@ Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noi
 - Clang MacOSX
 
 ## Wiki
-[Getting Started](https://github.com/Auburns/FastNoiseSIMD/wiki)
-
-More documentation coming soon.
+[Docs](https://github.com/Auburns/FastNoiseSIMD/wiki)
 
 # FastNoise SIMD Preview
 
