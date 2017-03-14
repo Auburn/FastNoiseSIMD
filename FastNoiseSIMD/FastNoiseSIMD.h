@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-// VERSION: 0.4.1
+// VERSION: 0.5.0
 
 #ifndef FASTNOISE_SIMD_H
 #define FASTNOISE_SIMD_H
