@@ -591,17 +591,16 @@ static SIMDf SIMDf_NUM(Y_GRAD_0);
 //static SIMDf SIMDf_NUM(Y_GRAD_8);
 static SIMDf SIMDf_NUM(Z_GRAD_0);
 static SIMDf SIMDf_NUM(Z_GRAD_8);
+
+#else
+static SIMDi SIMDi_NUM(8);
+static SIMDi SIMDi_NUM(12);
+static SIMDi SIMDi_NUM(13);
 #endif
 
 static SIMDi SIMDi_NUM(incremental);
 static SIMDi SIMDi_NUM(1);
 static SIMDi SIMDi_NUM(2);
-static SIMDi SIMDi_NUM(3);
-static SIMDi SIMDi_NUM(4);
-static SIMDi SIMDi_NUM(8);
-static SIMDi SIMDi_NUM(12);
-static SIMDi SIMDi_NUM(14);
-static SIMDi SIMDi_NUM(15);
 static SIMDi SIMDi_NUM(255);
 static SIMDi SIMDi_NUM(60493);
 static SIMDi SIMDi_NUM(0x7fffffff);
@@ -665,16 +664,15 @@ void FUNC(InitSIMDValues)()
 	//SIMDf_NUM(Y_GRAD_8) = _mm256_set_ps(-1, 1, -1, 1, -1, 1, -1, 1); Same as x0
 	SIMDf_NUM(Z_GRAD_0) = _mm256_set_ps(-1, -1, 1, 1, 0, 0, 0, 0);
 	SIMDf_NUM(Z_GRAD_8) = _mm256_set_ps(-1, 0, 1, 0, -1, -1, 1, 1);
+
+#else
+	SIMDi_NUM(8) = SIMDi_SET(8);
+	SIMDi_NUM(12) = SIMDi_SET(12);
+	SIMDi_NUM(13) = SIMDi_SET(13);
 #endif
 
 	SIMDi_NUM(1) = SIMDi_SET(1);
 	SIMDi_NUM(2) = SIMDi_SET(2);
-	SIMDi_NUM(3) = SIMDi_SET(3);
-	SIMDi_NUM(4) = SIMDi_SET(4);
-	SIMDi_NUM(8) = SIMDi_SET(8);
-	SIMDi_NUM(12) = SIMDi_SET(12);
-	SIMDi_NUM(14) = SIMDi_SET(14);
-	SIMDi_NUM(15) = SIMDi_SET(15);
 	SIMDi_NUM(255) = SIMDi_SET(255);
 	SIMDi_NUM(60493) = SIMDi_SET(60493);
 	SIMDi_NUM(0x7fffffff) = SIMDi_SET(0x7fffffff);
@@ -814,15 +812,16 @@ static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, cons
 #else
 static SIMDf VECTORCALL FUNC(GradCoord)(const SIMDi& seed, const SIMDi& xi, const SIMDi& yi, const SIMDi& zi, const SIMDf& x, const SIMDf& y, const SIMDf& z)
 {
-	SIMDi hash = SIMDi_AND(FUNC(Hash)(seed, xi, yi, zi), SIMDi_NUM(15));
+	SIMDi hash = FUNC(Hash)(seed, xi, yi, zi);
+	SIMDi hasha13 = SIMDi_AND(hash, SIMDi_NUM(13));
 
 	//if h < 8 then x, else y
-	MASK l8 = SIMDi_LESS_THAN(hash, SIMDi_NUM(8));
+	MASK l8 = SIMDi_LESS_THAN(hasha13, SIMDi_NUM(8));
 	SIMDf u = SIMDf_BLENDV(y, x, l8);
 
 	//if h < 4 then y else if h is 12 or 14 then x else z
-	SIMDi l4 = SIMDi_LESS_THAN(hash, SIMDi_NUM(4));
-	SIMDi h12o14 = SIMDi_OR(SIMDi_EQUAL(hash, SIMDi_NUM(12)), SIMDi_EQUAL(hash, SIMDi_NUM(14)));
+	SIMDi l4 = SIMDi_LESS_THAN(hasha13, SIMDi_NUM(2));
+	SIMDi h12o14 = SIMDi_EQUAL(SIMDi_NUM(12), hasha13);
 	SIMDf v = SIMDf_BLENDV(SIMDf_BLENDV(z, x, h12o14), y, l4);
 
 	//if h1 then -u else u
