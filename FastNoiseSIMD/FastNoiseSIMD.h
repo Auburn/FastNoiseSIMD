@@ -48,18 +48,15 @@
 // Only the latest compilers will support this
 //#define FN_COMPILE_AVX512
 
-// Using FMA instructions with AVX2/NEON provides a small performance increase but can cause 
+// Using FMA instructions with AVX(51)2/NEON provides a small performance increase but can cause 
 // minute variations in noise output compared to other SIMD levels due to higher calculation precision
+// Intel compiler will always generate FMA instructions, use /Qfma- or -no-fma to disable
 #define FN_USE_FMA
 #endif
 
 // Using aligned sets of memory for float arrays allows faster storing of SIMD data
 // Comment out to allow unaligned float arrays to be used as sets
 #define FN_ALIGNED_SETS
-
-// Reduced minimum of zSize from 8 to 4 when not using a vector set
-// Causes slightly performance loss on non-"mulitple of 8" zSize
-//#define FN_MIN_Z_4
 
 // SSE2/NEON support is guaranteed on 64bit CPUs so no fallback is needed
 #if !(defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__) || defined(__aarch64__) || defined(FN_IOS)) || defined(_DEBUG)

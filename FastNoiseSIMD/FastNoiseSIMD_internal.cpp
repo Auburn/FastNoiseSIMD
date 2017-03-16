@@ -536,7 +536,7 @@ static float FUNC(INV_SQRT)(float x)
 #define SIMD_ZERO_ALL()
 #endif
 
-// FMA3
+// FMA
 #ifdef FN_USE_FMA
 #if SIMD_LEVEL == FN_NEON
 #define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (b,c,a)
@@ -1099,26 +1099,14 @@ float* SIMD_LEVEL_CLASS::GetEmptySet(int size)
 	return noiseSet;
 }
 
-#if defined(FN_MIN_Z_4) || (!defined(FN_COMPILE_AVX2) && !defined(FN_COMPILE_AVX512))
-#define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 4)
-#else
-#define Z_SIZE_ASSERT(_zSize) assert(_zSize >= 8)
-#endif
-
-// TODO AVX512
-#if VECTOR_SIZE > 4 && defined(FN_MIN_Z_4)
-#define AVX_DOUBLE_RESET {\
+#define AXIS_RESET(_zSize, _start) for (int _i = (_zSize) * (_start); _i < VECTOR_SIZE; _i+=(_zSize)){\
 MASK _zReset = SIMDi_GREATER_THAN(z, zEndV);\
 y = SIMDi_MASK_ADD(_zReset, y, SIMDi_NUM(1));\
 z = SIMDi_MASK_SUB(_zReset, z, zSizeV);\
 \
 MASK _yReset = SIMDi_GREATER_THAN(y, yEndV);\
 x = SIMDi_MASK_ADD(_yReset, x, SIMDi_NUM(1));\
-y = SIMDi_MASK_SUB(_yReset, y, ySizeV);\}
-
-#else
-#define AVX_DOUBLE_RESET
-#endif
+y = SIMDi_MASK_SUB(_yReset, y, ySizeV);}
 
 #ifdef FN_ALIGNED_SETS
 #define STORE_LAST_RESULT(_dest, _source) SIMDf_STORE(_dest, _source)
@@ -1264,7 +1252,6 @@ if ((zSize & (VECTOR_SIZE - 1)) == 0)\
 }\
 else\
 {\
-	\
 	SIMDi ySizeV = SIMDi_SET(ySize); \
 	SIMDi zSizeV = SIMDi_SET(zSize); \
 	\
@@ -1274,7 +1261,7 @@ else\
 	SIMDi x = SIMDi_SET(xStart); \
 	SIMDi y = SIMDi_SET(yStart); \
 	SIMDi z = SIMDi_ADD(SIMDi_SET(zStart), SIMDi_NUM(incremental)); \
-	AVX_DOUBLE_RESET;\
+	AXIS_RESET(zSize, 1)\
 	\
 	int index = 0; \
 	int maxIndex = xSize * ySize * zSize; \
@@ -1292,15 +1279,7 @@ else\
 		\
 		z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));\
 		\
-		MASK zReset = SIMDi_GREATER_THAN(z, zEndV);\
-		y = SIMDi_MASK_ADD(zReset, y, SIMDi_NUM(1));\
-		z = SIMDi_MASK_SUB(zReset, z, zSizeV);\
-		\
-		MASK yReset = SIMDi_GREATER_THAN(y, yEndV);\
-		x = SIMDi_MASK_ADD(yReset, x, SIMDi_NUM(1));\
-		y = SIMDi_MASK_SUB(yReset, y, ySizeV);\
-		\
-		AVX_DOUBLE_RESET;\
+		AXIS_RESET(zSize, 0)\
 	}\
 	\
 	SIMDf xF = SIMDf_MUL(SIMDf_CONVERT_TO_FLOAT(x), xFreqV);\
@@ -1379,7 +1358,6 @@ else\
 void SIMD_LEVEL_CLASS::Fill##func##Set(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)\
 {\
 	assert(noiseSet);\
-	Z_SIZE_ASSERT(zSize);\
 	SIMD_ZERO_ALL();\
 	SIMDi seedV = SIMDi_SET(m_seed); \
 	INIT_PERTURB_VALUES();\
@@ -1399,7 +1377,6 @@ void SIMD_LEVEL_CLASS::Fill##func##Set(float* noiseSet, int xStart, int yStart, 
 void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)\
 {\
 	assert(noiseSet);\
-	Z_SIZE_ASSERT(zSize);\
 	SIMD_ZERO_ALL();\
 	\
 	SIMDi seedV = SIMDi_SET(m_seed);\
@@ -1563,7 +1540,6 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 	void SIMD_LEVEL_CLASS::FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
 {
 	assert(noiseSet);
-	Z_SIZE_ASSERT(zSize);
 	SIMD_ZERO_ALL();
 	SIMDi seedV = SIMDi_SET(m_seed);
 
@@ -1603,7 +1579,6 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 	}
 	else
 	{
-
 		SIMDi ySizeV = SIMDi_SET(ySize);
 		SIMDi zSizeV = SIMDi_SET(zSize);
 
@@ -1613,7 +1588,7 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 		SIMDi x = SIMDi_SET(xStart);
 		SIMDi y = SIMDi_SET(yStart);
 		SIMDi z = SIMDi_ADD(SIMDi_SET(zStart), SIMDi_NUM(incremental));
-		AVX_DOUBLE_RESET;
+		AXIS_RESET(zSize, 1);
 
 		int index = 0;
 		int maxIndex = xSize * ySize * zSize;
@@ -1624,15 +1599,7 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 
 			z = SIMDi_ADD(z, SIMDi_NUM(vectorSize));
 
-			MASK zReset = SIMDi_GREATER_THAN(z, zEndV);
-			y = SIMDi_MASK_ADD(zReset, y, SIMDi_NUM(1));
-			z = SIMDi_MASK_SUB(zReset, z, zSizeV);
-			
-			MASK yReset = SIMDi_GREATER_THAN(y, yEndV);
-			x = SIMDi_MASK_ADD(yReset, x, SIMDi_NUM(1));
-			y = SIMDi_MASK_SUB(yReset, y, ySizeV);
-
-			AVX_DOUBLE_RESET;
+			AXIS_RESET(zSize, 0);
 		}
 		SIMDf result = FUNC(ValCoord)(seedV, x, y, z);
 		STORE_LAST_RESULT(&noiseSet[index], result);
@@ -1961,7 +1928,6 @@ case Natural:\
 void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
 {
 	assert(noiseSet);
-	Z_SIZE_ASSERT(zSize);
 	SIMD_ZERO_ALL();
 	SIMDi seedV = SIMDi_SET(m_seed);
 	INIT_PERTURB_VALUES();
@@ -2144,9 +2110,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 	xSizeSample = (xSizeSample >> sampleScale) + 1;
 	ySizeSample = (ySizeSample >> sampleScale) + 1;
 	zSizeSample = (zSizeSample >> sampleScale) + 1;
-
-	Z_SIZE_ASSERT(zSizeSample);
-
+	
 	float* noiseSetSample = GetEmptySet(xSizeSample * ySizeSample * zSizeSample);
 	FillNoiseSet(noiseSetSample, xStart >> sampleScale, yStart >> sampleScale, zStart >> sampleScale, xSizeSample, ySizeSample, zSizeSample, scaleModifier);
 
