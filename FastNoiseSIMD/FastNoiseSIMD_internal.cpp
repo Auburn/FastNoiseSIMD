@@ -2126,6 +2126,14 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 	SIMDi yBase = SIMDi_SET(-yOffset);
 	SIMDi zBase = SIMDi_SET(-zOffset);
 
+	int localCountMax = (1 << (sampleScale * 3));
+
+#if VECTOR_SIZE > 8
+	int vMax = VECTOR_SIZE > localCountMax ? localCountMax : VECTOR_SIZE;
+#else
+	int vMax = VECTOR_SIZE;
+#endif
+
 #if SIMD_LEVEL == FN_NEON
 	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
 	SIMDi sampleScale2V = SIMDi_MUL(sampleScaleV, SIMDi_NUM(2));
@@ -2156,7 +2164,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 				SIMDi localCountSIMD = SIMDi_NUM(incremental);
 
 				int localCount = 0;
-				while (localCount < (1 << (sampleScale * 3)))
+				while (localCount < localCountMax)
 				{
 					uSIMDi xi, yi, zi;
 
@@ -2187,7 +2195,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 							FUNC(Lerp)(c001, c101, xf),
 							FUNC(Lerp)(c011, c111, xf), yf), zf);
 
-					for (int i = 0; i < VECTOR_SIZE; i++)
+					for (int i = 0; i < vMax; i++)
 					{
 						if (xi.a[i] >= 0 && xi.a[i] < xSize &&
 							yi.a[i] >= 0 && yi.a[i] < ySize &&
@@ -2265,6 +2273,14 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 	SIMDi sampleSizeSIMD = SIMDi_SET(sampleSize);
 	SIMDi xSIMD = SIMDi_SET_ZERO();
 
+	int localCountMax = (1 << (sampleScale * 3));
+
+#if VECTOR_SIZE > 8
+	int vMax = VECTOR_SIZE > localCountMax ? localCountMax : VECTOR_SIZE;
+#else
+	int vMax = VECTOR_SIZE;
+#endif
+
 #if SIMD_LEVEL == FN_NEON
 	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
 	SIMDi sampleScale2V = SIMDi_MUL(sampleScaleV, SIMDi_NUM(2));
@@ -2295,7 +2311,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 				SIMDi localCountSIMD = SIMDi_NUM(incremental);
 
 				int localCount = 0;
-				while (localCount < (1 << (sampleScale * 3)))
+				while (localCount < localCountMax)
 				{
 					uSIMDi xi, yi, zi;
 
@@ -2326,7 +2342,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 							FUNC(Lerp)(c001, c101, xf),
 							FUNC(Lerp)(c011, c111, xf), yf), zf);
 
-					for (int i = 0; i < VECTOR_SIZE; i++)
+					for (int i = 0; i < vMax; i++)
 					{
 						if (xi.a[i] < xSize &&
 							yi.a[i] < ySize &&
