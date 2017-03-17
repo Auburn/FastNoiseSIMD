@@ -2127,12 +2127,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, int xStart, int ySta
 	SIMDi zBase = SIMDi_SET(-zOffset);
 
 	int localCountMax = (1 << (sampleScale * 3));
-
-#if VECTOR_SIZE > 8
-	int vMax = VECTOR_SIZE > localCountMax ? localCountMax : VECTOR_SIZE;
-#else
 	int vMax = VECTOR_SIZE;
-#endif
 
 #if SIMD_LEVEL == FN_NEON
 	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
@@ -2274,12 +2269,7 @@ void SIMD_LEVEL_CLASS::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* 
 	SIMDi xSIMD = SIMDi_SET_ZERO();
 
 	int localCountMax = (1 << (sampleScale * 3));
-
-#if VECTOR_SIZE > 8
-	int vMax = VECTOR_SIZE > localCountMax ? localCountMax : VECTOR_SIZE;
-#else
 	int vMax = VECTOR_SIZE;
-#endif
 
 #if SIMD_LEVEL == FN_NEON
 	SIMDi sampleScaleV = SIMDi_SET(-sampleScale);
