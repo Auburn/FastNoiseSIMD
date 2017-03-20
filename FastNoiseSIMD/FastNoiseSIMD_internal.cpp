@@ -539,20 +539,24 @@ static float FUNC(INV_SQRT)(float x)
 // FMA
 #ifdef FN_USE_FMA
 #if SIMD_LEVEL == FN_NEON
-#define SIMDf_MUL_ADD(a,b,c) vmlaq_f32 (b,c,a)
+#define SIMDf_MUL_ADD(a,b,c) vmlaq_f32(b,c,a)
 #define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c) // Neon multiply sub swaps sides of minus compared to FMA making it unusable
+#define SIMDf_NMUL_ADD(a,b,c) vmlaq_f32(b,c,a)
 #elif SIMD_LEVEL == FN_AVX512
 #define SIMDf_MUL_ADD(a,b,c) _mm512_fmadd_ps(a,b,c)
 #define SIMDf_MUL_SUB(a,b,c) _mm512_fmsub_ps(a,b,c)
+#define SIMDf_NMUL_ADD(a,b,c) _mm512_fnmadd_ps(a,b,c)
 #elif SIMD_LEVEL == FN_AVX2
 #define SIMDf_MUL_ADD(a,b,c) _mm256_fmadd_ps(a,b,c)
 #define SIMDf_MUL_SUB(a,b,c) _mm256_fmsub_ps(a,b,c)
+#define SIMDf_NMUL_ADD(a,b,c) _mm256_fnmadd_ps(a,b,c)
 #endif
 #endif
 
 #ifndef SIMDf_MUL_ADD
 #define SIMDf_MUL_ADD(a,b,c) SIMDf_ADD(SIMDf_MUL(a,b),c)
 #define SIMDf_MUL_SUB(a,b,c) SIMDf_SUB(SIMDf_MUL(a,b),c)
+#define SIMDf_NMUL_ADD(a,b,c)  SIMDf_SUB(c, SIMDf_MUL(a,b))
 #endif
 
 static bool VAR(SIMD_Values_Set) = false;
@@ -573,7 +577,6 @@ static SIMDf SIMDf_NUM(511_5);
 
 static SIMDf SIMDf_NUM(F3);
 static SIMDf SIMDf_NUM(G3);
-static SIMDf SIMDf_NUM(G32);
 static SIMDf SIMDf_NUM(G33);
 static SIMDf SIMDf_NUM(hash2Float);
 static SIMDf SIMDf_NUM(vectorSize);
@@ -646,8 +649,7 @@ void FUNC(InitSIMDValues)()
 
 	SIMDf_NUM(F3) = SIMDf_SET(1.f / 3.f);
 	SIMDf_NUM(G3) = SIMDf_SET(1.f / 6.f);
-	SIMDf_NUM(G32) = SIMDf_SET(2.f / 6.f);
-	SIMDf_NUM(G33) = SIMDf_SET(3.f / 6.f);
+	SIMDf_NUM(G33) = SIMDf_SET((3.f / 6.f) - 1.f);
 	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 2147483648.f);
 	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
 	SIMDf_NUM(cubicBounding) = SIMDf_SET(1.f / (1.5f*1.5f*1.5f));
@@ -931,17 +933,17 @@ static SIMDf VECTORCALL FUNC(SimplexSingle)(const SIMDi& seed, const SIMDf& x, c
 	SIMDf x1 = SIMDf_ADD(SIMDf_MASK_SUB(i1, x0, SIMDf_NUM(1)), SIMDf_NUM(G3));
 	SIMDf y1 = SIMDf_ADD(SIMDf_MASK_SUB(j1, y0, SIMDf_NUM(1)), SIMDf_NUM(G3));
 	SIMDf z1 = SIMDf_ADD(SIMDf_MASK_SUB(k1, z0, SIMDf_NUM(1)), SIMDf_NUM(G3));
-	SIMDf x2 = SIMDf_ADD(SIMDf_MASK_SUB(i2, x0, SIMDf_NUM(1)), SIMDf_NUM(G32));
-	SIMDf y2 = SIMDf_ADD(SIMDf_MASK_SUB(j2, y0, SIMDf_NUM(1)), SIMDf_NUM(G32));
-	SIMDf z2 = SIMDf_ADD(SIMDf_MASK_SUB(k2, z0, SIMDf_NUM(1)), SIMDf_NUM(G32));
-	SIMDf x3 = SIMDf_ADD(SIMDf_SUB(x0, SIMDf_NUM(1)), SIMDf_NUM(G33));
-	SIMDf y3 = SIMDf_ADD(SIMDf_SUB(y0, SIMDf_NUM(1)), SIMDf_NUM(G33));
-	SIMDf z3 = SIMDf_ADD(SIMDf_SUB(z0, SIMDf_NUM(1)), SIMDf_NUM(G33));
+	SIMDf x2 = SIMDf_ADD(SIMDf_MASK_SUB(i2, x0, SIMDf_NUM(1)), SIMDf_NUM(F3));
+	SIMDf y2 = SIMDf_ADD(SIMDf_MASK_SUB(j2, y0, SIMDf_NUM(1)), SIMDf_NUM(F3));
+	SIMDf z2 = SIMDf_ADD(SIMDf_MASK_SUB(k2, z0, SIMDf_NUM(1)), SIMDf_NUM(F3));
+	SIMDf x3 = SIMDf_ADD(x0, SIMDf_NUM(G33));
+	SIMDf y3 = SIMDf_ADD(y0, SIMDf_NUM(G33));
+	SIMDf z3 = SIMDf_ADD(z0, SIMDf_NUM(G33));
 
-	SIMDf t0 = SIMDf_SUB(SIMDf_SUB(SIMDf_SUB(SIMDf_NUM(0_6), SIMDf_MUL(x0, x0)), SIMDf_MUL(y0, y0)), SIMDf_MUL(z0, z0));
-	SIMDf t1 = SIMDf_SUB(SIMDf_SUB(SIMDf_SUB(SIMDf_NUM(0_6), SIMDf_MUL(x1, x1)), SIMDf_MUL(y1, y1)), SIMDf_MUL(z1, z1));
-	SIMDf t2 = SIMDf_SUB(SIMDf_SUB(SIMDf_SUB(SIMDf_NUM(0_6), SIMDf_MUL(x2, x2)), SIMDf_MUL(y2, y2)), SIMDf_MUL(z2, z2));
-	SIMDf t3 = SIMDf_SUB(SIMDf_SUB(SIMDf_SUB(SIMDf_NUM(0_6), SIMDf_MUL(x3, x3)), SIMDf_MUL(y3, y3)), SIMDf_MUL(z3, z3));
+	SIMDf t0 = SIMDf_NMUL_ADD(z0, z0, SIMDf_NMUL_ADD(y0, y0, SIMDf_NMUL_ADD(x0, x0, SIMDf_NUM(0_6))));
+	SIMDf t1 = SIMDf_NMUL_ADD(z1, z1, SIMDf_NMUL_ADD(y1, y1, SIMDf_NMUL_ADD(x1, x1, SIMDf_NUM(0_6))));
+	SIMDf t2 = SIMDf_NMUL_ADD(z2, z2, SIMDf_NMUL_ADD(y2, y2, SIMDf_NMUL_ADD(x2, x2, SIMDf_NUM(0_6))));
+	SIMDf t3 = SIMDf_NMUL_ADD(z3, z3, SIMDf_NMUL_ADD(y3, y3, SIMDf_NMUL_ADD(x3, x3, SIMDf_NUM(0_6))));
 
 	MASK n0 = SIMDf_GREATER_EQUAL(t0, SIMDf_NUM(0));
 	MASK n1 = SIMDf_GREATER_EQUAL(t1, SIMDf_NUM(0));
