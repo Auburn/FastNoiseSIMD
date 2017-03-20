@@ -14,9 +14,8 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Multiple fractal options for all of the above
 - White Noise 3D
 - Cellular Noise 3D
-- Large variety of cellular noise settings
 - Perturb input coordinates in 3D space
-- Integrated noise sampling
+- Integrated up-sampling
 
 Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noise algorithm
 
@@ -54,12 +53,12 @@ Timings below are x1000 ns to generate 32x32x32 points of noise on a single thre
 
 | Noise Type  | AVX512 | AVX2 | SSE4.1 | SSE2 | FastNoise | LibNoise |
 |-------------|--------|------|--------|------|-----------|----------|
-| White Noise | 9      | 13   | 22     | 69   | 142       |          |
-| Value       | 102    | 159  | 338    | 799  | 614       |          |
-| Perlin      | 153    | 354  | 639    | 1037 | 964       | 1406     |
-| Simplex     | 158    | 350  | 601    | 729  | 1189      |          |
-| Cellular    | 991    | 1475 | 3206   | 4113 | 2949      | 57813    |
-| Cubic       | 908    | 1378 | 2663   | 5957 | 2949      |          |
+| White Noise | 9      | 13   | 22     | 69   | 141       |          |
+| Value       | 101    | 160  | 337    | 797  | 635       |          |
+| Perlin      | 152    | 342  | 605    | 986  | 964       | 1409     |
+| Simplex     | 157    | 340  | 580    | 732  | 1189      |          |
+| Cellular    | 984    | 1472 | 3202   | 4079 | 2933      | 56960    |
+| Cubic       | 899    | 1393 | 2652   | 5957 | 2933      |          |
 
 Comparision of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
