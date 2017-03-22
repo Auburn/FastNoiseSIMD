@@ -526,6 +526,8 @@ static float FUNC(INV_SQRT)(float x)
 
 #if SIMD_LEVEL == FN_NO_SIMD_FALLBACK
 #define SIMDf_ABS(a) fabsf(a)
+#elif SIMD_LEVEL == FN_AVX512
+#define SIMDf_ABS(a) _mm512_abs_ps(a)
 #else
 #define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 #endif
@@ -1353,7 +1355,7 @@ else\
 		seedF = SIMDi_ADD(seedF, SIMDi_NUM(1));\
 		\
 		ampF = SIMDf_MUL(ampF, gainV);\
-		result = SIMDf_SUB(result, SIMDf_MUL(SIMDf_SUB(SIMDf_NUM(1), SIMDf_ABS(FUNC(f##Single)(seedF, xF, yF, zF))), ampF));\
+		result = SIMDf_NMUL_ADD(SIMDf_SUB(SIMDf_NUM(1), SIMDf_ABS(FUNC(f##Single)(seedF, xF, yF, zF))), ampF, result);\
 	}
 
 #define FILL_SET(func) \
