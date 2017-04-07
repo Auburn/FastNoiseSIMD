@@ -53,12 +53,12 @@ Timings below are x1000 ns to generate 32x32x32 points of noise on a single thre
 
 | Noise Type  | AVX512 | AVX2 | SSE4.1 | SSE2 | FastNoise | LibNoise |
 |-------------|--------|------|--------|------|-----------|----------|
-| White Noise | 9      | 13   | 22     | 69   | 141       |          |
-| Value       | 101    | 160  | 337    | 797  | 635       |          |
-| Perlin      | 152    | 342  | 605    | 986  | 964       | 1409     |
-| Simplex     | 157    | 340  | 580    | 732  | 1189      |          |
-| Cellular    | 984    | 1472 | 3202   | 4079 | 2933      | 56960    |
-| Cubic       | 899    | 1393 | 2652   | 5957 | 2933      |          |
+| White Noise | 7      | 9    | 16     | 29   | 141       |          |
+| Value       | 92     | 152  | 324    | 436  | 642       |          |
+| Perlin      | 147    | 324  | 592    | 795  | 1002      | 1368     |
+| Simplex     | 129    | 294  | 548    | 604  | 1194      |          |
+| Cellular    | 851    | 1283 | 2679   | 2959 | 2979      | 58125    |
+| Cubic       | 615    | 952  | 1970   | 3516 | 2979      |          |
 
 Comparision of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
