@@ -159,6 +159,9 @@ static SIMDf SIMDf_NUM(1);
 #define SIMDf_STORE(p,a) vst1q_f32(p, a)
 #define SIMDf_LOAD(p) vld1q_f32(p)
 
+#define SIMDf_UNDEFINED() SIMDf_SET(0)
+#define SIMDi_UNDEFINED() SIMDi_SET(0)
+
 #define SIMDf_CONVERT_TO_FLOAT(a) vcvtq_f32_s32(a)
 #define SIMDf_CAST_TO_FLOAT(a) vreinterpretq_f32_s32(a)
 #define SIMDi_CONVERT_TO_INT(a) vcvtq_s32_f32(a)
@@ -237,6 +240,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_LOAD(p) _mm512_loadu_ps(p)
 #endif
 
+#define SIMDf_UNDEFINED() _mm512_undefined_ps()
+#define SIMDi_UNDEFINED() _mm512_undefined_epi32()
+
 #define SIMDf_ADD(a,b) _mm512_add_ps(a,b)
 #define SIMDf_SUB(a,b) _mm512_sub_ps(a,b)
 #define SIMDf_MUL(a,b) _mm512_mul_ps(a,b)
@@ -295,6 +301,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_LOAD(p) _mm256_loadu_ps(p)
 #endif
 
+#define SIMDf_UNDEFINED() _mm256_undefined_ps()
+#define SIMDi_UNDEFINED() _mm256_undefined_si256()
+
 #define SIMDf_CONVERT_TO_FLOAT(a) _mm256_cvtepi32_ps(a)
 #define SIMDf_CAST_TO_FLOAT(a) _mm256_castsi256_ps(a)
 #define SIMDi_CONVERT_TO_INT(a) _mm256_cvtps_epi32(a)
@@ -349,6 +358,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_STORE(p,a) _mm_storeu_ps(p,a)
 #define SIMDf_LOAD(p) _mm_loadu_ps(p)
 #endif
+
+#define SIMDf_UNDEFINED() SIMDf_SET_ZERO()
+#define SIMDi_UNDEFINED() SIMDi_SET_ZERO()
 
 #define SIMDf_CONVERT_TO_FLOAT(a) _mm_cvtepi32_ps(a)
 #define SIMDf_CAST_TO_FLOAT(a) _mm_castsi128_ps(a)
@@ -435,6 +447,9 @@ static float FUNC(CAST_TO_FLOAT)(int i) { return *reinterpret_cast<float*>(&i); 
 
 #define SIMDf_STORE(p,a) (*(p) = a)
 #define SIMDf_LOAD(p) (*p)
+
+#define SIMDf_UNDEFINED() (0)
+#define SIMDi_UNDEFINED() (0)
 
 #define SIMDf_ADD(a,b) ((a) + (b))
 #define SIMDf_SUB(a,b) ((a) - (b))
@@ -737,9 +752,9 @@ static SIMDi VECTORCALL FUNC(Hash)(SIMDi seed, SIMDi x, SIMDi y, SIMDi z)
 {
 	SIMDi hash = seed;
 
-	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	hash = SIMDi_XOR(x, hash);
+	hash = SIMDi_XOR(y, hash);
+	hash = SIMDi_XOR(z, hash);
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 	hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
@@ -751,9 +766,9 @@ static SIMDi VECTORCALL FUNC(HashHB)(SIMDi seed, SIMDi x, SIMDi y, SIMDi z)
 {
 	SIMDi hash = seed;
 
-	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	hash = SIMDi_XOR(x, hash);
+	hash = SIMDi_XOR(y, hash);
+	hash = SIMDi_XOR(z, hash);
 	//hash = SIMDi_XOR(SIMDi_SHIFT_R(hash, 13), hash);
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
@@ -766,9 +781,9 @@ static SIMDf VECTORCALL FUNC(ValCoord)(SIMDi seed, SIMDi x, SIMDi y, SIMDi z)
 	// High bit hash
 	SIMDi hash = seed;
 
-	hash = SIMDi_XOR(SIMDi_MUL(x, SIMDi_NUM(xPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_MUL(y, SIMDi_NUM(yPrime)), hash);
-	hash = SIMDi_XOR(SIMDi_MUL(z, SIMDi_NUM(zPrime)), hash);
+	hash = SIMDi_XOR(x, hash);
+	hash = SIMDi_XOR(y, hash);
+	hash = SIMDi_XOR(z, hash);
 
 	hash = SIMDi_MUL(SIMDi_MUL(SIMDi_MUL(hash, hash), SIMDi_NUM(60493)), hash);
 	//hash = SIMDi_XOR(SIMDi_SHIFT_L(hash, 13), hash);
@@ -840,9 +855,9 @@ static SIMDf VECTORCALL FUNC(GradCoord)(SIMDi seed, SIMDi xi, SIMDi yi, SIMDi zi
 static SIMDf VECTORCALL FUNC(WhiteNoiseSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)
 {
 	return FUNC(ValCoord)(seed,
-		SIMDi_XOR(SIMDi_CAST_TO_INT(x), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(x), 16)),
-		SIMDi_XOR(SIMDi_CAST_TO_INT(y), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(y), 16)),
-		SIMDi_XOR(SIMDi_CAST_TO_INT(z), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(z), 16)));
+		SIMDi_MUL(SIMDi_XOR(SIMDi_CAST_TO_INT(x), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(x), 16)), SIMDi_NUM(xPrime)),
+		SIMDi_MUL(SIMDi_XOR(SIMDi_CAST_TO_INT(y), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(y), 16)), SIMDi_NUM(yPrime)),
+		SIMDi_MUL(SIMDi_XOR(SIMDi_CAST_TO_INT(z), SIMDi_SHIFT_R(SIMDi_CAST_TO_INT(z), 16)), SIMDi_NUM(zPrime)));
 }
 
 static SIMDf VECTORCALL FUNC(ValueSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)
@@ -851,12 +866,12 @@ static SIMDf VECTORCALL FUNC(ValueSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)
 	SIMDf ys = SIMDf_FLOOR(y);
 	SIMDf zs = SIMDf_FLOOR(z);
 
-	SIMDi x0 = SIMDi_CONVERT_TO_INT(xs);
-	SIMDi y0 = SIMDi_CONVERT_TO_INT(ys);
-	SIMDi z0 = SIMDi_CONVERT_TO_INT(zs);
-	SIMDi x1 = SIMDi_ADD(x0, SIMDi_NUM(1));
-	SIMDi y1 = SIMDi_ADD(y0, SIMDi_NUM(1));
-	SIMDi z1 = SIMDi_ADD(z0, SIMDi_NUM(1));
+	SIMDi x0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(xs), SIMDi_NUM(xPrime));
+	SIMDi y0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(ys), SIMDi_NUM(yPrime));
+	SIMDi z0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(zs), SIMDi_NUM(zPrime));
+	SIMDi x1 = SIMDi_ADD(x0, SIMDi_NUM(xPrime));
+	SIMDi y1 = SIMDi_ADD(y0, SIMDi_NUM(yPrime));
+	SIMDi z1 = SIMDi_ADD(z0, SIMDi_NUM(zPrime));
 
 	xs = FUNC(InterpQuintic)(SIMDf_SUB(x, xs));
 	ys = FUNC(InterpQuintic)(SIMDf_SUB(y, ys));
@@ -877,12 +892,12 @@ static SIMDf VECTORCALL FUNC(PerlinSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z
 	SIMDf ys = SIMDf_FLOOR(y);
 	SIMDf zs = SIMDf_FLOOR(z);
 
-	SIMDi x0 = SIMDi_CONVERT_TO_INT(xs);
-	SIMDi y0 = SIMDi_CONVERT_TO_INT(ys);
-	SIMDi z0 = SIMDi_CONVERT_TO_INT(zs);
-	SIMDi x1 = SIMDi_ADD(x0, SIMDi_NUM(1));
-	SIMDi y1 = SIMDi_ADD(y0, SIMDi_NUM(1));
-	SIMDi z1 = SIMDi_ADD(z0, SIMDi_NUM(1));
+	SIMDi x0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(xs), SIMDi_NUM(xPrime));
+	SIMDi y0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(ys), SIMDi_NUM(yPrime));
+	SIMDi z0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(zs), SIMDi_NUM(zPrime));
+	SIMDi x1 = SIMDi_ADD(x0, SIMDi_NUM(xPrime));
+	SIMDi y1 = SIMDi_ADD(y0, SIMDi_NUM(yPrime));
+	SIMDi z1 = SIMDi_ADD(z0, SIMDi_NUM(zPrime));
 
 	SIMDf xf0 = xs = SIMDf_SUB(x, xs);
 	SIMDf yf0 = ys = SIMDf_SUB(y, ys);
@@ -911,11 +926,11 @@ static SIMDf VECTORCALL FUNC(SimplexSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf 
 	SIMDf y0 = SIMDf_FLOOR(SIMDf_ADD(y, f));
 	SIMDf z0 = SIMDf_FLOOR(SIMDf_ADD(z, f));
 
-	SIMDi i = SIMDi_CONVERT_TO_INT(x0);
-	SIMDi j = SIMDi_CONVERT_TO_INT(y0);
-	SIMDi k = SIMDi_CONVERT_TO_INT(z0);
+	SIMDi i = SIMDi_MUL(SIMDi_CONVERT_TO_INT(x0), SIMDi_NUM(xPrime));
+	SIMDi j = SIMDi_MUL(SIMDi_CONVERT_TO_INT(y0), SIMDi_NUM(yPrime));
+	SIMDi k = SIMDi_MUL(SIMDi_CONVERT_TO_INT(z0), SIMDi_NUM(zPrime));
 
-	SIMDf g = SIMDf_MUL(SIMDf_NUM(G3), SIMDf_CONVERT_TO_FLOAT(SIMDi_ADD(SIMDi_ADD(i, j), k)));
+	SIMDf g = SIMDf_MUL(SIMDf_NUM(G3), SIMDf_ADD(SIMDf_ADD(x0, y0), z0));
 	x0 = SIMDf_SUB(x, SIMDf_SUB(x0, g));
 	y0 = SIMDf_SUB(y, SIMDf_SUB(y0, g));
 	z0 = SIMDf_SUB(z, SIMDf_SUB(z0, g));
@@ -958,9 +973,9 @@ static SIMDf VECTORCALL FUNC(SimplexSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf 
 	t3 = SIMDf_MUL(t3, t3);
 
 	SIMDf v0 = SIMDf_MUL(SIMDf_MUL(t0, t0), FUNC(GradCoord)(seed, i, j, k, x0, y0, z0));
-	SIMDf v1 = SIMDf_MUL(SIMDf_MUL(t1, t1), FUNC(GradCoord)(seed, SIMDi_MASK_ADD(i1, i, SIMDi_NUM(1)), SIMDi_MASK_ADD(j1, j, SIMDi_NUM(1)), SIMDi_MASK_ADD(k1, k, SIMDi_NUM(1)), x1, y1, z1));
-	SIMDf v2 = SIMDf_MUL(SIMDf_MUL(t2, t2), FUNC(GradCoord)(seed, SIMDi_MASK_ADD(i2, i, SIMDi_NUM(1)), SIMDi_MASK_ADD(j2, j, SIMDi_NUM(1)), SIMDi_MASK_ADD(k2, k, SIMDi_NUM(1)), x2, y2, z2));
-	SIMDf v3 = SIMDf_MASK(n3, SIMDf_MUL(SIMDf_MUL(t3, t3), FUNC(GradCoord)(seed, SIMDi_ADD(i, SIMDi_NUM(1)), SIMDi_ADD(j, SIMDi_NUM(1)), SIMDi_ADD(k, SIMDi_NUM(1)), x3, y3, z3)));
+	SIMDf v1 = SIMDf_MUL(SIMDf_MUL(t1, t1), FUNC(GradCoord)(seed, SIMDi_MASK_ADD(i1, i, SIMDi_NUM(xPrime)), SIMDi_MASK_ADD(j1, j, SIMDi_NUM(yPrime)), SIMDi_MASK_ADD(k1, k, SIMDi_NUM(zPrime)), x1, y1, z1));
+	SIMDf v2 = SIMDf_MUL(SIMDf_MUL(t2, t2), FUNC(GradCoord)(seed, SIMDi_MASK_ADD(i2, i, SIMDi_NUM(xPrime)), SIMDi_MASK_ADD(j2, j, SIMDi_NUM(yPrime)), SIMDi_MASK_ADD(k2, k, SIMDi_NUM(zPrime)), x2, y2, z2));
+	SIMDf v3 = SIMDf_MASK(n3, SIMDf_MUL(SIMDf_MUL(t3, t3), FUNC(GradCoord)(seed, SIMDi_ADD(i, SIMDi_NUM(xPrime)), SIMDi_ADD(j, SIMDi_NUM(yPrime)), SIMDi_ADD(k, SIMDi_NUM(zPrime)), x3, y3, z3)));
 
 	return SIMDf_MUL(SIMDf_NUM(32), SIMDf_MASK_ADD(n0, SIMDf_MASK_ADD(n1, SIMDf_MASK_ADD(n2, v3, v2), v1), v0));
 }
@@ -971,19 +986,19 @@ static SIMDf VECTORCALL FUNC(CubicSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)
 	SIMDf yf1 = SIMDf_FLOOR(y);
 	SIMDf zf1 = SIMDf_FLOOR(z);
 
-	SIMDi x1 = SIMDi_CONVERT_TO_INT(xf1);
-	SIMDi y1 = SIMDi_CONVERT_TO_INT(yf1);
-	SIMDi z1 = SIMDi_CONVERT_TO_INT(zf1);
+	SIMDi x1 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(xf1), SIMDi_NUM(xPrime));
+	SIMDi y1 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(yf1), SIMDi_NUM(yPrime));
+	SIMDi z1 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(zf1), SIMDi_NUM(zPrime));
 
-	SIMDi x0 = SIMDi_SUB(x1, SIMDi_NUM(1));
-	SIMDi y0 = SIMDi_SUB(y1, SIMDi_NUM(1));
-	SIMDi z0 = SIMDi_SUB(z1, SIMDi_NUM(1));
-	SIMDi x2 = SIMDi_ADD(x1, SIMDi_NUM(1));
-	SIMDi y2 = SIMDi_ADD(y1, SIMDi_NUM(1));
-	SIMDi z2 = SIMDi_ADD(z1, SIMDi_NUM(1));
-	SIMDi x3 = SIMDi_ADD(x1, SIMDi_NUM(2));
-	SIMDi y3 = SIMDi_ADD(y1, SIMDi_NUM(2));
-	SIMDi z3 = SIMDi_ADD(z1, SIMDi_NUM(2));
+	SIMDi x0 = SIMDi_SUB(x1, SIMDi_NUM(xPrime));
+	SIMDi y0 = SIMDi_SUB(y1, SIMDi_NUM(yPrime));
+	SIMDi z0 = SIMDi_SUB(z1, SIMDi_NUM(zPrime));
+	SIMDi x2 = SIMDi_ADD(x1, SIMDi_NUM(xPrime));
+	SIMDi y2 = SIMDi_ADD(y1, SIMDi_NUM(yPrime));
+	SIMDi z2 = SIMDi_ADD(z1, SIMDi_NUM(zPrime));
+	SIMDi x3 = SIMDi_ADD(x2, SIMDi_NUM(xPrime));
+	SIMDi y3 = SIMDi_ADD(y2, SIMDi_NUM(yPrime));
+	SIMDi z3 = SIMDi_ADD(z2, SIMDi_NUM(zPrime));
 
 	SIMDf xs = SIMDf_SUB(x, xf1);
 	SIMDf ys = SIMDf_SUB(y, yf1);
@@ -1038,12 +1053,12 @@ static void VECTORCALL FUNC(GradientPerturbSingle)(SIMDi seed, SIMDf perturbAmp,
 	SIMDf ys = SIMDf_FLOOR(yf);
 	SIMDf zs = SIMDf_FLOOR(zf);
 
-	SIMDi x0 = SIMDi_CONVERT_TO_INT(xs);
-	SIMDi y0 = SIMDi_CONVERT_TO_INT(ys);
-	SIMDi z0 = SIMDi_CONVERT_TO_INT(zs);
-	SIMDi x1 = SIMDi_ADD(x0, SIMDi_NUM(1));
-	SIMDi y1 = SIMDi_ADD(y0, SIMDi_NUM(1));
-	SIMDi z1 = SIMDi_ADD(z0, SIMDi_NUM(1));
+	SIMDi x0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(xs), SIMDi_NUM(xPrime));
+	SIMDi y0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(ys), SIMDi_NUM(yPrime));
+	SIMDi z0 = SIMDi_MUL(SIMDi_CONVERT_TO_INT(zs), SIMDi_NUM(zPrime));
+	SIMDi x1 = SIMDi_ADD(x0, SIMDi_NUM(xPrime));
+	SIMDi y1 = SIMDi_ADD(y0, SIMDi_NUM(yPrime));
+	SIMDi z1 = SIMDi_ADD(z0, SIMDi_NUM(zPrime));
 
 	xs = FUNC(InterpQuintic)(SIMDf_SUB(xf, xs));
 	ys = FUNC(InterpQuintic)(SIMDf_SUB(yf, ys));
@@ -1624,19 +1639,27 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)\
 {\
 	SIMDf distance = SIMDf_NUM(999999);\
-	SIMDf cellValue = SIMDf_NUM(0);\
+	SIMDf cellValue = SIMDf_UNDEFINED();\
 	\
-	SIMDi xc = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
+	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
+	SIMDf xcf     = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+	SIMDf ycfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(ycBase), y);\
+	SIMDf zcfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zcBase), z);\
+	\
+	xc     = SIMDi_MUL(xc, SIMDi_NUM(xPrime));\
+	ycBase = SIMDi_MUL(ycBase, SIMDi_NUM(yPrime));\
+	zcBase = SIMDi_MUL(zcBase, SIMDi_NUM(zPrime));\
+	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
-		SIMDf xcf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+		SIMDf ycf = ycfBase;\
 		SIMDi yc = ycBase;\
 		for (int yi = 0; yi < 3; yi++)\
 		{\
-			SIMDf ycf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(yc), y);\
+			SIMDf zcf = zcfBase;\
 			SIMDi zc = zcBase;\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
@@ -1659,11 +1682,14 @@ static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(SIMDi seed, SI
 				distance = SIMDf_MIN(newDistance, distance);\
 				cellValue = SIMDf_BLENDV(cellValue, newCellValue, closer);\
 				\
-				zc = SIMDi_ADD(zc, SIMDi_NUM(1));\
+				zcf = SIMDf_ADD(zcf, SIMDf_NUM(1));\
+				zc = SIMDi_ADD(zc, SIMDi_NUM(zPrime));\
 			}\
-			yc = SIMDi_ADD(yc, SIMDi_NUM(1));\
+			ycf = SIMDf_ADD(ycf, SIMDf_NUM(1));\
+			yc = SIMDi_ADD(yc, SIMDi_NUM(yPrime));\
 		}\
-		xc = SIMDi_ADD(xc, SIMDi_NUM(1));\
+		xcf = SIMDf_ADD(xcf, SIMDf_NUM(1));\
+		xc = SIMDi_ADD(xc, SIMDi_NUM(xPrime));\
 	}\
 	\
 	return cellValue;\
@@ -1702,28 +1728,34 @@ switch(noiseLookupSettings.fractalType)\
 static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(SIMDi seedV, SIMDf x, SIMDf y, SIMDf z, const NoiseLookupSettings& noiseLookupSettings)\
 {\
 	SIMDf distance = SIMDf_NUM(999999);\
+	SIMDf xCell = SIMDf_UNDEFINED();\
+	SIMDf yCell = SIMDf_UNDEFINED();\
+	SIMDf zCell = SIMDf_UNDEFINED();\
 	\
-	SIMDi xc = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
+	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
-	SIMDf xCell = SIMDf_NUM(0);\
-	SIMDf yCell = SIMDf_NUM(0);\
-	SIMDf zCell = SIMDf_NUM(0);\
+	SIMDf xcf     = SIMDf_CONVERT_TO_FLOAT(xc);\
+	SIMDf ycfBase = SIMDf_CONVERT_TO_FLOAT(ycBase);\
+	SIMDf zcfBase = SIMDf_CONVERT_TO_FLOAT(zcBase);\
+	\
+	xc     = SIMDi_MUL(xc, SIMDi_NUM(xPrime));\
+	ycBase = SIMDi_MUL(ycBase, SIMDi_NUM(yPrime));\
+	zcBase = SIMDi_MUL(zcBase, SIMDi_NUM(zPrime));\
 	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
-		SIMDf xcf = SIMDf_CONVERT_TO_FLOAT(xc);\
-		SIMDf xLocal = SIMDf_SUB(xcf, x);\
+		SIMDf ycf = ycfBase;\
 		SIMDi yc = ycBase;\
+		SIMDf xLocal = SIMDf_SUB(xcf, x);\
 		for (int yi = 0; yi < 3; yi++)\
 		{\
-			SIMDf ycf = SIMDf_CONVERT_TO_FLOAT(yc);\
-			SIMDf yLocal = SIMDf_SUB(ycf, y);\
+			SIMDf zcf = zcfBase;\
 			SIMDi zc = zcBase;\
+			SIMDf yLocal = SIMDf_SUB(ycf, y);\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
-				SIMDf zcf = SIMDf_CONVERT_TO_FLOAT(zc);\
 				SIMDf zLocal = SIMDf_SUB(zcf, z);\
 				\
 				SIMDi hash = FUNC(HashHB)(seedV, xc, yc, zc);\
@@ -1754,17 +1786,20 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(SIMDi seedV, 
 				yCell = SIMDf_BLENDV(yCell, yCellNew, closer);\
 				zCell = SIMDf_BLENDV(zCell, zCellNew, closer);\
 				\
-				zc = SIMDi_ADD(zc, SIMDi_NUM(1));\
+				zcf = SIMDf_ADD(zcf, SIMDf_NUM(1));\
+				zc = SIMDi_ADD(zc, SIMDi_NUM(zPrime));\
 			}\
-			yc = SIMDi_ADD(yc, SIMDi_NUM(1));\
+			ycf = SIMDf_ADD(ycf, SIMDf_NUM(1));\
+			yc = SIMDi_ADD(yc, SIMDi_NUM(yPrime));\
 		}\
-		xc = SIMDi_ADD(xc, SIMDi_NUM(1));\
+		xcf = SIMDf_ADD(xcf, SIMDf_NUM(1));\
+		xc = SIMDi_ADD(xc, SIMDi_NUM(xPrime));\
 	}\
 	\
 	SIMDf xF = SIMDf_MUL(xCell, noiseLookupSettings.frequency);\
 	SIMDf yF = SIMDf_MUL(yCell, noiseLookupSettings.frequency);\
 	SIMDf zF = SIMDf_MUL(zCell, noiseLookupSettings.frequency);\
-	SIMDf result = SIMDf_NUM(0);\
+	SIMDf result;\
 	\
 	switch(noiseLookupSettings.type)\
 	{\
@@ -1804,17 +1839,25 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 {\
 	SIMDf distance = SIMDf_NUM(999999);\
 	\
-	SIMDi xc = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
+	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
+	SIMDf xcf     = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+	SIMDf ycfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(ycBase), y);\
+	SIMDf zcfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zcBase), z);\
+	\
+	xc     = SIMDi_MUL(xc, SIMDi_NUM(xPrime));\
+	ycBase = SIMDi_MUL(ycBase, SIMDi_NUM(yPrime));\
+	zcBase = SIMDi_MUL(zcBase, SIMDi_NUM(zPrime));\
+	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
-		SIMDf xcf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+		SIMDf ycf = ycfBase;\
 		SIMDi yc = ycBase;\
 		for (int yi = 0; yi < 3; yi++)\
 		{\
-			SIMDf ycf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(yc), y);\
+			SIMDf zcf = zcfBase;\
 			SIMDi zc = zcBase;\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
@@ -1833,11 +1876,14 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 				\
 				distance = SIMDf_MIN(distance, newDistance);\
 				\
-				zc = SIMDi_ADD(zc, SIMDi_NUM(1));\
+				zcf = SIMDf_ADD(zcf, SIMDf_NUM(1));\
+				zc = SIMDi_ADD(zc, SIMDi_NUM(zPrime));\
 			}\
-			yc = SIMDi_ADD(yc, SIMDi_NUM(1));\
+			ycf = SIMDf_ADD(ycf, SIMDf_NUM(1));\
+			yc = SIMDi_ADD(yc, SIMDi_NUM(yPrime));\
 		}\
-		xc = SIMDi_ADD(xc, SIMDi_NUM(1));\
+		xcf = SIMDf_ADD(xcf, SIMDf_NUM(1));\
+		xc = SIMDi_ADD(xc, SIMDi_NUM(xPrime));\
 	}\
 	\
 	return SIMDf_SUB(distance, SIMDf_NUM(1));\
@@ -1849,17 +1895,25 @@ static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi s
 	SIMDf distance = SIMDf_NUM(999999);\
 	SIMDf distance2 = SIMDf_NUM(999999);\
 	\
-	SIMDi xc = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
+	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
 	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
 	\
+	SIMDf xcf     = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+	SIMDf ycfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(ycBase), y);\
+	SIMDf zcfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zcBase), z);\
+	\
+	xc     = SIMDi_MUL(xc, SIMDi_NUM(xPrime));\
+	ycBase = SIMDi_MUL(ycBase, SIMDi_NUM(yPrime));\
+	zcBase = SIMDi_MUL(zcBase, SIMDi_NUM(zPrime));\
+	\
 	for (int xi = 0; xi < 3; xi++)\
 	{\
-		SIMDf xcf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+		SIMDf ycf = ycfBase;\
 		SIMDi yc = ycBase;\
 		for (int yi = 0; yi < 3; yi++)\
 		{\
-			SIMDf ycf = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(yc), y);\
+			SIMDf zcf = zcfBase;\
 			SIMDi zc = zcBase;\
 			for (int zi = 0; zi < 3; zi++)\
 			{\
@@ -1872,18 +1926,21 @@ static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi s
 				\
 				xd = SIMDf_MUL_ADD(xd, invMag, xcf);\
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
-				zd = SIMDf_MUL_ADD(zd, invMag, SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zc), z));\
+				zd = SIMDf_MUL_ADD(zd, invMag, zcf);\
 				\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
 				distance2 = SIMDf_MAX(SIMDf_MIN(distance2, newDistance), distance);\
 				distance = SIMDf_MIN(distance, newDistance);\
 				\
-				zc = SIMDi_ADD(zc, SIMDi_NUM(1));\
+				zcf = SIMDf_ADD(zcf, SIMDf_NUM(1));\
+				zc = SIMDi_ADD(zc, SIMDi_NUM(zPrime));\
 			}\
-			yc = SIMDi_ADD(yc, SIMDi_NUM(1));\
+			ycf = SIMDf_ADD(ycf, SIMDf_NUM(1));\
+			yc = SIMDi_ADD(yc, SIMDi_NUM(yPrime));\
 		}\
-		xc = SIMDi_ADD(xc, SIMDi_NUM(1));\
+		xcf = SIMDf_ADD(xcf, SIMDf_NUM(1));\
+		xc = SIMDi_ADD(xc, SIMDi_NUM(xPrime));\
 	}\
 	\
 	return SIMDf_SUB(returnFunc##_RETURN(distance, distance2), SIMDf_NUM(1));\
