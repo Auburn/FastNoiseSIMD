@@ -259,3 +259,4 @@ paket-files/
 *.exe
 /avxPerm
 *.filters
+/TEST/FastNoiseSIMD Preview

@@ -197,6 +197,7 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_FLOOR(a) vrndmq_f32(a)
 #endif
 
+#define SIMDf_ABS(a) vabsq_f32(a)
 #define SIMDf_BLENDV(a,b,mask) vbslq_f32(mask,b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
@@ -249,6 +250,7 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_XOR(a,b) _mm512_xor_ps(a,b)
 
 #define SIMDf_FLOOR(a) _mm512_floor_ps(a)
+#define SIMDf_ABS(a) _mm512_abs_ps(a)
 #define SIMDf_BLENDV(a,b,mask) _mm512_mask_blend_ps(mask,a,b)
 #define SIMDf_GATHER(p,a) _mm512_i32gather_ps(a,p,4)
 #define SIMDf_PERMUTE(a,b) _mm512_permutexvar_ps(b,a)
@@ -315,8 +317,8 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_XOR(a,b) _mm256_xor_ps(a,b)
 
 #define SIMDf_FLOOR(a) _mm256_floor_ps(a)
+#define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 #define SIMDf_BLENDV(a,b,mask) _mm256_blendv_ps(a,b,SIMDf_CAST_TO_FLOAT(mask))
-#define SIMDf_GATHER(p,a) _mm256_i32gather_ps(p,a,4)
 #define SIMDf_PERMUTE(a,b) _mm256_permutevar8x32_ps(a,b)
 
 #define SIMDi_ADD(a,b) _mm256_add_epi32(a,b)
@@ -372,6 +374,8 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDf_AND_NOT(a,b) _mm_andnot_ps(a,b)
 #define SIMDf_XOR(a,b) _mm_xor_ps(a,b)
 
+#define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
+
 #if SIMD_LEVEL == FN_SSE41
 #define SIMDi_MUL(a,b) _mm_mullo_epi32(a,b)
 #define SIMDf_FLOOR(a) _mm_floor_ps(a)
@@ -395,19 +399,6 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 
 #define SIMDf_BLENDV(a,b,mask) _mm_or_ps(_mm_andnot_ps(SIMDf_CAST_TO_FLOAT(mask), a), _mm_and_ps(SIMDf_CAST_TO_FLOAT(mask), b))
 #endif
-
-static SIMDf VECTORCALL FUNC(GATHER)(const float* p, SIMDi a)
-{
-	const uSIMDi* m = reinterpret_cast<const uSIMDi*>(&a);
-	uSIMDf r;
-
-	for (int i = 0; i < VECTOR_SIZE; i++)
-	{
-		r.a[i] = *(p + m->a[i]);
-	}
-	return r.m;
-}
-#define SIMDf_GATHER(p,a) FUNC(GATHER)(p, a)
 
 #define SIMDi_ADD(a,b) _mm_add_epi32(a,b)
 #define SIMDi_SUB(a,b) _mm_sub_epi32(a,b)
@@ -467,6 +458,7 @@ static float FUNC(INV_SQRT)(float x)
 #define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(SIMDi_CAST_TO_INT(a) ^ SIMDi_CAST_TO_INT(b))
 
 #define SIMDf_FLOOR(a) floorf(a)
+#define SIMDf_ABS(a) fabsf(a)
 #define SIMDf_BLENDV(a,b,mask) (mask ? (b) : (a))
 #define SIMDf_GATHER(p,a) (*(reinterpret_cast<const float*>(p)+(a)))
 
@@ -526,12 +518,10 @@ static float FUNC(INV_SQRT)(float x)
 
 #endif
 
-#if SIMD_LEVEL == FN_NO_SIMD_FALLBACK
-#define SIMDf_ABS(a) fabsf(a)
-#elif SIMD_LEVEL == FN_AVX512
-#define SIMDf_ABS(a) _mm512_abs_ps(a)
+#if SIMD_LEVEL == FN_AVX512
+#elif SIMD_LEVEL == FN_NEON
+#elif SIMD_LEVEL == FN_NO_SIMD_FALLBACK
 #else
-#define SIMDf_ABS(a) SIMDf_AND(a,SIMDf_CAST_TO_FLOAT(SIMDi_NUM(0x7fffffff)))
 #endif
 
 #if SIMD_LEVEL == FN_AVX2
@@ -574,11 +564,12 @@ static SIMDf SIMDf_NUM(15);
 static SIMDf SIMDf_NUM(32);
 static SIMDf SIMDf_NUM(999999);
 
-static SIMDf SIMDf_NUM(0_45);
 static SIMDf SIMDf_NUM(0_5);
 static SIMDf SIMDf_NUM(0_6);
+static SIMDf SIMDf_NUM(15_5);
 static SIMDf SIMDf_NUM(511_5);
 
+static SIMDf SIMDf_NUM(cellLength);
 static SIMDf SIMDf_NUM(F3);
 static SIMDf SIMDf_NUM(G3);
 static SIMDf SIMDf_NUM(G33);
@@ -611,6 +602,7 @@ static SIMDi SIMDi_NUM(0x7fffffff);
 static SIMDi SIMDi_NUM(xPrime);
 static SIMDi SIMDi_NUM(yPrime);
 static SIMDi SIMDi_NUM(zPrime);
+static SIMDi SIMDi_NUM(bit5Mask);
 static SIMDi SIMDi_NUM(bit10Mask);
 static SIMDi SIMDi_NUM(vectorSize);
 
@@ -638,11 +630,12 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(32) = SIMDf_SET(32.0f);
 	SIMDf_NUM(999999) = SIMDf_SET(999999.0f);
 
-	SIMDf_NUM(0_45) = SIMDf_SET(0.45f);
 	SIMDf_NUM(0_5) = SIMDf_SET(0.5f);
 	SIMDf_NUM(0_6) = SIMDf_SET(0.6f);
+	SIMDf_NUM(15_5) = SIMDf_SET(15.5f);
 	SIMDf_NUM(511_5) = SIMDf_SET(511.5f);
 
+	SIMDf_NUM(cellLength) = SIMDf_SET(0.39614f);
 	SIMDf_NUM(F3) = SIMDf_SET(1.f / 3.f);
 	SIMDf_NUM(G3) = SIMDf_SET(1.f / 6.f);
 	SIMDf_NUM(G33) = SIMDf_SET((3.f / 6.f) - 1.f);
@@ -674,6 +667,7 @@ void FUNC(InitSIMDValues)()
 	SIMDi_NUM(xPrime) = SIMDi_SET(1619);
 	SIMDi_NUM(yPrime) = SIMDi_SET(31337);
 	SIMDi_NUM(zPrime) = SIMDi_SET(6971);
+	SIMDi_NUM(bit5Mask) = SIMDi_SET(31);
 	SIMDi_NUM(bit10Mask) = SIMDi_SET(1023);
 	SIMDi_NUM(vectorSize) = SIMDi_SET(VECTOR_SIZE);
 
@@ -983,7 +977,7 @@ SIMDf x##_x##_y##_z = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(hash##_x##_y##_
 SIMDf y##_x##_y##_z = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash##_x##_y##_z, 10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5)); \
 SIMDf z##_x##_y##_z = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash##_x##_y##_z, 20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5)); 
 
-//SIMDf invMag##_x##_y##_z = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(x##_x##_y##_z, x##_x##_y##_z, SIMDf_MUL_ADD(y##_x##_y##_z, y##_x##_y##_z, SIMDf_MUL(z##_x##_y##_z, z##_x##_y##_z)))));
+//SIMDf invMag##_x##_y##_z = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(x##_x##_y##_z, x##_x##_y##_z, SIMDf_MUL_ADD(y##_x##_y##_z, y##_x##_y##_z, SIMDf_MUL(z##_x##_y##_z, z##_x##_y##_z)))));
 //x##_x##_y##_z = SIMDf_MUL(x##_x##_y##_z, invMag##_x##_y##_z);
 //y##_x##_y##_z = SIMDf_MUL(y##_x##_y##_z, invMag##_x##_y##_z); 
 //z##_x##_y##_z = SIMDf_MUL(z##_x##_y##_z, invMag##_x##_y##_z);
@@ -1613,7 +1607,7 @@ static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(SIMDi seed, SI
 				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
-				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
+				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
 				xd = SIMDf_MUL_ADD(xd, invMag, xcf);\
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
@@ -1708,7 +1702,7 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(SIMDi seedV, 
 				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
-				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
+				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
 				SIMDf xCellNew = SIMDf_MUL(xd, invMag);\
 				SIMDf yCellNew = SIMDf_MUL(yd, invMag);\
@@ -1811,7 +1805,7 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
-				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
+				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
 				xd = SIMDf_MUL_ADD(xd, invMag, xcf);\
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
@@ -1835,10 +1829,9 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 }
 
 #define CELLULAR_DISTANCE2_SINGLE(distanceFunc, returnFunc)\
-static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)\
+static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z, int index0, int index1)\
 {\
-	SIMDf distance = SIMDf_NUM(999999);\
-	SIMDf distance2 = SIMDf_NUM(999999);\
+	SIMDf distance[4] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
 	\
 	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
@@ -1867,7 +1860,7 @@ static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi s
 				SIMDf yd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				SIMDf zd = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit10Mask))), SIMDf_NUM(511_5));\
 				\
-				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(0_45), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
+				SIMDf invMag = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd, xd, SIMDf_MUL_ADD(yd, yd, SIMDf_MUL(zd, zd)))));\
 				\
 				xd = SIMDf_MUL_ADD(xd, invMag, xcf);\
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
@@ -1875,8 +1868,9 @@ static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi s
 				\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
-				distance2 = SIMDf_MAX(SIMDf_MIN(distance2, newDistance), distance);\
-				distance = SIMDf_MIN(distance, newDistance);\
+				for(int i = index1; i > 0; i--)\
+					distance[i] = SIMDf_MAX(SIMDf_MIN(distance[i], newDistance), distance[i-1]);\
+				distance[0] = SIMDf_MIN(distance[0], newDistance);\
 				\
 				zcf = SIMDf_ADD(zcf, SIMDf_NUM(1));\
 				zc = SIMDi_ADD(zc, SIMDi_NUM(zPrime));\
@@ -1888,7 +1882,77 @@ static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi s
 		xc = SIMDi_ADD(xc, SIMDi_NUM(xPrime));\
 	}\
 	\
-	return SIMDf_SUB(returnFunc##_RETURN(distance, distance2), SIMDf_NUM(1));\
+	return SIMDf_SUB(returnFunc##_RETURN(distance[index0], distance[index1]), SIMDf_NUM(1));\
+}
+
+#define CELLULAR_DISTANCE2CAVE_SINGLE(distanceFunc)\
+static SIMDf VECTORCALL FUNC(CellularDistance2Cave##distanceFunc##Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z, int index0, int index1)\
+{\
+	SIMDf distance0[4] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
+	SIMDf distance1[4] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
+	\
+	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
+	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
+	SIMDi zcBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(z), SIMDi_NUM(1));\
+	\
+	SIMDf xcf     = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(xc), x);\
+	SIMDf ycfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(ycBase), y);\
+	SIMDf zcfBase = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zcBase), z);\
+	\
+	xc     = SIMDi_MUL(xc, SIMDi_NUM(xPrime));\
+	ycBase = SIMDi_MUL(ycBase, SIMDi_NUM(yPrime));\
+	zcBase = SIMDi_MUL(zcBase, SIMDi_NUM(zPrime));\
+	\
+	for (int xi = 0; xi < 3; xi++)\
+	{\
+		SIMDf ycf = ycfBase;\
+		SIMDi yc = ycBase;\
+		for (int yi = 0; yi < 3; yi++)\
+		{\
+			SIMDf zcf = zcfBase;\
+			SIMDi zc = zcBase;\
+			for (int zi = 0; zi < 3; zi++)\
+			{\
+				SIMDi hash = FUNC(HashHB)(seed, xc, yc, zc);\
+				SIMDf xd0 = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(hash, SIMDi_NUM(bit5Mask))), SIMDf_NUM(15_5));\
+				SIMDf yd0 = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,5), SIMDi_NUM(bit5Mask))), SIMDf_NUM(15_5));\
+				SIMDf zd0 = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,10), SIMDi_NUM(bit5Mask))), SIMDf_NUM(15_5));\
+				SIMDf xd1 = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,15), SIMDi_NUM(bit5Mask))), SIMDf_NUM(15_5));\
+				SIMDf yd1 = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,20), SIMDi_NUM(bit5Mask))), SIMDf_NUM(15_5));\
+				SIMDf zd1 = SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(SIMDi_AND(SIMDi_SHIFT_R(hash,25), SIMDi_NUM(bit5Mask))), SIMDf_NUM(15_5));\
+				\
+				SIMDf invMag0 = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd0, xd0, SIMDf_MUL_ADD(yd0, yd0, SIMDf_MUL(zd0, zd0)))));\
+				SIMDf invMag1 = SIMDf_MUL(SIMDf_NUM(cellLength), SIMDf_INV_SQRT(SIMDf_MUL_ADD(xd1, xd1, SIMDf_MUL_ADD(yd1, yd1, SIMDf_MUL(zd1, zd1)))));\
+				\
+				xd0 = SIMDf_MUL_ADD(xd0, invMag0, xcf);\
+				yd0 = SIMDf_MUL_ADD(yd0, invMag0, ycf);\
+				zd0 = SIMDf_MUL_ADD(zd0, invMag0, zcf);\
+				xd1 = SIMDf_MUL_ADD(xd1, invMag1, xcf);\
+				yd1 = SIMDf_MUL_ADD(yd1, invMag1, ycf);\
+				zd1 = SIMDf_MUL_ADD(zd1, invMag1, zcf);\
+				\
+				SIMDf newDistance0 = distanceFunc##_DISTANCE(xd0, yd0, zd0);\
+				SIMDf newDistance1 = distanceFunc##_DISTANCE(xd1, yd1, zd1);\
+				\
+				for(int i = index1; i > 0; i--)\
+				{\
+					distance0[i] = SIMDf_MAX(SIMDf_MIN(distance0[i], newDistance0), distance0[i - 1]); \
+					distance1[i] = SIMDf_MAX(SIMDf_MIN(distance1[i], newDistance1), distance1[i - 1]); \
+				}\
+				distance0[0] = SIMDf_MIN(distance0[0], newDistance0);\
+				distance1[0] = SIMDf_MIN(distance1[0], newDistance1);\
+				\
+				zcf = SIMDf_ADD(zcf, SIMDf_NUM(1));\
+				zc = SIMDi_ADD(zc, SIMDi_NUM(zPrime));\
+			}\
+			ycf = SIMDf_ADD(ycf, SIMDf_NUM(1));\
+			yc = SIMDi_ADD(yc, SIMDi_NUM(yPrime));\
+		}\
+		xcf = SIMDf_ADD(xcf, SIMDf_NUM(1));\
+		xc = SIMDi_ADD(xc, SIMDi_NUM(xPrime));\
+	}\
+	\
+	return SIMDf_MIN(Distance2Div_RETURN(distance0[index0], distance0[index1]), Distance2Div_RETURN(distance1[index0], distance1[index1]));\
 }
 
 CELLULAR_VALUE_SINGLE(Euclidean)
@@ -1898,6 +1962,10 @@ CELLULAR_VALUE_SINGLE(Natural)
 CELLULAR_LOOKUP_SINGLE(Euclidean)
 CELLULAR_LOOKUP_SINGLE(Manhattan)
 CELLULAR_LOOKUP_SINGLE(Natural)
+
+CELLULAR_DISTANCE2CAVE_SINGLE(Euclidean)
+CELLULAR_DISTANCE2CAVE_SINGLE(Manhattan)
+CELLULAR_DISTANCE2CAVE_SINGLE(Natural)
 
 #undef Natural_DISTANCE
 #define Natural_DISTANCE(_x, _y, _z) SIMDf_MUL(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
@@ -1931,6 +1999,20 @@ case Natural:\
 	break;\
 }
 
+#define CELLULAR_INDEX_MULTI(returnFunc)\
+switch(m_cellularDistanceFunction)\
+{\
+case Euclidean:\
+	SET_BUILDER(result = FUNC(Cellular##returnFunc##EuclideanSingle)(seedV, xF, yF, zF, m_cellularDistanceIndex0, m_cellularDistanceIndex1))\
+	break;\
+case Manhattan:\
+	SET_BUILDER(result = FUNC(Cellular##returnFunc##ManhattanSingle)(seedV, xF, yF, zF, m_cellularDistanceIndex0, m_cellularDistanceIndex1))\
+	break;\
+case Natural:\
+	SET_BUILDER(result = FUNC(Cellular##returnFunc##NaturalSingle)(seedV, xF, yF, zF, m_cellularDistanceIndex0, m_cellularDistanceIndex1))\
+	break;\
+}
+
 void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
 {
 	assert(noiseSet);
@@ -1955,19 +2037,22 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, int xStart, int yStart, 
 		CELLULAR_MULTI(Distance);
 		break;
 	case Distance2:
-		CELLULAR_MULTI(Distance2);
+		CELLULAR_INDEX_MULTI(Distance2);
 		break;
 	case Distance2Add:
-		CELLULAR_MULTI(Distance2Add);
+		CELLULAR_INDEX_MULTI(Distance2Add);
 		break;
 	case Distance2Sub:
-		CELLULAR_MULTI(Distance2Sub);
+		CELLULAR_INDEX_MULTI(Distance2Sub);
 		break;
 	case Distance2Mul:
-		CELLULAR_MULTI(Distance2Mul);
+		CELLULAR_INDEX_MULTI(Distance2Mul);
 		break;
 	case Distance2Div:
-		CELLULAR_MULTI(Distance2Div);
+		CELLULAR_INDEX_MULTI(Distance2Div);
+		break;
+	case Distance2Cave:
+		CELLULAR_INDEX_MULTI(Distance2Cave);
 		break;
 	case NoiseLookup:
 		nls.type = m_cellularNoiseLookupType;
@@ -2009,6 +2094,20 @@ case Natural:\
 	break;\
 }
 
+#define CELLULAR_INDEX_MULTI_VECTOR(returnFunc)\
+switch(m_cellularDistanceFunction)\
+{\
+case Euclidean:\
+	VECTOR_SET_BUILDER(result = FUNC(Cellular##returnFunc##EuclideanSingle)(seedV, xF, yF, zF, m_cellularDistanceIndex0, m_cellularDistanceIndex1))\
+	break;\
+case Manhattan:\
+	VECTOR_SET_BUILDER(result = FUNC(Cellular##returnFunc##ManhattanSingle)(seedV, xF, yF, zF, m_cellularDistanceIndex0, m_cellularDistanceIndex1))\
+	break;\
+case Natural:\
+	VECTOR_SET_BUILDER(result = FUNC(Cellular##returnFunc##NaturalSingle)(seedV, xF, yF, zF, m_cellularDistanceIndex0, m_cellularDistanceIndex1))\
+	break;\
+}
+
 void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
 {
 	assert(noiseSet);
@@ -2038,19 +2137,22 @@ void SIMD_LEVEL_CLASS::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vect
 		CELLULAR_MULTI_VECTOR(Distance);
 		break;
 	case Distance2:
-		CELLULAR_MULTI_VECTOR(Distance2);
+		CELLULAR_INDEX_MULTI_VECTOR(Distance2);
 		break;
 	case Distance2Add:
-		CELLULAR_MULTI_VECTOR(Distance2Add);
+		CELLULAR_INDEX_MULTI_VECTOR(Distance2Add);
 		break;
 	case Distance2Sub:
-		CELLULAR_MULTI_VECTOR(Distance2Sub);
+		CELLULAR_INDEX_MULTI_VECTOR(Distance2Sub);
 		break;
 	case Distance2Mul:
-		CELLULAR_MULTI_VECTOR(Distance2Mul);
+		CELLULAR_INDEX_MULTI_VECTOR(Distance2Mul);
 		break;
 	case Distance2Div:
-		CELLULAR_MULTI_VECTOR(Distance2Div);
+		CELLULAR_INDEX_MULTI_VECTOR(Distance2Div);
+		break;
+	case Distance2Cave:
+		CELLULAR_INDEX_MULTI_VECTOR(Distance2Cave);
 		break;
 	case NoiseLookup:
 		nls.type = m_cellularNoiseLookupType;

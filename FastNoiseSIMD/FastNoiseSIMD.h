@@ -104,7 +104,7 @@ public:
 	enum PerturbType { None, Gradient, GradientFractal, Normalise, Gradient_Normalise, GradientFractal_Normalise };
 
 	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
-	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup };
+	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave };
 
 	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
@@ -139,6 +139,7 @@ public:
 	// Create an empty (aligned) noise set for use with FillNoiseSet()
 	static float* GetEmptySet(int xSize, int ySize, int zSize) { return GetEmptySet(xSize*ySize*zSize); }
 
+	// Rounds the size up to the nearest aligned size for the current SIMD level
 	static int AlignedSize(int size);
 
 
@@ -194,6 +195,10 @@ public:
 	// Sets relative frequency on the cellular noise lookup return type
 	// Default: 0.2
 	void SetCellularNoiseLookupFrequency(float cellularNoiseLookupFrequency) { m_cellularNoiseLookupFrequency = cellularNoiseLookupFrequency; }
+
+	// Sets the 2 distance indicies used for distance2 return types
+	// Default: 0, 1
+	void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1) { m_cellularDistanceIndex0 = cellularDistanceIndex0; m_cellularDistanceIndex1 = cellularDistanceIndex1; }
 
 
 	// Enables position perturbing for all noise types
@@ -296,6 +301,8 @@ protected:
 	CellularReturnType m_cellularReturnType = Distance;
 	NoiseType m_cellularNoiseLookupType = Simplex;
 	float m_cellularNoiseLookupFrequency = 0.2f;
+	int m_cellularDistanceIndex0 = 0;
+	int m_cellularDistanceIndex1 = 1;
 
 	PerturbType m_perturbType = None;
 	float m_perturbAmp = 1.0f;
