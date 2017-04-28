@@ -198,7 +198,9 @@ public:
 
 	// Sets the 2 distance indicies used for distance2 return types
 	// Default: 0, 1
-	void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1) { m_cellularDistanceIndex0 = cellularDistanceIndex0; m_cellularDistanceIndex1 = cellularDistanceIndex1; }
+	// Note: index0 should be lower than index1
+	// index1 must be < 4, both indicies must be >= 0
+	void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1);
 
 
 	// Enables position perturbing for all noise types
@@ -342,6 +344,8 @@ public:
 
 	void SetSize(int _size);
 };
+
+#define FN_CELLULAR_INDEX_MAX 3
 
 #define FN_NO_SIMD_FALLBACK 0
 #define FN_SSE2 1

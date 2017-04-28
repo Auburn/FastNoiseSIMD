@@ -29,6 +29,7 @@
 #include "FastNoiseSIMD.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <cstdint>
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
@@ -522,6 +523,15 @@ float FastNoiseSIMD::CalculateFractalBounding(int octaves, float gain)
 		amp *= gain;
 	}
 	return 1.0f / ampFractal;
+}
+
+void FastNoiseSIMD::SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1)
+{
+	m_cellularDistanceIndex0 = std::min(cellularDistanceIndex0, cellularDistanceIndex1);
+	m_cellularDistanceIndex1 = std::max(cellularDistanceIndex0, cellularDistanceIndex1);
+
+	m_cellularDistanceIndex0 = std::min(std::max(m_cellularDistanceIndex0, 0), FN_CELLULAR_INDEX_MAX);
+	m_cellularDistanceIndex1 = std::min(std::max(m_cellularDistanceIndex1, 0), FN_CELLULAR_INDEX_MAX);
 }
 
 void FastNoiseVectorSet::Free()
