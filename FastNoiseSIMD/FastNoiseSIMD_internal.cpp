@@ -1611,7 +1611,7 @@ static SIMDf VECTORCALL FUNC(CellularValue##distanceFunc##Single)(SIMDi seed, SI
 				\
 				xd = SIMDf_MUL_ADD(xd, invMag, xcf);\
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
-				zd = SIMDf_MUL_ADD(zd, invMag, SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zc), z));\
+				zd = SIMDf_MUL_ADD(zd, invMag, zcf);\
 				\
 				SIMDf newCellValue = SIMDf_MUL(SIMDf_NUM(hash2Float), SIMDf_CONVERT_TO_FLOAT(hash));\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
@@ -1809,7 +1809,7 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 				\
 				xd = SIMDf_MUL_ADD(xd, invMag, xcf);\
 				yd = SIMDf_MUL_ADD(yd, invMag, ycf);\
-				zd = SIMDf_MUL_ADD(zd, invMag, SIMDf_SUB(SIMDf_CONVERT_TO_FLOAT(zc), z));\
+				zd = SIMDf_MUL_ADD(zd, invMag, zcf);\
 				\
 				SIMDf newDistance = distanceFunc##_DISTANCE(xd, yd, zd);\
 				\
@@ -1963,10 +1963,6 @@ CELLULAR_LOOKUP_SINGLE(Euclidean)
 CELLULAR_LOOKUP_SINGLE(Manhattan)
 CELLULAR_LOOKUP_SINGLE(Natural)
 
-CELLULAR_DISTANCE2CAVE_SINGLE(Euclidean)
-CELLULAR_DISTANCE2CAVE_SINGLE(Manhattan)
-CELLULAR_DISTANCE2CAVE_SINGLE(Natural)
-
 #undef Natural_DISTANCE
 #define Natural_DISTANCE(_x, _y, _z) SIMDf_MUL(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
 
@@ -1984,6 +1980,10 @@ CELLULAR_DISTANCE2_MULTI(Distance2Add)
 CELLULAR_DISTANCE2_MULTI(Distance2Sub)
 CELLULAR_DISTANCE2_MULTI(Distance2Div)
 CELLULAR_DISTANCE2_MULTI(Distance2Mul)
+
+CELLULAR_DISTANCE2CAVE_SINGLE(Euclidean)
+CELLULAR_DISTANCE2CAVE_SINGLE(Manhattan)
+CELLULAR_DISTANCE2CAVE_SINGLE(Natural)
 
 #define CELLULAR_MULTI(returnFunc)\
 switch(m_cellularDistanceFunction)\
