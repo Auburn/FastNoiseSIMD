@@ -260,3 +260,5 @@ paket-files/
 /avxPerm
 *.filters
 /TEST/FastNoiseSIMD Preview
+/cellModel.skp
+/cellModel.skb

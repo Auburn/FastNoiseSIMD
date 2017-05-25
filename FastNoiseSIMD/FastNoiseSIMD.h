@@ -199,8 +199,13 @@ public:
 	// Sets the 2 distance indicies used for distance2 return types
 	// Default: 0, 1
 	// Note: index0 should be lower than index1
-	// index1 must be < 4, both indicies must be >= 0
+	// Both indicies must be >= 0, index1 must be < 4
 	void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1);
+
+	// Sets the maximum distance a cellular point can move from it's grid position
+	// Setting this high will make artifacts more common
+	// Default: 0.45
+	void SetCellularJitter(float cellularJitter) { m_cellularJitter = cellularJitter; }
 
 
 	// Enables position perturbing for all noise types
@@ -305,6 +310,7 @@ protected:
 	float m_cellularNoiseLookupFrequency = 0.2f;
 	int m_cellularDistanceIndex0 = 0;
 	int m_cellularDistanceIndex1 = 1;
+	float m_cellularJitter = 0.45f;
 
 	PerturbType m_perturbType = None;
 	float m_perturbAmp = 1.0f;
