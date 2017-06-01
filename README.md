@@ -16,6 +16,7 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Cellular Noise 3D
 - Perturb input coordinates in 3D space
 - Integrated up-sampling
+- Easy to use 3D cave noise
 
 Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noise algorithm
 
@@ -69,6 +70,8 @@ Comparision of fractals and sampling performance [here](https://github.com/Aubur
 ![Cellular Noise](http://i.imgur.com/PjPYBXu.png)
 
 ![Cellular Noise](http://i.imgur.com/hyKjIuH.png)
+
+[Cave noise example](https://www.youtube.com/watch?v=Df4Hidvq11M)
 
 ### Fractal Noise
 ![Simplex Fractal Billow](http://i.imgur.com/gURJtpc.png)
