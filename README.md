@@ -38,8 +38,8 @@ Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noi
 
 ## Related repositories
 
--[FastNoise](https://github.com/Auburns/FastNoise)
--[PyFastNoiseSIMD](https://github.com/robbmcleod/PyFastNoiseSIMD)
+- [FastNoise](https://github.com/Auburns/FastNoise)
+- [PyFastNoiseSIMD](https://github.com/robbmcleod/PyFastNoiseSIMD)
 
 # FastNoise SIMD Preview
 
