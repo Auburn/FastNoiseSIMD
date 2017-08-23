@@ -22,7 +22,7 @@ Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noi
 
 ## Supported Instruction Sets
 - ARM NEON
-- AVX512
+- AVX512f
 - AVX2 - FMA3
 - SSE4.1
 - SSE2
