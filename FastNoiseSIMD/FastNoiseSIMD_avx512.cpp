@@ -42,7 +42,11 @@
 
 #define SIMD_LEVEL_H FN_AVX512
 #include "FastNoiseSIMD_internal.h"
+#ifdef _WIN32
 #include <intrin.h> //AVX512
+#else
+#include <x86intrin.h> //AVX512
+#endif
 
 #define SIMD_LEVEL FN_AVX512
 #include "FastNoiseSIMD_internal.cpp"
