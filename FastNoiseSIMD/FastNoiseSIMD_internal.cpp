@@ -112,6 +112,7 @@ typedef int SIMDi;
 #ifdef _WIN32
 #define SIMD_ALLOCATE_SET(floatP, floatCount) floatP = (float*)_aligned_malloc((floatCount)* sizeof(float), MEMORY_ALIGNMENT)
 #else
+#include <cstdlib>
 #define SIMD_ALLOCATE_SET(floatP, floatCount) posix_memalign((void**)&floatP, MEMORY_ALIGNMENT, (floatCount)* sizeof(float))
 #endif
 #else
