@@ -190,7 +190,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 {
 	SIMDf fval = SIMDf_CONVERT_TO_FLOAT(SIMDi_CONVERT_TO_INT(a));
 
-	return vsubq_f32(fval, SIMDf_AND(SIMDf_LESS_THAN(a, fval), SIMDf_NUM(1)));
+	return vsubq_f32(fval,
+	                 SIMDf_CAST_TO_FLOAT(vandq_s32(SIMDf_LESS_THAN(a, fval),
+	                                               SIMDi_CAST_TO_INT(SIMDf_NUM(1)))));
 }
 #define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
 #else
@@ -199,7 +201,7 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #endif
 
 #define SIMDf_ABS(a) vabsq_f32(a)
-#define SIMDf_BLENDV(a,b,mask) vbslq_f32( vreinterpretq_u32_s32(mask),b,a)
+#define SIMDf_BLENDV(a,b,mask) vbslq_f32(vreinterpretq_u32_s32(mask),b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
 #define SIMDi_SUB(a,b) vsubq_s32(a,b)
