@@ -16,12 +16,13 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Cellular Noise 3D
 - Perturb input coordinates in 3D space
 - Integrated up-sampling
+- Easy to use 3D cave noise
 
 Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noise algorithm
 
 ## Supported Instruction Sets
 - ARM NEON
-- AVX512
+- AVX-512F
 - AVX2 - FMA3
 - SSE4.1
 - SSE2
@@ -34,6 +35,11 @@ Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noi
 
 ## Wiki
 [Docs](https://github.com/Auburns/FastNoiseSIMD/wiki)
+
+## Related repositories
+
+- [FastNoise](https://github.com/Auburns/FastNoise)
+- [PyFastNoiseSIMD](https://github.com/robbmcleod/PyFastNoiseSIMD)
 
 # FastNoise SIMD Preview
 
@@ -69,6 +75,8 @@ Comparision of fractals and sampling performance [here](https://github.com/Aubur
 ![Cellular Noise](http://i.imgur.com/PjPYBXu.png)
 
 ![Cellular Noise](http://i.imgur.com/hyKjIuH.png)
+
+[Cave noise example](https://www.youtube.com/watch?v=Df4Hidvq11M)
 
 ### Fractal Noise
 ![Simplex Fractal Billow](http://i.imgur.com/gURJtpc.png)
