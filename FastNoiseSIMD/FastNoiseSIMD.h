@@ -91,6 +91,9 @@ AMD Carrizo - Q2 2015
 FMA3
 Intel Haswell - Q2 2013
 AMD Piledriver - 2012
+
+AVX-512F
+Intel Skylake-X - Q2 2017
 */
 
 struct FastNoiseVectorSet;
@@ -111,7 +114,7 @@ public:
 
 	// Returns highest detected level of CPU support
 	// 5: ARM NEON
-	// 4: AVX512
+	// 4: AVX-512F
 	// 3: AVX2 & FMA3
 	// 2: SSE4.1
 	// 1: SSE2
@@ -120,7 +123,7 @@ public:
 
 	// Sets the SIMD level for newly created FastNoiseSIMD objects
 	// 5: ARM NEON
-	// 4: AVX512
+	// 4: AVX-512F
 	// 3: AVX2 & FMA3
 	// 2: SSE4.1
 	// 1: SSE2

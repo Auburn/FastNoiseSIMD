@@ -175,10 +175,10 @@ static SIMDf VECTORCALL FUNC(DIV)(SIMDf a, SIMDf b)
 #define SIMDf_MAX(a,b) vmaxq_f32(a,b)
 #define SIMDf_INV_SQRT(a) vrsqrteq_f32(a)
 
-#define SIMDf_LESS_THAN(a,b) vreinterpretq_f32_u32(vcltq_f32(a,b))
-#define SIMDf_GREATER_THAN(a,b) vreinterpretq_f32_u32(vcgtq_f32(a,b))
-#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_f32_u32(vcleq_f32(a,b))
-#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_f32_u32(vcgeq_f32(a,b))
+#define SIMDf_LESS_THAN(a,b) vreinterpretq_u32_f32(vcltq_f32(a,b))
+#define SIMDf_GREATER_THAN(a,b) vreinterpretq_u32_f32(vcgtq_f32(a,b))
+#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_u32_f32(vcleq_f32(a,b))
+#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_u32_f32(vcgeq_f32(a,b))
 
 #define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
 #define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
@@ -214,9 +214,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDi_SHIFT_L(a, b) vshlq_n_s32(a, b)
 #define SIMDi_VSHIFT_L(a, b) vshlq_s32(a, b)
 
-#define SIMDi_EQUAL(a,b) vreinterpretq_s32_u32(vceqq_s32(a,b))
-#define SIMDi_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_s32(a,b))
-#define SIMDi_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_s32(a,b))
+#define SIMDi_EQUAL(a,b) vreinterpretq_u32_s32(vceqq_s32(a,b))
+#define SIMDi_GREATER_THAN(a,b) vreinterpretq_u32_s32(vcgtq_s32(a,b))
+#define SIMDi_LESS_THAN(a,b) vreinterpretq_u32_s32(vcltq_s32(a,b))
 
 #elif SIMD_LEVEL == FN_AVX512
 
@@ -1831,7 +1831,7 @@ static SIMDf VECTORCALL FUNC(CellularDistance##distanceFunc##Single)(SIMDi seed,
 #define CELLULAR_DISTANCE2_SINGLE(distanceFunc, returnFunc)\
 static SIMDf VECTORCALL FUNC(Cellular##returnFunc##distanceFunc##Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z, SIMDf cellJitter, int index0, int index1)\
 {\
-	SIMDf distance[4] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
+	SIMDf distance[FN_CELLULAR_INDEX_MAX+1] = {SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999),SIMDf_NUM(999999)};\
 	\
 	SIMDi xc     = SIMDi_SUB(SIMDi_CONVERT_TO_INT(x), SIMDi_NUM(1));\
 	SIMDi ycBase = SIMDi_SUB(SIMDi_CONVERT_TO_INT(y), SIMDi_NUM(1));\
