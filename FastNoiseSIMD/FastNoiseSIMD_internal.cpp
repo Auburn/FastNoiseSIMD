@@ -176,10 +176,10 @@ static SIMDf VECTORCALL FUNC(DIV)(SIMDf a, SIMDf b)
 #define SIMDf_MAX(a,b) vmaxq_f32(a,b)
 #define SIMDf_INV_SQRT(a) vrsqrteq_f32(a)
 
-#define SIMDf_LESS_THAN(a,b) vreinterpretq_u32_f32(vcltq_f32(a,b))
-#define SIMDf_GREATER_THAN(a,b) vreinterpretq_u32_f32(vcgtq_f32(a,b))
-#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_u32_f32(vcleq_f32(a,b))
-#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_u32_f32(vcgeq_f32(a,b))
+#define SIMDf_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_f32(a,b))
+#define SIMDf_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_f32(a,b))
+#define SIMDf_LESS_EQUAL(a,b) vreinterpretq_s32_u32(vcleq_f32(a,b))
+#define SIMDf_GREATER_EQUAL(a,b) vreinterpretq_s32_u32(vcgeq_f32(a,b))
 
 #define SIMDf_AND(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vreinterpretq_s32_f32(a),vreinterpretq_s32_f32(b)))
 #define SIMDf_AND_NOT(a,b) SIMDf_CAST_TO_FLOAT(vandq_s32(vmvnq_s32(vreinterpretq_s32_f32(a)),vreinterpretq_s32_f32(b)))
@@ -199,7 +199,7 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #endif
 
 #define SIMDf_ABS(a) vabsq_f32(a)
-#define SIMDf_BLENDV(a,b,mask) vbslq_f32(mask,b,a)
+#define SIMDf_BLENDV(a,b,mask) vbslq_f32( vreinterpretq_u32_s32(mask),b,a)
 
 #define SIMDi_ADD(a,b) vaddq_s32(a,b)
 #define SIMDi_SUB(a,b) vsubq_s32(a,b)
@@ -215,9 +215,9 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 #define SIMDi_SHIFT_L(a, b) vshlq_n_s32(a, b)
 #define SIMDi_VSHIFT_L(a, b) vshlq_s32(a, b)
 
-#define SIMDi_EQUAL(a,b) vreinterpretq_u32_s32(vceqq_s32(a,b))
-#define SIMDi_GREATER_THAN(a,b) vreinterpretq_u32_s32(vcgtq_s32(a,b))
-#define SIMDi_LESS_THAN(a,b) vreinterpretq_u32_s32(vcltq_s32(a,b))
+#define SIMDi_EQUAL(a,b) vreinterpretq_s32_u32(vceqq_s32(a,b))
+#define SIMDi_GREATER_THAN(a,b) vreinterpretq_s32_u32(vcgtq_s32(a,b))
+#define SIMDi_LESS_THAN(a,b) vreinterpretq_s32_u32(vcltq_s32(a,b))
 
 #elif SIMD_LEVEL == FN_AVX512
 
