@@ -61,6 +61,7 @@
  * NDK r4: Initial release
  */
 
+#define _GNU_SOURCE
 #include "cpu-features.h"
 
 #include <dlfcn.h>
@@ -69,7 +70,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/system_properties.h>
+#include <string.h>
+#include <unistd.h>
 
 static  pthread_once_t     g_once;
 static  int                g_inited;
