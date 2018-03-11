@@ -39,7 +39,7 @@ option(FN_ALIGNED_SETS
 	"Using aligned sets of memory for float arrays allows faster storing of SIMD data."
 	ON)
 
-configure_file(${directory}/${file_prefix}.h include/${file_prefix}.h)
+configure_file(${directory}/${file_prefix}.cmake.h include/${file_prefix}.h)
 
 set(flags)
 if(${MSVC})
