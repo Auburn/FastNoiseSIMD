@@ -70,7 +70,7 @@
 #include "ARM/cpu-features.h"
 #endif
 #else
-#if !(defined(__ppc64__) || defined(__PPC64__))
+#if !(defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__))
 #include <cpuid.h>
 #endif
 #include "inttypes.h"
@@ -108,7 +108,7 @@ uint64_t xgetbv(unsigned int x) {
 	return _xgetbv(x);
 }
 #else
-#if defined(__ppc64__) || defined(__PPC64__)
+#if defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__)
 void cpuid(int32_t out[4], int32_t x) {
 	/* Just disable it as anything better is unimplemented. */
 	out[0] = 0;
