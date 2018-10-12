@@ -25,53 +25,103 @@
 // The developer's email is jorzixdan.me2@gzixmail.com (for great email, take
 // off every 'zix'.)
 //
+#ifndef _FastNoiseSIMD_internal_h_
+#define _FastNoiseSIMD_internal_h_
 
-#ifndef SIMD_LEVEL_H
-#error Dont include this file without defining SIMD_LEVEL_H
-#else
-#define FASTNOISE_SIMD_CLASS2(x) FastNoiseSIMD_L##x
-#define FASTNOISE_SIMD_CLASS(level) FASTNOISE_SIMD_CLASS2(level)
+//#include "simd_constants.inl"
+//// Typedefs
+//#include "internal_none.inl"
+//#include "internal_neon.inl"
+//#include "internal_sse2.inl"
+//#include "internal_sse41.inl"
+//#include "internal_avx2.inl"
+//#include "internal_avx512.inl"
 
-namespace FastNoiseSIMD_internal
+namespace FastNoise
 {
-	class FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H) : public FastNoiseSIMD
-	{
-	public:
-		// Do not call this, use SetSIMDLevel(int) to have NewFastNoiseSIMD() return the level you want
-		FASTNOISE_SIMD_CLASS(SIMD_LEVEL_H)(int seed = 1337);
+namespace details
+{
 
-		static float* GetEmptySet(int size);
-		static int AlignedSize(int size);
+template<SIMDType _SIMDType>
+struct PerturbValues
+{
+    typename SIMD<_SIMDType>::Float AmpV, FreqV, LacunarityV, GainV, NormaliseLengthV;
+    int Octaves;
+};
 
-		void FillSampledNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, int sampleScale) override;
-		void FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
 
-		void FillWhiteNoiseSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillWhiteNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+//template<SIMDType _SIMDType, NoiseType _NoiseType=SimplexFractal, FractalType _FractalType=FBM, PerturbType _PerturbType=None, CellularDistance _CellularDistance=Euclidean, CellularReturnType _CellularReturnType=Distance>
+template<SIMDType _SIMDType>
+class NoiseSIMD:public FastNoise::NoiseSIMD
+{
+public:
+    typedef typename SIMD<_SIMDType>::Float Float;
+    typedef typename SIMD<_SIMDType>::Int Int;
 
-		void FillValueSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillValueFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillValueSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
-		void FillValueFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+    NoiseSIMD(int seed=1337);
 
-		void FillPerlinSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillPerlinFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillPerlinSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
-		void FillPerlinFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+    static FastNoise::NoiseSIMD *create(int seed=1337);
+    static float* GetEmptySet(size_t size);
+    static size_t AlignedSize(size_t size);
+    static const bool m_registered;
 
-		void FillSimplexSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillSimplexFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillSimplexSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
-		void FillSimplexFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+    void FillSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier) override;
+    void FillSetMap(float* noiseSet, float* xMap, float* yMap, float* zMap, int xSize, int ySize, int zSize) override;
 
-		void FillCellularSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
+    void FillFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier);
+    void FillFractalSetMap(float* noiseSet, float* xMap, float* yMap, float* zMap, int xSize, int ySize, int zSize);
 
-		void FillCubicSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillCubicFractalSet(float* floatSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier = 1.0f) override;
-		void FillCubicSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
-		void FillCubicFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset = 0.0f, float yOffset = 0.0f, float zOffset = 0.0f) override;
-	};
-}
-#undef SIMD_LEVEL_H
+    void FillSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
+    void FillFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
+    void FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier);
+
+//    void FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier);
+//    void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
+//    void FillSampledNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, int sampleScale);
+//    void FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
+};
+    
+
+}//namespace details
+}//namespace FastNoiseSIMD
+
+//#include "FastNoiseSIMD_internal.inl"
+
+//namespace FastNoise
+//{
+//namespace details
+//{
+//
+////template instantiation
+//template class NoiseSIMD<SIMDType::None>;
+////template struct Constants<typename SIMD<SIMDType::None>::Float, typename SIMD<SIMDType::None>::Int, SIMDType::None>;
+//
+//#ifdef FN_COMPILE_NEON
+//template class NoiseSIMD<SIMDType::Neon>;
+////template struct Constants<typename SIMD<SIMDType::Neon>::Float, typename SIMD<SIMDType::Neon>::Int, SIMDType::Neon>;
+//#endif
+//
+//#ifdef FN_COMPILE_SSE2
+//template class NoiseSIMD<SIMDType::SSE2>;
+////template struct Constants<typename SIMD<SIMDType::SSE2>::Float, typename SIMD<SIMDType::SSE2>::Int, SIMDType::SSE2>;
+//#endif
+//
+//#ifdef FN_COMPILE_SSE41
+//template class NoiseSIMD<SIMDType::SSE4_1>;
+////template struct Constants<typename SIMD<SIMDType::SSE4_1>::Float, typename SIMD<SIMDType::SSE4_1>::Int, SIMDType::SSE4_1>;
+//#endif
+//
+//#ifdef FN_COMPILE_AVX2
+//template class NoiseSIMD<SIMDType::AVX2>;
+////template struct Constants<typename SIMD<SIMDType::AVX2>::Float, typename SIMD<SIMDType::AVX2>::Int, SIMDType::AVX2>;
+//#endif
+//
+//#ifdef FN_COMPILE_AVX512
+//template class NoiseSIMD<SIMDType::AVX512>;
+////template struct Constants<typename SIMD<SIMDType::AVX512>::Float, typename SIMD<SIMDType::AVX512>::Int, SIMDType::AVX512>;
+//#endif
+//
+//}//namespace details
+//}//namespace FastNoiseSIMD
+
 #endif

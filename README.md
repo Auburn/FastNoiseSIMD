@@ -1,3 +1,10 @@
+![travis](https://img.shields.io/travis/caseymcc/FastNoiseSIMD.svg?logo=travis&style=flat-square&label=Linux%20OSX "Travis CI")
+![appveyor](https://img.shields.io/appveyor/ci/caseymcc/FastNoiseSIMD.svg?logo=appveyor&style=flat-square&label=Windows "AppVeyor CI")
+
+
+# FastNoise SIMD (altered)
+This is an altered version of [FastNoiseSIMD](https://github.com/Auburns/FastNoiseSIMD). All of the macros in the original version have been replace with templates allowing for a little better debugging. Also the library has been altered to create multiple shared libraries each compiled with the proper SIMD Instructions. The shared libraries are dynamically loaded by the main library.
+
 # FastNoise SIMD
 FastNoise SIMD is the SIMD implementation of my noise library [FastNoise](https://github.com/Auburns/FastNoise). It aims to provide faster performance through the use of intrinsic(SIMD) CPU functions. Vectorisation of the code allows noise functions to process data in sets of 4/8/16 increasing performance by 700% in some cases (Simplex).
 
@@ -13,7 +20,7 @@ Runtime detection of highest supported instruction set ensures the fastest possi
 - Cubic Noise 3D
 - Multiple fractal options for all of the above
 - White Noise 3D
-- Cellular Noise 3D
+- ~~Cellular Noise 3D~~ disabled for the moment
 - Perturb input coordinates in 3D space
 - Integrated up-sampling
 - Easy to use 3D cave noise
@@ -38,6 +45,7 @@ Credit to [CubicNoise](https://github.com/jobtalle/CubicNoise) for the cubic noi
 
 ## Related repositories
 
+- [FastNoiseSIMD](https://github.com/Auburns/FastNoiseSIMD)
 - [FastNoise](https://github.com/Auburns/FastNoise)
 - [PyFastNoiseSIMD](https://github.com/robbmcleod/PyFastNoiseSIMD)
 
