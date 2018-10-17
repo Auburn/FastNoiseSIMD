@@ -26,9 +26,6 @@ struct SIMD
     static Int zeroInt() { return 0; }
     static void zeroAll() {}
 
-    //    static Float oneFloat() { return 1.0f; }
-    //    static maxInt() { return 0x7fffffff; }
-
     static void store(float *p, Float a) { *(p)=a; }
     static Float load(float *p) { return *p; }
 
@@ -52,6 +49,7 @@ struct SIMD
     static Float max(Float  a, Float b) { return fmaxf(a, b); }
     static Float invSqrt(Float x)
     {
+        //this does not match the precision of the SIMD functions, nor will 1.0f/sqrt(x)
         float xhalf=0.5f * x;
         int i=*(int*)&x;
         i=0x5f3759df-(i>>1);
@@ -60,6 +58,7 @@ struct SIMD
         return x;
     }
 
+    static Mask equal(Float a, Float b) { return ((a)==(b))?0xFFFFFFFF:0; }
     static Mask lessThan(Float a, Float b) { return ((a)<(b))?0xFFFFFFFF:0; }
     static Mask greaterThan(Float a, Float b) { return ((a)>(b))?0xFFFFFFFF:0; }
     static Mask lessEqual(Float a, Float b) { return ((a)<=(b))?0xFFFFFFFF:0; }

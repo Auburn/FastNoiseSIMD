@@ -68,6 +68,11 @@ else()
     endif()
 endif()
 
+message(STATUS "FN_SIMD_SSE2: ${FN_SIMD_SSE2}")
+message(STATUS "FN_SIMD_SSE41: ${FN_SIMD_SSE41}")
+message(STATUS "FN_SIMD_AVX2: ${FN_SIMD_AVX2}")
+message(STATUS "FN_SIMD_AVX512: ${FN_SIMD_AVX512}")
+
 set(fastNoise_sources
     FastNoiseSIMD/FastNoiseSIMD.cpp
     FastNoiseSIMD/FastNoiseSIMD_none.cpp
@@ -88,7 +93,9 @@ add_library(fastNoise SHARED
 )
 
 target_compile_definitions(fastNoise PRIVATE "-DFN_USE_FILESYSTEM=${FN_USE_FILESYSTEM}")
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    target_compile_options(fastNoise PUBLIC "/bigobj")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     target_compile_options(fastNoise PUBLIC "-ldl")
     if(FN_USE_FILESYSTEM GREATER 0)
         target_compile_options(fastNoise PUBLIC "-lstdc++fs")
@@ -110,7 +117,9 @@ if(FN_SIMD_SSE2)
         ${fastNoise_sse2_headers}
     )
 
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        target_compile_options(fastNoise_sse2 PUBLIC "/bigobj")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
         target_compile_options(fastNoise_sse2 PRIVATE "-msse2")
     endif()
     target_link_libraries(fastNoise_sse2 fastNoise)
@@ -130,7 +139,9 @@ if(FN_SIMD_SSE41)
         ${fastNoise_sse41_headers}
     )
 
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        target_compile_options(fastNoise_sse41 PUBLIC "/bigobj")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
         target_compile_options(fastNoise_sse41 PRIVATE "-msse4.1")
     endif()
     target_link_libraries(fastNoise_sse41 fastNoise)
@@ -151,7 +162,7 @@ if(FN_SIMD_AVX2)
     )
 
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        target_compile_options(fastNoise_avx2 PRIVATE "/arch:AVX2")
+        target_compile_options(fastNoise_avx2 PRIVATE "/arch:AVX2" "/bigobj")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
         target_compile_options(fastNoise_avx2 PRIVATE "-mavx2" "-mfma")
     endif()
@@ -173,7 +184,7 @@ if(FN_SIMD_AVX512)
     )
 
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        target_compile_options(fastNoise_avx512 PRIVATE "/arch:AVX512")
+        target_compile_options(fastNoise_avx512 PRIVATE "/arch:AVX512" "/bigobj")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
         target_compile_options(fastNoise_avx512 PRIVATE "-mavx512f" "-mfma")
     endif()

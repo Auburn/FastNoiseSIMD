@@ -44,7 +44,9 @@ struct SIMD<SIMDType::SSE2>
 
     static Float add(Float a, Float b) { return _mm_add_ps(a, b); }
     static Float sub(Float a, Float b) { return _mm_sub_ps(a, b); }
-    static Float mulf(Float a, Float b) { return _mm_mul_ps(a, b); }
+    static Float mulf(Float a, Float b) { 
+        return _mm_mul_ps(a, b); 
+    }
     static Float div(Float a, Float b) { return _mm_div_ps(a, b); }
 
     static Float mulAdd(Float a, Float b, Float c) { return add(mulf(a, b), c); }
@@ -53,8 +55,11 @@ struct SIMD<SIMDType::SSE2>
 
     static Float min(Float a, Float b) { return _mm_min_ps(a, b); }
     static Float max(Float  a, Float b) { return _mm_max_ps(a, b); }
-    static Float invSqrt(Float a) { return _mm_rsqrt_ps(a); }
+    static Float invSqrt(Float a) { 
+        return _mm_rsqrt_ps(a); 
+    }
 
+    static Mask equal(Float a, Float b) { return cast(_mm_cmpeq_ps(a, b)); }
     static Mask lessThan(Float a, Float b) { return cast(_mm_cmplt_ps(a, b)); }
     static Mask greaterThan(Float a, Float b) { return cast(_mm_cmpgt_ps(a, b)); }
     static Mask lessEqual(Float a, Float b) { return cast(_mm_cmple_ps(a, b)); }

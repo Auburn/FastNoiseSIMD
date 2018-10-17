@@ -15,7 +15,5 @@ namespace details
 template class NoiseSIMD<SIMDType::None>;
 
 }//namespace details
-
-
-}//namespace FastNoiseSIMD
+}//namespace FastNoise
 

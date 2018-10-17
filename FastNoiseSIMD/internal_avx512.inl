@@ -50,6 +50,7 @@ struct SIMD<SIMDType::AVX512>
     static Float max(Float  a, Float b) { return _mm512_max_ps(a, b); }
     static Float invSqrt(Float a) { return _mm512_rsqrt14_ps(a); }
 
+    static Mask equal(Float a, Float b) { return _mm512_cmp_ps_mask(a, b, _CMP_EQ_OQ); }
     static Mask lessThan(Float a, Float b) { return _mm512_cmp_ps_mask(a, b, _CMP_LT_OQ); }
     static Mask greaterThan(Float a, Float b) { return _mm512_cmp_ps_mask(a, b, _CMP_GT_OQ); }
     static Mask lessEqual(Float a, Float b) { return _mm512_cmp_ps_mask(a, b, _CMP_LE_OQ); }

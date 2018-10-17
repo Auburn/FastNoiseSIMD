@@ -28,15 +28,6 @@
 #ifndef _FastNoiseSIMD_internal_h_
 #define _FastNoiseSIMD_internal_h_
 
-//#include "simd_constants.inl"
-//// Typedefs
-//#include "internal_none.inl"
-//#include "internal_neon.inl"
-//#include "internal_sse2.inl"
-//#include "internal_sse41.inl"
-//#include "internal_avx2.inl"
-//#include "internal_avx512.inl"
-
 namespace FastNoise
 {
 namespace details
@@ -50,7 +41,6 @@ struct PerturbValues
 };
 
 
-//template<SIMDType _SIMDType, NoiseType _NoiseType=SimplexFractal, FractalType _FractalType=FBM, PerturbType _PerturbType=None, CellularDistance _CellularDistance=Euclidean, CellularReturnType _CellularReturnType=Distance>
 template<SIMDType _SIMDType>
 class NoiseSIMD:public FastNoise::NoiseSIMD
 {
@@ -66,62 +56,15 @@ public:
     static const bool m_registered;
 
     void FillSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier) override;
-    void FillSetMap(float* noiseSet, float* xMap, float* yMap, float* zMap, int xSize, int ySize, int zSize) override;
-
-    void FillFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier);
-    void FillFractalSetMap(float* noiseSet, float* xMap, float* yMap, float* zMap, int xSize, int ySize, int zSize);
-
-    void FillSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
-    void FillFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
     void FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier);
 
-//    void FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier);
-//    void FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
+    void FillSet(float* noiseSet, VectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
 //    void FillSampledNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, int sampleScale);
-//    void FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
+//    void FillSampledNoiseSet(float* noiseSet, VectorSet* vectorSet, float xOffset, float yOffset, float zOffset);
 };
     
 
 }//namespace details
 }//namespace FastNoiseSIMD
-
-//#include "FastNoiseSIMD_internal.inl"
-
-//namespace FastNoise
-//{
-//namespace details
-//{
-//
-////template instantiation
-//template class NoiseSIMD<SIMDType::None>;
-////template struct Constants<typename SIMD<SIMDType::None>::Float, typename SIMD<SIMDType::None>::Int, SIMDType::None>;
-//
-//#ifdef FN_COMPILE_NEON
-//template class NoiseSIMD<SIMDType::Neon>;
-////template struct Constants<typename SIMD<SIMDType::Neon>::Float, typename SIMD<SIMDType::Neon>::Int, SIMDType::Neon>;
-//#endif
-//
-//#ifdef FN_COMPILE_SSE2
-//template class NoiseSIMD<SIMDType::SSE2>;
-////template struct Constants<typename SIMD<SIMDType::SSE2>::Float, typename SIMD<SIMDType::SSE2>::Int, SIMDType::SSE2>;
-//#endif
-//
-//#ifdef FN_COMPILE_SSE41
-//template class NoiseSIMD<SIMDType::SSE4_1>;
-////template struct Constants<typename SIMD<SIMDType::SSE4_1>::Float, typename SIMD<SIMDType::SSE4_1>::Int, SIMDType::SSE4_1>;
-//#endif
-//
-//#ifdef FN_COMPILE_AVX2
-//template class NoiseSIMD<SIMDType::AVX2>;
-////template struct Constants<typename SIMD<SIMDType::AVX2>::Float, typename SIMD<SIMDType::AVX2>::Int, SIMDType::AVX2>;
-//#endif
-//
-//#ifdef FN_COMPILE_AVX512
-//template class NoiseSIMD<SIMDType::AVX512>;
-////template struct Constants<typename SIMD<SIMDType::AVX512>::Float, typename SIMD<SIMDType::AVX512>::Int, SIMDType::AVX512>;
-//#endif
-//
-//}//namespace details
-//}//namespace FastNoiseSIMD
 
 #endif

@@ -53,20 +53,6 @@ namespace details
 template<SIMDType _SIMDType>
 const bool NoiseSIMD<_SIMDType>::m_registered=FastNoise::NoiseSIMD::registerNoiseSimd(_SIMDType, NoiseSIMD<_SIMDType>::create, NoiseSIMD<_SIMDType>::AlignedSize, NoiseSIMD<_SIMDType>::GetEmptySet);
 
-//template<SIMDType _SIMDType>
-//size_t alignedSize(size_t size)
-//{
-//#ifdef FN_ALIGNED_SETS
-//    // size must be a multiple of SIMD<_SIMDType>::vectorSize() (8)
-//    if((size & (SIMD<_SIMDType>::vectorSize()-1))!=0)
-//    {
-//        size&=~(SIMD<_SIMDType>::vectorSize()-1);
-//        size+=SIMD<_SIMDType>::vectorSize();
-//    }
-//#endif
-//    return size;
-//}
-
 template<SIMDType _SIMDType>
 struct simdAlloc
 {
@@ -92,15 +78,6 @@ struct simdAlloc<SIMDType::None>
 {
     static float *_(size_t count) { return new float[count]; }
 };
-
-//template<SIMDType _SIMDType>
-//float *GetEmptySet(size_t size)
-//{
-//    size_t aSize=alignedSize<_SIMDType>(size);
-//    float* noiseSet=simdAlloc<_SIMDType>::_(aSize);
-//
-//    return noiseSet;
-//}
 
 template<SIMDType _SIMDType>
 static typename SIMD<_SIMDType>::Float VECTORCALL Lerp(typename SIMD<_SIMDType>::Float a, typename SIMD<_SIMDType>::Float b, typename SIMD<_SIMDType>::Float t)
@@ -133,17 +110,6 @@ static typename SIMD<_SIMDType>::Float VECTORCALL CubicLerp(typename SIMD<_SIMDT
     return SIMD<_SIMDType>::mulAdd(t, SIMD<_SIMDType>::mulf(t, SIMD<_SIMDType>::mulf(t, p)), SIMD<_SIMDType>::mulAdd(t, SIMD<_SIMDType>::mulf(t, SIMD<_SIMDType>::sub(SIMD<_SIMDType>::sub(a, b), p)), SIMD<_SIMDType>::mulAdd(t, SIMD<_SIMDType>::sub(c, a), b)));
 }
 
-//static typename SIMD<_SIMDType>::Float VECTORCALL FUNC(InterpHermite)(typename SIMD<_SIMDType>::Float t)
-//{
-//	typename SIMD<_SIMDType>::Float r;
-//	r = SIMD<_SIMDType>::mul(t, Constants::numf_2);
-//	r = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::add(Constants::numf_1, Constants::numf_2), r);
-//	r = SIMD<_SIMDType>::mul(r, t);
-//	r = SIMD<_SIMDType>::mul(r, t);
-//
-//	return r;
-//}
-
 template<SIMDType _SIMDType>
 static typename SIMD<_SIMDType>::Int VECTORCALL Hash(typename SIMD<_SIMDType>::Int seed, typename SIMD<_SIMDType>::Int x, typename SIMD<_SIMDType>::Int y, typename SIMD<_SIMDType>::Int z)
 {
@@ -169,7 +135,6 @@ static typename SIMD<_SIMDType>::Int VECTORCALL HashHB(typename SIMD<_SIMDType>:
     hash=SIMD<_SIMDType>::_xor(x, hash);
     hash=SIMD<_SIMDType>::_xor(y, hash);
     hash=SIMD<_SIMDType>::_xor(z, hash);
-    //hash = SIMD<_SIMDType>::_xor(SIMD<_SIMDType>::shiftR(hash, 13), hash);
 
     hash=SIMD<_SIMDType>::mul(SIMD<_SIMDType>::mul(SIMD<_SIMDType>::mul(hash, hash), Constant::numi_60493), hash);
 
@@ -188,7 +153,6 @@ static typename SIMD<_SIMDType>::Float VECTORCALL ValCoord(typename SIMD<_SIMDTy
     hash=SIMD<_SIMDType>::_xor(z, hash);
 
     hash=SIMD<_SIMDType>::mul(SIMD<_SIMDType>::mul(SIMD<_SIMDType>::mul(hash, hash), Constant::numi_60493), hash);
-    //hash = SIMD<_SIMDType>::_xor(SIMD<_SIMDType>::shiftL(hash, 13), hash);
 
     return SIMD<_SIMDType>::mulf(Constant::numf_hash2Float, SIMD<_SIMDType>::convert(hash));
 }
@@ -439,7 +403,6 @@ struct Single<_SIMDType, NoiseType::Cubic>
     }
 };
 
-//#define GRADIENT_COORD(_x,_y,_z)
 template<SIMDType _SIMDType>
 void gradientCoord(typename SIMD<_SIMDType>::Int seed, const typename SIMD<_SIMDType>::Int &x, const typename SIMD<_SIMDType>::Int &y, const typename SIMD<_SIMDType>::Int &z,
     typename SIMD<_SIMDType>::Float &xGrad, typename SIMD<_SIMDType>::Float &yGrad, typename SIMD<_SIMDType>::Float &zGrad)
@@ -451,10 +414,6 @@ void gradientCoord(typename SIMD<_SIMDType>::Int seed, const typename SIMD<_SIMD
     yGrad = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(SIMD<_SIMDType>::shiftR(hash, 10), Constant::numi_bit10Mask)), Constant::numf_511_5);
     zGrad = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(SIMD<_SIMDType>::shiftR(hash, 20), Constant::numi_bit10Mask)), Constant::numf_511_5); 
 }
-//typename SIMD<_SIMDType>::Float invMag##_x##_y##_z = SIMD<_SIMDType>::mul(Constant::numf_cellJitter, SIMD<_SIMDType>::invSqrt(SIMD<_SIMDType>::mulAdd(x##_x##_y##_z, x##_x##_y##_z, SIMD<_SIMDType>::mulAdd(y##_x##_y##_z, y##_x##_y##_z, SIMD<_SIMDType>::mul(z##_x##_y##_z, z##_x##_y##_z)))));
-//x##_x##_y##_z = SIMD<_SIMDType>::mul(x##_x##_y##_z, invMag##_x##_y##_z);
-//y##_x##_y##_z = SIMD<_SIMDType>::mul(y##_x##_y##_z, invMag##_x##_y##_z); 
-//z##_x##_y##_z = SIMD<_SIMDType>::mul(z##_x##_y##_z, invMag##_x##_y##_z);
 
 template<SIMDType _SIMDType>
 static void VECTORCALL GradientPerturbSingle(typename SIMD<_SIMDType>::Int seed, typename SIMD<_SIMDType>::Float perturbAmp, typename SIMD<_SIMDType>::Float perturbFrequency, typename SIMD<_SIMDType>::Float& x, typename SIMD<_SIMDType>::Float& y, typename SIMD<_SIMDType>::Float& z)
@@ -548,13 +507,11 @@ float* NoiseSIMD<_SIMDType>::GetEmptySet(size_t size)
 	size = AlignedSize(size);
 
 	float* noiseSet;
-//	SIMD_ALLOCATE_SET(noiseSet, size);
     noiseSet=simdAlloc<_SIMDType>::_(size);
 
 	return noiseSet;
 }
 
-//#define AXIS_RESET(_zSize, _start)
 template<SIMDType _SIMDType>
 void axisReset(typename SIMD<_SIMDType>::Int &x, typename SIMD<_SIMDType>::Int &y, typename SIMD<_SIMDType>::Int &z, 
     const typename SIMD<_SIMDType>::Int &ySizeV, const typename SIMD<_SIMDType>::Int &yEndV, const typename SIMD<_SIMDType>::Int &zSizeV, const typename SIMD<_SIMDType>::Int &zEndV, int &_zSize, int _start)
@@ -595,6 +552,9 @@ struct NoiseValues
     typename SIMD<_SIMDType>::Float zFreqV;
 
     typename SIMD<_SIMDType>::Float cellJitterV;
+    int index0;
+    int index1;
+    typename SIMD<_SIMDType>::Float cellularLookupFrequencyV;
 
     size_t octaves;
 };
@@ -615,8 +575,13 @@ NoiseValues<_SIMDType> initNoise(const NoiseDetails &noiseDetails, float scaleMo
     noise.zFreqV=SIMD<_SIMDType>::set(scaleModifier * noiseDetails.zScale);
 
     noise.cellJitterV=SIMD<_SIMDType>::set(noiseDetails.cellularJitter);
+    noise.index0=noiseDetails.cellularDistanceIndex0;
+    noise.index1=noiseDetails.cellularDistanceIndex1;
+
+    noise.cellularLookupFrequencyV=SIMD<_SIMDType>::set(noiseDetails.cellularNoiseLookupFrequency);
 
     noise.octaves=noiseDetails.octaves;
+    
     return noise;
 };
 
@@ -828,7 +793,6 @@ struct Perturb<_SIMDType, PerturbType::GradientFractal_Normalise>
 };
 
 // FBM SINGLE
-//#define FBM_SINGLE(f)
 template<SIMDType _SIMDType, NoiseType _NoiseType>
 typename SIMD<_SIMDType>::Float FBMSingle(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
 {
@@ -854,7 +818,6 @@ typename SIMD<_SIMDType>::Float FBMSingle(const NoiseValues<_SIMDType> &noise, t
 }
 
 // BILLOW SINGLE
-//#define BILLOW_SINGLE(f)
 template<SIMDType _SIMDType, NoiseType _NoiseType>
 typename SIMD<_SIMDType>::Float BillowSingle(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
 {
@@ -881,7 +844,6 @@ typename SIMD<_SIMDType>::Float BillowSingle(const NoiseValues<_SIMDType> &noise
 }
 
 // RIGIDMULTI SINGLE
-//#define RIGIDMULTI_SINGLE(f)
 template<SIMDType _SIMDType, NoiseType _NoiseType>
 typename SIMD<_SIMDType>::Float RigidMultiSingle(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
 {
@@ -905,565 +867,11 @@ typename SIMD<_SIMDType>::Float RigidMultiSingle(const NoiseValues<_SIMDType> &n
     return result;
 }
 
-template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType>
-struct GetSingle
-{
-    template<typename ..._Types>
-    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF, _Types ...args)
-    { assert(false);  return SIMD<_SIMDType>::zeroFloat(); }
-};
-
-template<SIMDType _SIMDType, NoiseType _NoiseType>
-struct GetSingle<_SIMDType, _NoiseType, FractalType::None>
-{
-    template<typename ..._Types>
-    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF, _Types ...args)
-    { return Single<_SIMDType, _NoiseType>::_(noise.seedV, xF, yF, zF); }
-};
-
-template<SIMDType _SIMDType, NoiseType _NoiseType>
-struct GetSingle<_SIMDType, _NoiseType, FractalType::FBM>
-{
-    template<typename ..._Types>
-    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
-    {   return FBMSingle<_SIMDType, _NoiseType>(noise, xF, yF, zF); }
-};
-
-template<SIMDType _SIMDType, NoiseType _NoiseType>
-struct GetSingle<_SIMDType, _NoiseType, FractalType::Billow>
-{
-    template<typename ..._Types>
-    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
-    {   return BillowSingle<_SIMDType, _NoiseType>(noise, xF, yF, zF); }
-};
-
-template<SIMDType _SIMDType, NoiseType _NoiseType>
-struct GetSingle<_SIMDType, _NoiseType, FractalType::RigidMulti>
-{
-    template<typename ..._Types>
-    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
-    {   return RigidMultiSingle<_SIMDType, _NoiseType>(noise, xF, yF, zF); }
-};
-
-//#define SET_BUILDER(f)
-template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, PerturbType _PerturbType, typename... _Types>
-static void Build(const NoiseValues<_SIMDType> &noise, const PerturbValues<_SIMDType> &perturb,
-    float *noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, _Types... args)
-{
-    typedef typename SIMD<_SIMDType>::Float Float;
-    typedef typename SIMD<_SIMDType>::Int Int;
-    typedef Constants<Float, Int, _SIMDType> Constant;
-
-    if((zSize & (SIMD<_SIMDType>::vectorSize()-1))==0)
-    {
-        Int yBase=SIMD<_SIMDType>::set(yStart);
-        Int zBase=SIMD<_SIMDType>::add(Constant::numi_incremental, SIMD<_SIMDType>::set(zStart));
-        Int x=SIMD<_SIMDType>::set(xStart);
-
-        int index=0;
-
-        for(int ix=0; ix<xSize; ix++)
-        {
-            Float xf=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(x), noise.xFreqV);
-            Int y=yBase;
-
-            for(int iy=0; iy<ySize; iy++)
-            {
-                Float yf=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(y), noise.yFreqV);
-                Int z=zBase;
-                Float xF=xf;
-                Float yF=yf;
-                Float zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
-
-                //    			PERTURB_SWITCH()
-                Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
-                Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(noise, xF, yF, zF, args...);
-                SIMD<_SIMDType>::store(&noiseSet[index], result);
-
-                int iz=SIMD<_SIMDType>::vectorSize();
-                while(iz<zSize)
-                {
-                    z=SIMD<_SIMDType>::add(z, Constant::numi_vectorSize);
-                    index+=SIMD<_SIMDType>::vectorSize();
-                    iz+=SIMD<_SIMDType>::vectorSize();
-                    xF=xf;
-                    yF=yf;
-                    zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
-
-                    //    				PERTURB_SWITCH()
-                    Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
-                    Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(noise, xF, yF, zF, args...);
-                    SIMD<_SIMDType>::store(&noiseSet[index], result);
-                }
-                index+=SIMD<_SIMDType>::vectorSize();
-                y=SIMD<_SIMDType>::add(y, Constant::numi_1);
-            }
-            x=SIMD<_SIMDType>::add(x, Constant::numi_1);
-        }
-    }
-    else
-    {
-        Int ySizeV=SIMD<_SIMDType>::set(ySize);
-        Int zSizeV=SIMD<_SIMDType>::set(zSize);
-
-        Int yEndV=SIMD<_SIMDType>::set(yStart+ySize-1);
-        Int zEndV=SIMD<_SIMDType>::set(zStart+zSize-1);
-
-        Int x=SIMD<_SIMDType>::set(xStart);
-        Int y=SIMD<_SIMDType>::set(yStart);
-        Int z=SIMD<_SIMDType>::add(SIMD<_SIMDType>::set(zStart), Constant::numi_incremental);
-//        AXIS_RESET(zSize, 1)
-        axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 1);
-
-            int index=0;
-        int maxIndex=xSize * ySize * zSize;
-
-        for(; index<maxIndex-SIMD<_SIMDType>::vectorSize(); index+=SIMD<_SIMDType>::vectorSize())
-        {
-            Float xF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(x), noise.xFreqV);
-            Float yF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(y), noise.yFreqV);
-            Float zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
-
-            //    		PERTURB_SWITCH()
-            Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
-            Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(noise, xF, yF, zF, args...);
-
-            SIMD<_SIMDType>::store(&noiseSet[index], result);
-
-            z=SIMD<_SIMDType>::add(z, Constant::numi_vectorSize);
-
-//            AXIS_RESET(zSize, 0)
-            axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 0);
-        }
-
-        Float xF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(x), noise.xFreqV);
-        Float yF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(y), noise.yFreqV);
-        Float zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
-
-        //    	PERTURB_SWITCH()
-        Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
-        Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(noise, xF, yF, zF, args...);
-        STORE_LAST_RESULT(&noiseSet[index], result);
-    }
-}
-
-template<SIMDType _SIMDType, FractalType _FractalType, PerturbType _PerturbType, typename... _Types>
-static void CallBuild(NoiseType noiseType, _Types... args)
-{
-    switch(noiseType)
-    {
-    case NoiseType::Value:
-    case NoiseType::ValueFractal:
-        Build<_SIMDType, NoiseType::Value, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Perlin:
-    case NoiseType::PerlinFractal:
-        Build<_SIMDType, NoiseType::Perlin, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Simplex:
-    case NoiseType::SimplexFractal:
-        Build<_SIMDType, NoiseType::Simplex, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::WhiteNoise:
-        Build<_SIMDType, NoiseType::WhiteNoise, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Cellular:
-        Build<_SIMDType, NoiseType::Cellular, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Cubic:
-    case NoiseType::CubicFractal:
-        Build<_SIMDType, NoiseType::Cubic, _FractalType, _PerturbType>(args...);
-        break;
-    }
-}
-
-template<SIMDType _SIMDType, PerturbType _PerturbType, typename... _Types>
-static void CallBuild(NoiseType noiseType, FractalType fractalType, _Types... args)
-{
-    FractalType type=FractalType::None;
-
-    //only use fractal type if it is fractal noise
-    if((noiseType==NoiseType::ValueFractal)||(noiseType==NoiseType::PerlinFractal)||(noiseType==NoiseType::SimplexFractal)||(noiseType==NoiseType::CubicFractal))
-        type=fractalType;
-
-    switch(type)
-    {
-    case FractalType::None:
-        CallBuild<_SIMDType, FractalType::None, _PerturbType>(noiseType, args...);
-        break;
-    case FractalType::FBM:
-        CallBuild<_SIMDType, FractalType::FBM, _PerturbType>(noiseType, args...);
-        break;
-    case FractalType::Billow:
-        CallBuild<_SIMDType, FractalType::Billow, _PerturbType>(noiseType, args...);
-        break;
-    case FractalType::RigidMulti:
-        CallBuild<_SIMDType, FractalType::RigidMulti, _PerturbType>(noiseType, args...);
-        break;
-    }
-}
-
-template<SIMDType _SIMDType, typename... _Types>
-static void CallBuild(NoiseType noiseType, FractalType fractalType, PerturbType perturbType, _Types... args)
-{
-    switch(perturbType)
-    {
-    case PerturbType::None:
-        CallBuild<_SIMDType, PerturbType::None>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::Gradient:
-        CallBuild<_SIMDType, PerturbType::Gradient>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::GradientFractal:
-        CallBuild<_SIMDType, PerturbType::GradientFractal>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::Normalise:
-        CallBuild<_SIMDType, PerturbType::Normalise>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::Gradient_Normalise:
-        CallBuild<_SIMDType, PerturbType::Gradient_Normalise>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::GradientFractal_Normalise:
-        CallBuild<_SIMDType, PerturbType::GradientFractal_Normalise>(noiseType, fractalType, args...);
-        break;
-    }
-}
-
-
-//#define SET_MAP_BUILDER(f)
-template<SIMDType _SIMDType>
-void BuildMap(const PerturbValues<_SIMDType> &perturb, 
-    float *noiseSet, float *xMap, float *yMap, float *zMap, int xSize, int ySize, int zSize, float scaleModifier)
-{
-//    typename SIMD<_SIMDType>::Int seedV=SIMD<_SIMDType>::set(m_seed);
-//    typename SIMD<_SIMDType>::Float FreqV=SIMD<_SIMDType>::set(m_frequency);
-//
-//	int index = 0; 
-//	int maxIndex = xSize * ySize * zSize; 
-//	
-//	for (; index < maxIndex ; index += SIMD<_SIMDType>::vectorSize())
-//	{
-//		typename SIMD<_SIMDType>::Float xF = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::load(&xMap[index]), FreqV);
-//		typename SIMD<_SIMDType>::Float yF = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::load(&yMap[index]), FreqV);
-//		typename SIMD<_SIMDType>::Float zF = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::load(&zMap[index]), FreqV);
-//		
-//        Perturb<_SIMDType, _PerturbType>::_<_SIMDType, _PerturbType>::_(seedV, perturb, xF, yF, zF);
-//		typename SIMD<_SIMDType>::Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(seedV, xF, yF, zF);
-//		SIMD<_SIMDType>::store(&noiseSet[index], result);
-//	}
-}
-
-
-//#define FILL_SET(func) 
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
-{
-	assert(noiseSet);
-	SIMD<_SIMDType>::zeroAll();
-
-    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails, scaleModifier);
-    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-	
-//    Build<_SIMDType, _NoiseType, FractalType::None, _PerturbType>::_(seedV, perturb, noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, xFreqV, yFreqV, zFreqV);
-    CallBuild<_SIMDType>(m_noiseType, m_fractalType, m_perturbType,
-        noise, perturb, noiseSet, xStart, yStart, zStart, xSize, ySize, zSize);
-	
-	SIMD<_SIMDType>::zeroAll();
-}
-
-//#define FILL_SET_MAP(func)
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillSetMap(float* noiseSet, float* xMap, float* yMap, float* zMap, int xSize, int ySize, int zSize)
-{
-	assert(noiseSet);
-    SIMD<_SIMDType>::zeroAll();
-
-    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails);
-    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-	
-//    BuildMap<_SIMDType, _NoiseType, FractalType::None, _PerturbType>::_(perturb, noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
-	
-	SIMD<_SIMDType>::zeroAll();
-}
-
-//#define FILL_FRACTAL_SET(func)
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillFractalSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
-{
-	assert(noiseSet);
-	SIMD<_SIMDType>::zeroAll();
-	
-    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails, scaleModifier);
-    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-	
-    CallBuild<_SIMDType>(m_noiseType, m_fractalType, m_perturbType,
-        noise, perturb, noiseSet, xStart, yStart, zStart, xSize, ySize, zSize);
-	SIMD<_SIMDType>::zeroAll();
-}
-
-//#define FILL_FRACTAL_SET_MAP(func)
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillFractalSetMap(float* noiseSet, float* xMap, float* yMap, float* zMap, int xSize, int ySize, int zSize)
-{
-	assert(noiseSet);
-	SIMD<_SIMDType>::zeroAll();
-	
-    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails);
-    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-	
-//	BuildMap<_SIMDType, _NoiseType, _FractalType, _PerturbType>(perturb, noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
-	SIMD<_SIMDType>::zeroAll();
-}
-
 #ifdef FN_ALIGNED_SETS
 #define SIZE_MASK
 #else
 #define SIZE_MASK & ~(SIMD<_SIMDType>::vectorSize() - 1)
 #endif
-
-//#define VECTOR_SET_BUILDER(f)
-template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, PerturbType _PerturbType>
-void BuildVectorSet(const NoiseValues<_SIMDType> &noise, const PerturbValues<_SIMDType> &perturb, float* noiseSet, FastNoiseVectorSet* vectorSet,
-    const typename SIMD<_SIMDType>::Float &xOffsetV, const typename SIMD<_SIMDType>::Float &yOffsetV, const typename SIMD<_SIMDType>::Float &zOffsetV)
-{
-    int index=0;
-    int loopMax=vectorSet->size SIZE_MASK;
-
-    while(index<loopMax)
-    {
-        typename SIMD<_SIMDType>::Float xF=SIMD<_SIMDType>::mulAdd(SIMD<_SIMDType>::load(&vectorSet->xSet[index]), noise.xFreqV, xOffsetV); 
-        typename SIMD<_SIMDType>::Float yF=SIMD<_SIMDType>::mulAdd(SIMD<_SIMDType>::load(&vectorSet->ySet[index]), noise.yFreqV, yOffsetV); 
-        typename SIMD<_SIMDType>::Float zF=SIMD<_SIMDType>::mulAdd(SIMD<_SIMDType>::load(&vectorSet->zSet[index]), noise.zFreqV, zOffsetV); 
-        
-        Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
-        typename SIMD<_SIMDType>::Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(noise, xF, yF, zF);
-        SIMD<_SIMDType>::store(&noiseSet[index], result); 
-        index+=SIMD<_SIMDType>::vectorSize(); 
-    }
-    
-#ifndef FN_ALIGNED_SETS
-    if(loopMax!=vectorSet->size)
-    {
-        std::size_t remaining=(vectorSet->size-loopMax)*4; 
-        
-        typename SIMD<_SIMDType>::Float xF=SIMD<_SIMDType>::load(&vectorSet->xSet[loopMax]); 
-        typename SIMD<_SIMDType>::Float yF=SIMD<_SIMDType>::load(&vectorSet->ySet[loopMax]); 
-        typename SIMD<_SIMDType>::Float zF=SIMD<_SIMDType>::load(&vectorSet->zSet[loopMax]); 
-        
-        xF=SIMD<_SIMDType>::mulAdd(xF, noise.xFreqV, xOffsetV); 
-        yF=SIMD<_SIMDType>::mulAdd(yF, noise.yFreqV, yOffsetV); 
-        zF=SIMD<_SIMDType>::mulAdd(zF, noise.zFreqV, zOffsetV); 
-        
-        typename SIMD<_SIMDType>::Float result=GetSingle<_SIMDType, _NoiseType, _FractalType>::_(noise, xF, yF, zF);
-        std::memcpy(&noiseSet[index], &result, remaining); 
-    }
-#endif
-}
-
-template<SIMDType _SIMDType, FractalType _FractalType, PerturbType _PerturbType, typename... _Types>
-static void CallBuildVectorSet(NoiseType noiseType, _Types... args)
-{
-    switch(noiseType)
-    {
-    case NoiseType::Value:
-        BuildVectorSet<_SIMDType, NoiseType::Value, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::ValueFractal:
-        BuildVectorSet<_SIMDType, NoiseType::ValueFractal, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Perlin:
-        BuildVectorSet<_SIMDType, NoiseType::Perlin, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::PerlinFractal:
-        BuildVectorSet<_SIMDType, NoiseType::PerlinFractal, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Simplex:
-        BuildVectorSet<_SIMDType, NoiseType::Simplex, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::SimplexFractal:
-        BuildVectorSet<_SIMDType, NoiseType::SimplexFractal, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::WhiteNoise:
-        BuildVectorSet<_SIMDType, NoiseType::WhiteNoise, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Cellular:
-        BuildVectorSet<_SIMDType, NoiseType::Cellular, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::Cubic:
-        BuildVectorSet<_SIMDType, NoiseType::Cubic, _FractalType, _PerturbType>(args...);
-        break;
-    case NoiseType::CubicFractal:
-        BuildVectorSet<_SIMDType, NoiseType::CubicFractal, _FractalType, _PerturbType>(args...);
-        break;
-    }
-}
-
-template<SIMDType _SIMDType, PerturbType _PerturbType, typename... _Types>
-static void CallBuildVectorSet(NoiseType noiseType, FractalType fractalType, _Types... args)
-{
-    switch(fractalType)
-    {
-    case FractalType::None:
-        CallBuildVectorSet<_SIMDType, FractalType::None, _PerturbType>(noiseType, args...);
-        break;
-    case FractalType::FBM:
-        CallBuildVectorSet<_SIMDType, FractalType::FBM, _PerturbType>(noiseType, args...);
-        break;
-    case FractalType::Billow:
-        CallBuildVectorSet<_SIMDType, FractalType::Billow, _PerturbType>(noiseType, args...);
-        break;
-    case FractalType::RigidMulti:
-        CallBuildVectorSet<_SIMDType, FractalType::RigidMulti, _PerturbType>(noiseType, args...);
-        break;
-    }
-}
-
-template<SIMDType _SIMDType, typename... _Types>
-static void CallBuildVectorSet(NoiseType noiseType, FractalType fractalType, PerturbType perturbType, _Types... args)
-{
-    switch(perturbType)
-    {
-    case PerturbType::None:
-        CallBuildVectorSet<_SIMDType, PerturbType::None>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::Gradient:
-        CallBuildVectorSet<_SIMDType, PerturbType::Gradient>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::GradientFractal:
-        CallBuildVectorSet<_SIMDType, PerturbType::GradientFractal>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::Normalise:
-        CallBuildVectorSet<_SIMDType, PerturbType::Normalise>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::Gradient_Normalise:
-        CallBuildVectorSet<_SIMDType, PerturbType::Gradient_Normalise>(noiseType, fractalType, args...);
-        break;
-    case PerturbType::GradientFractal_Normalise:
-        CallBuildVectorSet<_SIMDType, PerturbType::GradientFractal_Normalise>(noiseType, fractalType, args...);
-        break;
-    }
-}
-
-//#define FILL_VECTOR_SET(func)
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
-{
-	assert(noiseSet);
-	assert(vectorSet);
-	assert(vectorSet->size >= 0);
-	SIMD<_SIMDType>::zeroAll();
-	
-    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails);
-	typename SIMD<_SIMDType>::Float xOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(xOffset), noise.xFreqV);
-	typename SIMD<_SIMDType>::Float yOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(yOffset), noise.yFreqV);
-	typename SIMD<_SIMDType>::Float zOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(zOffset), noise.zFreqV);
-    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-	
-    CallBuildVectorSet<_SIMDType>(m_noiseType, m_fractalType, m_perturbType,
-        noise, perturb, noiseSet, vectorSet, xOffsetV, yOffsetV, zOffsetV);
-	SIMD<_SIMDType>::zeroAll();
-}
-
-//#define FILL_FRACTAL_VECTOR_SET(func)
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillFractalSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
-{
-	assert(noiseSet);
-	assert(vectorSet);
-	assert(vectorSet->size >= 0);
-	SIMD<_SIMDType>::zeroAll();
-	
-    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails);
-	typename SIMD<_SIMDType>::Float xOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(xOffset), noise.xFreqV);
-	typename SIMD<_SIMDType>::Float yOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(yOffset), noise.yFreqV);
-	typename SIMD<_SIMDType>::Float zOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(zOffset), noise.zFreqV);
-
-    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-	
-    CallBuildVectorSet<_SIMDType>(m_noiseType, m_fractalType, m_perturbType,
-        noise, perturb, noiseSet, vectorSet, xOffsetV, yOffsetV, zOffsetV);
-	SIMD<_SIMDType>::zeroAll();
-}
-
-template<SIMDType _SIMDType>
-void NoiseSIMD<_SIMDType>::FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
-{
-    typedef Constants<typename SIMD<_SIMDType>::Float, typename SIMD<_SIMDType>::Int, _SIMDType> Constant;
-
-	assert(noiseSet);
-	SIMD<_SIMDType>::zeroAll();
-	typename SIMD<_SIMDType>::Int seedV = SIMD<_SIMDType>::set(m_noiseDetails.seed);
-
-	if ((zSize & (SIMD<_SIMDType>::vectorSize() - 1)) == 0)
-	{
-		typename SIMD<_SIMDType>::Int x = SIMD<_SIMDType>::mul(SIMD<_SIMDType>::set(xStart), Constant::numi_xPrime);
-		typename SIMD<_SIMDType>::Int yBase = SIMD<_SIMDType>::mul(SIMD<_SIMDType>::set(yStart), Constant::numi_yPrime);
-		typename SIMD<_SIMDType>::Int zBase = SIMD<_SIMDType>::mul(SIMD<_SIMDType>::add(Constant::numi_incremental, SIMD<_SIMDType>::set(zStart)), Constant::numi_zPrime);
-
-		typename SIMD<_SIMDType>::Int zStep = SIMD<_SIMDType>::mul(Constant::numi_vectorSize, Constant::numi_zPrime);
-
-		int index = 0;
-
-		for (int ix = 0; ix < xSize; ix++)
-		{
-			typename SIMD<_SIMDType>::Int y = yBase;
-
-			for (int iy = 0; iy < ySize; iy++)
-			{
-				typename SIMD<_SIMDType>::Int z = zBase;
-
-				SIMD<_SIMDType>::store(&noiseSet[index], ValCoord<_SIMDType>(seedV, x, y, z));
-
-				int iz = SIMD<_SIMDType>::vectorSize();
-				while (iz < zSize)
-				{
-					z = SIMD<_SIMDType>::add(z, zStep);
-					index += SIMD<_SIMDType>::vectorSize();
-					iz += SIMD<_SIMDType>::vectorSize();
-
-					SIMD<_SIMDType>::store(&noiseSet[index], ValCoord<_SIMDType>(seedV, x, y, z));
-				}
-				index += SIMD<_SIMDType>::vectorSize();
-				y = SIMD<_SIMDType>::add(y, Constant::numi_yPrime);
-			}
-			x = SIMD<_SIMDType>::add(x, Constant::numi_xPrime);
-		}
-	}
-	else
-	{
-		typename SIMD<_SIMDType>::Int ySizeV = SIMD<_SIMDType>::set(ySize);
-		typename SIMD<_SIMDType>::Int zSizeV = SIMD<_SIMDType>::set(zSize);
-
-		typename SIMD<_SIMDType>::Int yEndV = SIMD<_SIMDType>::set(yStart + ySize - 1);
-		typename SIMD<_SIMDType>::Int zEndV = SIMD<_SIMDType>::set(zStart + zSize - 1);
-
-		typename SIMD<_SIMDType>::Int x = SIMD<_SIMDType>::set(xStart);
-		typename SIMD<_SIMDType>::Int y = SIMD<_SIMDType>::set(yStart);
-		typename SIMD<_SIMDType>::Int z = SIMD<_SIMDType>::add(SIMD<_SIMDType>::set(zStart), Constant::numi_incremental);
-//		AXIS_RESET(zSize, 1);
-        axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 1);
-
-		int index = 0;
-		int maxIndex = xSize * ySize * zSize;
-
-		for (; index < maxIndex - SIMD<_SIMDType>::vectorSize(); index += SIMD<_SIMDType>::vectorSize())
-		{
-			SIMD<_SIMDType>::store(&noiseSet[index], ValCoord<_SIMDType>(seedV, SIMD<_SIMDType>::mul(x, Constant::numi_xPrime), SIMD<_SIMDType>::mul(y, Constant::numi_yPrime), SIMD<_SIMDType>::mul(z, Constant::numi_zPrime)));
-
-			z = SIMD<_SIMDType>::add(z, Constant::numi_vectorSize);
-
-//			AXIS_RESET(zSize, 0);
-            axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 0);
-		}
-		typename SIMD<_SIMDType>::Float result = ValCoord<_SIMDType>(seedV, SIMD<_SIMDType>::mul(x, Constant::numi_xPrime), SIMD<_SIMDType>::mul(y, Constant::numi_yPrime), SIMD<_SIMDType>::mul(z, Constant::numi_zPrime));
-		STORE_LAST_RESULT(&noiseSet[index], result);
-	}
-	SIMD<_SIMDType>::zeroAll();
-}
-
-//#define Euclidean_DISTANCE(_x, _y, _z) SIMD<_SIMDType>::mulAdd(_x, _x, SIMD<_SIMDType>::mulAdd(_y, _y, SIMD<_SIMDType>::mul(_z, _z)))
-//#define Manhattan_DISTANCE(_x, _y, _z) SIMD<_SIMDType>::add(SIMD<_SIMDType>::add(SIMD<_SIMDType>::abs(_x), SIMD<_SIMDType>::abs(_y)), SIMD<_SIMDType>::abs(_z))
-//#define Natural_DISTANCE(_x, _y, _z) SIMD<_SIMDType>::add(Euclidean_DISTANCE(_x,_y,_z), Manhattan_DISTANCE(_x,_y,_z))
 
 template<SIMDType _SIMDType, CellularDistance _CellularDistance>
 struct Distance
@@ -1491,12 +899,6 @@ struct Distance<_SIMDType, CellularDistance::Natural>
         return SIMD<_SIMDType>::add(Distance<_SIMDType, CellularDistance::Euclidean>::_(_x, _y, _z), Distance<_SIMDType, CellularDistance::Manhattan>::_(_x, _y, _z));
     }
 };
-
-//#define Distance2_RETURN(_distance, _distance2) (_distance2)
-//#define Distance2Add_RETURN(_distance, _distance2) SIMD<_SIMDType>::add(_distance, _distance2)
-//#define Distance2Sub_RETURN(_distance, _distance2) SIMD<_SIMDType>::sub(_distance2, _distance)
-//#define Distance2Mul_RETURN(_distance, _distance2) SIMD<_SIMDType>::mul(_distance, _distance2)
-//#define Distance2Div_RETURN(_distance, _distance2) SIMD<_SIMDType>::div(_distance, _distance2)
 
 template<SIMDType _SIMDType, CellularReturnType _CellularReturnType>
 struct ReturnDistance
@@ -1552,7 +954,6 @@ struct ReturnDistance<_SIMDType, CellularReturnType::Distance2Div>
     }
 };
 
-//#define CELLULAR_VALUE_SINGLE(distanceFunc)
 template<SIMDType _SIMDType, CellularDistance _CellularDistance>
 static typename SIMD<_SIMDType>::Float VECTORCALL CellularValueSingle(typename SIMD<_SIMDType>::Int seed, typename SIMD<_SIMDType>::Float x, typename SIMD<_SIMDType>::Float y, typename SIMD<_SIMDType>::Float z, typename SIMD<_SIMDType>::Float cellJitter)
 {
@@ -1626,7 +1027,6 @@ struct NoiseLookupSettings
 	typename SIMD<_SIMDType>::Float fractalBounding;
 };
 
-//#define CELLULAR_LOOKUP_FRACTAL_VALUE(noiseType){
 template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType>
 typename SIMD<_SIMDType>::Float FractalCelluarLookup(const typename SIMD<_SIMDType>::Int &seedV, const typename SIMD<_SIMDType>::Float &xF, const typename SIMD<_SIMDType>::Float &yF, const typename SIMD<_SIMDType>::Float &zF, const NoiseLookupSettings<_SIMDType>& noiseLookupSettings)
 {
@@ -1635,93 +1035,12 @@ typename SIMD<_SIMDType>::Float FractalCelluarLookup(const typename SIMD<_SIMDTy
     typename SIMD<_SIMDType>::Float fractalBoundingV = noiseLookupSettings.fractalBounding;
     int m_octaves = noiseLookupSettings.fractalOctaves;
 
-    return GetSingle<_SIMDType, _NoiseType, _FractalType>::_(seedV, xF, yF, zF);
+    return GetValue<_SIMDType, _NoiseType, _FractalType>::_(seedV, xF, yF, zF);
 }
 
-//#define CELLULAR_LOOKUP_SINGLE(distanceFunc)
-template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, PerturbType _PerturbType, CellularDistance _CellularDistance>
-static typename SIMD<_SIMDType>::Float VECTORCALL CellularLookupSingle(typename SIMD<_SIMDType>::Int seedV, typename SIMD<_SIMDType>::Float x, typename SIMD<_SIMDType>::Float y, typename SIMD<_SIMDType>::Float z, typename SIMD<_SIMDType>::Float cellJitter, const NoiseLookupSettings<_SIMDType>& noiseLookupSettings)
-{
-    typedef Constants<typename SIMD<_SIMDType>::Float, typename SIMD<_SIMDType>::Int, _SIMDType> Constant;
-	typename SIMD<_SIMDType>::Float distance = Constant::numf_999999;
-	typename SIMD<_SIMDType>::Float xCell = SIMD<_SIMDType>::undefinedFloat();
-	typename SIMD<_SIMDType>::Float yCell = SIMD<_SIMDType>::undefinedFloat();
-	typename SIMD<_SIMDType>::Float zCell = SIMD<_SIMDType>::undefinedFloat();
-	
-	typename SIMD<_SIMDType>::Int xc     = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(x), Constant::numi_1);
-	typename SIMD<_SIMDType>::Int ycBase = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(y), Constant::numi_1);
-	typename SIMD<_SIMDType>::Int zcBase = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(z), Constant::numi_1);
-	
-	typename SIMD<_SIMDType>::Float xcf     = SIMD<_SIMDType>::convert(xc);
-	typename SIMD<_SIMDType>::Float ycfBase = SIMD<_SIMDType>::convert(ycBase);
-	typename SIMD<_SIMDType>::Float zcfBase = SIMD<_SIMDType>::convert(zcBase);
-	
-	xc     = SIMD<_SIMDType>::mul(xc, Constant::numi_xPrime);
-	ycBase = SIMD<_SIMDType>::mul(ycBase, Constant::numi_yPrime);
-	zcBase = SIMD<_SIMDType>::mul(zcBase, Constant::numi_zPrime);
-	
-	for (int xi = 0; xi < 3; xi++)
-	{
-		typename SIMD<_SIMDType>::Float ycf = ycfBase;
-		typename SIMD<_SIMDType>::Int yc = ycBase;
-		typename SIMD<_SIMDType>::Float xLocal = SIMD<_SIMDType>::sub(xcf, x);
-		for (int yi = 0; yi < 3; yi++)
-		{
-			typename SIMD<_SIMDType>::Float zcf = zcfBase;
-			typename SIMD<_SIMDType>::Int zc = zcBase;
-			typename SIMD<_SIMDType>::Float yLocal = SIMD<_SIMDType>::sub(ycf, y);
-			for (int zi = 0; zi < 3; zi++)
-			{
-				typename SIMD<_SIMDType>::Float zLocal = SIMD<_SIMDType>::sub(zcf, z);
-				
-				typename SIMD<_SIMDType>::Int hash = HashHB<_SIMDType>(seedV, xc, yc, zc);
-				typename SIMD<_SIMDType>::Float xd = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(hash, Constant::numi_bit10Mask)), Constant::numf_511_5);
-				typename SIMD<_SIMDType>::Float yd = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(SIMD<_SIMDType>::shiftR(hash,10), Constant::numi_bit10Mask)), Constant::numf_511_5);
-				typename SIMD<_SIMDType>::Float zd = SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(SIMD<_SIMDType>::shiftR(hash,20), Constant::numi_bit10Mask)), Constant::numf_511_5);
-				
-				typename SIMD<_SIMDType>::Float invMag = SIMD<_SIMDType>::mulf(cellJitter, SIMD<_SIMDType>::invSqrt(SIMD<_SIMDType>::mulAdd(xd, xd, SIMD<_SIMDType>::mulAdd(yd, yd, SIMD<_SIMDType>::mulf(zd, zd)))));
-				
-				typename SIMD<_SIMDType>::Float xCellNew = SIMD<_SIMDType>::mulf(xd, invMag);
-				typename SIMD<_SIMDType>::Float yCellNew = SIMD<_SIMDType>::mulf(yd, invMag);
-				typename SIMD<_SIMDType>::Float zCellNew = SIMD<_SIMDType>::mulf(zd, invMag);
-				
-				xd = SIMD<_SIMDType>::add(xCellNew, xLocal);
-				yd = SIMD<_SIMDType>::add(yCellNew, yLocal);
-				zd = SIMD<_SIMDType>::add(zCellNew, zLocal);
-				
-				xCellNew = SIMD<_SIMDType>::add(xCellNew, xcf); 
-				yCellNew = SIMD<_SIMDType>::add(yCellNew, ycf); 
-				zCellNew = SIMD<_SIMDType>::add(zCellNew, zcf); 
-				
-				typename SIMD<_SIMDType>::Float newDistance = Distance<_SIMDType, _CellularDistance>(xd, yd, zd);
-				
-				typename SIMD<_SIMDType>::Mask closer = SIMD<_SIMDType>::lessThan(newDistance, distance);
-				
-				distance = SIMD<_SIMDType>::min(newDistance, distance);
-				xCell = SIMD<_SIMDType>::blend(xCell, xCellNew, closer);
-				yCell = SIMD<_SIMDType>::blend(yCell, yCellNew, closer);
-				zCell = SIMD<_SIMDType>::blend(zCell, zCellNew, closer);
-				
-				zcf = SIMD<_SIMDType>::add(zcf, Constant::numf_1);
-				zc = SIMD<_SIMDType>::add(zc, Constant::numi_zPrime);
-			}
-			ycf = SIMD<_SIMDType>::add(ycf, Constant::numf_1);
-			yc = SIMD<_SIMDType>::add(yc, Constant::numi_yPrime);
-		}
-		xcf = SIMD<_SIMDType>::add(xcf, Constant::numf_1);
-		xc = SIMD<_SIMDType>::add(xc, Constant::numi_xPrime);
-	}
-	
-	typename SIMD<_SIMDType>::Float xF = SIMD<_SIMDType>::mulf(xCell, noiseLookupSettings.frequency);
-	typename SIMD<_SIMDType>::Float yF = SIMD<_SIMDType>::mulf(yCell, noiseLookupSettings.frequency);
-	typename SIMD<_SIMDType>::Float zF = SIMD<_SIMDType>::mulf(zCell, noiseLookupSettings.frequency);
-	typename SIMD<_SIMDType>::Float result=FractalCelluarLookup<_SIMDType, _NoiseType, _FractalType>(seedV, xF, yF, zF, noiseLookupSettings);
 
-	return result;
-}
 
-//#define CELLULAR_DISTANCE_SINGLE(distanceFunc)
-template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, PerturbType _PerturbType, CellularDistance _CellularDistance>
+template<SIMDType _SIMDType, CellularDistance _CellularDistance>
 static typename SIMD<_SIMDType>::Float VECTORCALL CellularDistanceSingle(typename SIMD<_SIMDType>::Int seed, typename SIMD<_SIMDType>::Float x, typename SIMD<_SIMDType>::Float y, typename SIMD<_SIMDType>::Float z, typename SIMD<_SIMDType>::Float cellJitter)
 {
     typedef Constants<typename SIMD<_SIMDType>::Float, typename SIMD<_SIMDType>::Int, _SIMDType> Constant;
@@ -1777,7 +1096,6 @@ static typename SIMD<_SIMDType>::Float VECTORCALL CellularDistanceSingle(typenam
 	return distance;
 }
 
-//#define CELLULAR_DISTANCE2_SINGLE(distanceFunc, returnFunc)
 template<SIMDType _SIMDType, CellularDistance _CellularDistance, CellularReturnType _CellularReturnType>
 static typename SIMD<_SIMDType>::Float VECTORCALL CellularReturnDistanceSingle(typename SIMD<_SIMDType>::Int seed, typename SIMD<_SIMDType>::Float x, typename SIMD<_SIMDType>::Float y, typename SIMD<_SIMDType>::Float z, typename SIMD<_SIMDType>::Float cellJitter, int index0, int index1)
 {
@@ -1836,48 +1154,638 @@ static typename SIMD<_SIMDType>::Float VECTORCALL CellularReturnDistanceSingle(t
 	return ReturnDistance<_SIMDType, _CellularReturnType>::_(distance[index0], distance[index1]);
 }
 
-//template<SIMDType _SIMDType>
-//void NoiseSIMD<_SIMDType>::FillCellularSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
-//{
-//	assert(noiseSet);
-//	SIMD<_SIMDType>::zeroAll();
-//    
-//    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails, scaleModifier);
-//    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-//
-//    CellularValue
-////	NoiseLookupSettings nls;
-////    CallBuildMap<_SIMDType, _NoiseType, _FractalType, _PerturbType, _CellularDistance, _CellularReturnType>(seedV, perturb, noiseSet, xMap, yMap, zMap, xSize, ySize, zSize, cellJitterV);
-//
-//	SIMD<_SIMDType>::zeroAll();
-//}
-//
-//template<SIMDType _SIMDType>
-//void NoiseSIMD<_SIMDType>::FillCellularSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
-//{
-//	assert(noiseSet);
-//	assert(vectorSet);
-//	assert(vectorSet->size >= 0);
-//	SIMD<_SIMDType>::zeroAll();
-//
-//    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails);
-//
-//    typename SIMD<_SIMDType>::Float xOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(xOffset), noise.xFreqV);
-//	typename SIMD<_SIMDType>::Float yOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(yOffset), noise.yFreqV);
-//	typename SIMD<_SIMDType>::Float zOffsetV = SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(zOffset), noise.zFreqV);
-//	
-//    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
-//
-//	int index = 0;
-//	int loopMax = vectorSet->size SIZE_MASK;
-////	NoiseLookupSettings nls;
-//
-//    CallBuildVectorSet<_SIMDType>(m_noiseType, m_fractalType, m_perturbType, m_cellularDistance, m_cellularReturnType,
-//        noise, perturb, xOffsetV, yOffsetV, zOffsetV);
-//
-//	SIMD<_SIMDType>::zeroAll();
-//}
-//
+////////////////////////////////////////////////////////////////////////////////
+//getValue functions
+////////////////////////////////////////////////////////////////////////////////
+template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, CellularDistance _CellularDistance, CellularReturnType _CellularReturnType, NoiseType _LookupNoiseType>
+struct GetValue
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF, _Types ...args)
+    { return CellularReturnDistanceSingle<_SIMDType, _CellularDistance, _CellularReturnType>(noise.seedV, xF, yF, zF, noise.cellJitterV, noise.index0, noise.index1); }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType>
+struct GetValue<_SIMDType, _NoiseType, FractalType::None, CellularDistance::None, CellularReturnType::None, NoiseType::None>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    { return Single<_SIMDType, _NoiseType>::_(noise.seedV, xF, yF, zF); }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType>
+struct GetValue<_SIMDType, _NoiseType, FractalType::FBM, CellularDistance::None, CellularReturnType::None, NoiseType::None>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    { return FBMSingle<_SIMDType, _NoiseType>(noise, xF, yF, zF); }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType>
+struct GetValue<_SIMDType, _NoiseType, FractalType::Billow, CellularDistance::None, CellularReturnType::None, NoiseType::None>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    { return BillowSingle<_SIMDType, _NoiseType>(noise, xF, yF, zF); }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType>
+struct GetValue<_SIMDType, _NoiseType, FractalType::RigidMulti, CellularDistance::None, CellularReturnType::None, NoiseType::None>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    { return RigidMultiSingle<_SIMDType, _NoiseType>(noise, xF, yF, zF); }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, CellularDistance _CellularDistance>
+struct GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, CellularReturnType::Value, NoiseType::None>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    { return CellularDistanceSingle<_SIMDType, _CellularDistance>(noise.seedV, xF, yF, zF, noise.cellJitterV); }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, CellularDistance _CellularDistance>
+struct GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, CellularReturnType::Distance, NoiseType::None>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    { return CellularDistanceSingle<_SIMDType, _CellularDistance>(noise.seedV, xF, yF, zF, noise.cellJitterV); }
+};
+
+
+template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, CellularDistance _CellularDistance>
+static typename SIMD<_SIMDType>::Float VECTORCALL CellularLookupSingle(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float x, typename SIMD<_SIMDType>::Float y, typename SIMD<_SIMDType>::Float z, typename SIMD<_SIMDType>::Float cellJitter)
+{
+    typedef Constants<typename SIMD<_SIMDType>::Float, typename SIMD<_SIMDType>::Int, _SIMDType> Constant;
+
+    typename SIMD<_SIMDType>::Float distance=Constant::numf_999999;
+    typename SIMD<_SIMDType>::Float xCell=SIMD<_SIMDType>::undefinedFloat();
+    typename SIMD<_SIMDType>::Float yCell=SIMD<_SIMDType>::undefinedFloat();
+    typename SIMD<_SIMDType>::Float zCell=SIMD<_SIMDType>::undefinedFloat();
+
+    typename SIMD<_SIMDType>::Int xc=SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(x), Constant::numi_1);
+    typename SIMD<_SIMDType>::Int ycBase=SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(y), Constant::numi_1);
+    typename SIMD<_SIMDType>::Int zcBase=SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(z), Constant::numi_1);
+
+    typename SIMD<_SIMDType>::Float xcf=SIMD<_SIMDType>::convert(xc);
+    typename SIMD<_SIMDType>::Float ycfBase=SIMD<_SIMDType>::convert(ycBase);
+    typename SIMD<_SIMDType>::Float zcfBase=SIMD<_SIMDType>::convert(zcBase);
+
+    xc=SIMD<_SIMDType>::mul(xc, Constant::numi_xPrime);
+    ycBase=SIMD<_SIMDType>::mul(ycBase, Constant::numi_yPrime);
+    zcBase=SIMD<_SIMDType>::mul(zcBase, Constant::numi_zPrime);
+
+    for(int xi=0; xi < 3; xi++)
+    {
+        typename SIMD<_SIMDType>::Float ycf=ycfBase;
+        typename SIMD<_SIMDType>::Int yc=ycBase;
+        typename SIMD<_SIMDType>::Float xLocal=SIMD<_SIMDType>::sub(xcf, x);
+        for(int yi=0; yi < 3; yi++)
+        {
+            typename SIMD<_SIMDType>::Float zcf=zcfBase;
+            typename SIMD<_SIMDType>::Int zc=zcBase;
+            typename SIMD<_SIMDType>::Float yLocal=SIMD<_SIMDType>::sub(ycf, y);
+            for(int zi=0; zi < 3; zi++)
+            {
+                typename SIMD<_SIMDType>::Float zLocal=SIMD<_SIMDType>::sub(zcf, z);
+
+                typename SIMD<_SIMDType>::Int hash=HashHB<_SIMDType>(noise.seedV, xc, yc, zc);
+                typename SIMD<_SIMDType>::Float xd=SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(hash, Constant::numi_bit10Mask)), Constant::numf_511_5);
+                typename SIMD<_SIMDType>::Float yd=SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(SIMD<_SIMDType>::shiftR(hash, 10), Constant::numi_bit10Mask)), Constant::numf_511_5);
+                typename SIMD<_SIMDType>::Float zd=SIMD<_SIMDType>::sub(SIMD<_SIMDType>::convert(SIMD<_SIMDType>::_and(SIMD<_SIMDType>::shiftR(hash, 20), Constant::numi_bit10Mask)), Constant::numf_511_5);
+
+                typename SIMD<_SIMDType>::Float invMag=SIMD<_SIMDType>::mulf(noise.cellJitterV, SIMD<_SIMDType>::invSqrt(SIMD<_SIMDType>::mulAdd(xd, xd, SIMD<_SIMDType>::mulAdd(yd, yd, SIMD<_SIMDType>::mulf(zd, zd)))));
+
+                typename SIMD<_SIMDType>::Float xCellNew=SIMD<_SIMDType>::mulf(xd, invMag);
+                typename SIMD<_SIMDType>::Float yCellNew=SIMD<_SIMDType>::mulf(yd, invMag);
+                typename SIMD<_SIMDType>::Float zCellNew=SIMD<_SIMDType>::mulf(zd, invMag);
+
+                xd=SIMD<_SIMDType>::add(xCellNew, xLocal);
+                yd=SIMD<_SIMDType>::add(yCellNew, yLocal);
+                zd=SIMD<_SIMDType>::add(zCellNew, zLocal);
+
+                xCellNew=SIMD<_SIMDType>::add(xCellNew, xcf);
+                yCellNew=SIMD<_SIMDType>::add(yCellNew, ycf);
+                zCellNew=SIMD<_SIMDType>::add(zCellNew, zcf);
+
+                typename SIMD<_SIMDType>::Float newDistance=Distance<_SIMDType, _CellularDistance>::_(xd, yd, zd);
+
+                typename SIMD<_SIMDType>::Mask closer=SIMD<_SIMDType>::lessThan(newDistance, distance);
+
+                distance=SIMD<_SIMDType>::min(newDistance, distance);
+                xCell=SIMD<_SIMDType>::blend(xCell, xCellNew, closer);
+                yCell=SIMD<_SIMDType>::blend(yCell, yCellNew, closer);
+                zCell=SIMD<_SIMDType>::blend(zCell, zCellNew, closer);
+
+                zcf=SIMD<_SIMDType>::add(zcf, Constant::numf_1);
+                zc=SIMD<_SIMDType>::add(zc, Constant::numi_zPrime);
+            }
+            ycf=SIMD<_SIMDType>::add(ycf, Constant::numf_1);
+            yc=SIMD<_SIMDType>::add(yc, Constant::numi_yPrime);
+        }
+        xcf=SIMD<_SIMDType>::add(xcf, Constant::numf_1);
+        xc=SIMD<_SIMDType>::add(xc, Constant::numi_xPrime);
+    }
+
+    typename SIMD<_SIMDType>::Float xF=SIMD<_SIMDType>::mulf(xCell, noise.cellularLookupFrequencyV);
+    typename SIMD<_SIMDType>::Float yF=SIMD<_SIMDType>::mulf(yCell, noise.cellularLookupFrequencyV);
+    typename SIMD<_SIMDType>::Float zF=SIMD<_SIMDType>::mulf(zCell, noise.cellularLookupFrequencyV);
+
+    typename SIMD<_SIMDType>::Float result=GetValue<_SIMDType, _NoiseType, _FractalType, CellularDistance::None, CellularReturnType::None, NoiseType::None>::_(noise, xF, yF, zF);
+    return result;
+}
+
+template<SIMDType _SIMDType, NoiseType _NoiseType, FractalType _FractalType, CellularDistance _CellularDistance, NoiseType _LookupNoiseType>
+struct GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, CellularReturnType::NoiseLookup, _LookupNoiseType>
+{
+    template<typename ..._Types>
+    static typename SIMD<_SIMDType>::Float _(const NoiseValues<_SIMDType> &noise, typename SIMD<_SIMDType>::Float &xF, typename SIMD<_SIMDType>::Float &yF, typename SIMD<_SIMDType>::Float &zF)
+    {
+        CellularLookupSingle<_SIMDType, _LookupNoiseType, _FractalType, _CellularDistance>(noise, xF, yF, zF, noise.cellJitterV);
+        return SIMD<_SIMDType>::zeroFloat();
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//build functions
+////////////////////////////////////////////////////////////////////////////////
+template<SIMDType _SIMDType, NoiseType _NoiseType, PerturbType _PerturbType, FractalType _FractalType, CellularDistance _CellularDistance, CellularReturnType _CellularReturnType, NoiseType _LookupNoiseType, BuildType buildType>
+struct Build
+{
+    template<typename... _Types>
+    static void _(const NoiseValues<_SIMDType> &noise, const PerturbValues<_SIMDType> &perturb,
+        float *noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, _Types... args)
+    {
+        typedef typename SIMD<_SIMDType>::Float Float;
+        typedef typename SIMD<_SIMDType>::Int Int;
+        typedef Constants<Float, Int, _SIMDType> Constant;
+
+        if((zSize & (SIMD<_SIMDType>::vectorSize()-1))==0)
+        {
+            Int yBase=SIMD<_SIMDType>::set(yStart);
+            Int zBase=SIMD<_SIMDType>::add(Constant::numi_incremental, SIMD<_SIMDType>::set(zStart));
+            Int x=SIMD<_SIMDType>::set(xStart);
+
+            int index=0;
+
+            for(int ix=0; ix<xSize; ix++)
+            {
+                Float xf=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(x), noise.xFreqV);
+                Int y=yBase;
+
+                for(int iy=0; iy<ySize; iy++)
+                {
+                    Float yf=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(y), noise.yFreqV);
+                    Int z=zBase;
+                    Float xF=xf;
+                    Float yF=yf;
+                    Float zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
+
+                    Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
+                    Float result=GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>::_(noise, xF, yF, zF, args...);
+                    SIMD<_SIMDType>::store(&noiseSet[index], result);
+
+                    int iz=SIMD<_SIMDType>::vectorSize();
+                    while(iz<zSize)
+                    {
+                        z=SIMD<_SIMDType>::add(z, Constant::numi_vectorSize);
+                        index+=SIMD<_SIMDType>::vectorSize();
+                        iz+=SIMD<_SIMDType>::vectorSize();
+                        xF=xf;
+                        yF=yf;
+                        zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
+
+                        Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
+                        Float result=GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>::_(noise, xF, yF, zF, args...);
+                        SIMD<_SIMDType>::store(&noiseSet[index], result);
+                    }
+                    index+=SIMD<_SIMDType>::vectorSize();
+                    y=SIMD<_SIMDType>::add(y, Constant::numi_1);
+                }
+                x=SIMD<_SIMDType>::add(x, Constant::numi_1);
+            }
+        }
+        else
+        {
+            Int ySizeV=SIMD<_SIMDType>::set(ySize);
+            Int zSizeV=SIMD<_SIMDType>::set(zSize);
+
+            Int yEndV=SIMD<_SIMDType>::set(yStart+ySize-1);
+            Int zEndV=SIMD<_SIMDType>::set(zStart+zSize-1);
+
+            Int x=SIMD<_SIMDType>::set(xStart);
+            Int y=SIMD<_SIMDType>::set(yStart);
+            Int z=SIMD<_SIMDType>::add(SIMD<_SIMDType>::set(zStart), Constant::numi_incremental);
+
+            axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 1);
+
+            int index=0;
+            int maxIndex=xSize * ySize * zSize;
+
+            for(; index<maxIndex-SIMD<_SIMDType>::vectorSize(); index+=SIMD<_SIMDType>::vectorSize())
+            {
+                Float xF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(x), noise.xFreqV);
+                Float yF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(y), noise.yFreqV);
+                Float zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
+
+                Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
+                Float result=GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>::_(noise, xF, yF, zF, args...);
+
+                SIMD<_SIMDType>::store(&noiseSet[index], result);
+
+                z=SIMD<_SIMDType>::add(z, Constant::numi_vectorSize);
+
+                axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 0);
+            }
+
+            Float xF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(x), noise.xFreqV);
+            Float yF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(y), noise.yFreqV);
+            Float zF=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::convert(z), noise.zFreqV);
+
+            Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
+            Float result=GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>::_(noise, xF, yF, zF, args...);
+            STORE_LAST_RESULT(&noiseSet[index], result);
+        }
+    }
+};
+
+template<SIMDType _SIMDType, NoiseType _NoiseType, PerturbType _PerturbType, FractalType _FractalType, CellularDistance _CellularDistance, CellularReturnType _CellularReturnType, NoiseType _LookupNoiseType>
+struct Build<_SIMDType, _NoiseType, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, BuildType::Vector>
+{
+    template<typename... _Types>
+    static void _(const NoiseValues<_SIMDType> &noise, const PerturbValues<_SIMDType> &perturb, float* noiseSet, VectorSet* vectorSet,
+        const typename SIMD<_SIMDType>::Float &xOffsetV, const typename SIMD<_SIMDType>::Float &yOffsetV, const typename SIMD<_SIMDType>::Float &zOffsetV, _Types... args)
+    {
+        int index=0;
+        int loopMax=vectorSet->size SIZE_MASK;
+
+        while(index<loopMax)
+        {
+            typename SIMD<_SIMDType>::Float xF=SIMD<_SIMDType>::mulAdd(SIMD<_SIMDType>::load(&vectorSet->xSet[index]), noise.xFreqV, xOffsetV);
+            typename SIMD<_SIMDType>::Float yF=SIMD<_SIMDType>::mulAdd(SIMD<_SIMDType>::load(&vectorSet->ySet[index]), noise.yFreqV, yOffsetV);
+            typename SIMD<_SIMDType>::Float zF=SIMD<_SIMDType>::mulAdd(SIMD<_SIMDType>::load(&vectorSet->zSet[index]), noise.zFreqV, zOffsetV);
+
+            Perturb<_SIMDType, _PerturbType>::_(noise.seedV, perturb, xF, yF, zF);
+            typename SIMD<_SIMDType>::Float result=GetValue<_SIMDType, _NoiseType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>::_(noise, xF, yF, zF);
+            SIMD<_SIMDType>::store(&noiseSet[index], result);
+            index+=SIMD<_SIMDType>::vectorSize();
+        }
+
+#ifndef FN_ALIGNED_SETS
+        if(loopMax!=vectorSet->size)
+        {
+            std::size_t remaining=(vectorSet->size-loopMax)*4;
+
+            typename SIMD<_SIMDType>::Float xF=SIMD<_SIMDType>::load(&vectorSet->xSet[loopMax]);
+            typename SIMD<_SIMDType>::Float yF=SIMD<_SIMDType>::load(&vectorSet->ySet[loopMax]);
+            typename SIMD<_SIMDType>::Float zF=SIMD<_SIMDType>::load(&vectorSet->zSet[loopMax]);
+
+            xF=SIMD<_SIMDType>::mulAdd(xF, noise.xFreqV, xOffsetV);
+            yF=SIMD<_SIMDType>::mulAdd(yF, noise.yFreqV, yOffsetV);
+            zF=SIMD<_SIMDType>::mulAdd(zF, noise.zFreqV, zOffsetV);
+
+            typename SIMD<_SIMDType>::Float result=GetValue<_SIMDType, _NoiseType, _FractalType, _LookupNoiseType>::_(noise, xF, yF, zF);
+            std::memcpy(&noiseSet[index], &result, remaining);
+        }
+#endif
+    }
+};
+
+template<SIMDType _SIMDType, BuildType _BuildType, PerturbType _PerturbType, FractalType _FractalType, CellularDistance _CellularDistance, CellularReturnType _CellularReturnType, NoiseType _LookupNoiseType, typename... _Types>
+static void CallBuild(NoiseType noiseType, _Types... args)
+{
+    switch(noiseType)
+    {
+    case NoiseType::Value:
+    case NoiseType::ValueFractal:
+        Build<_SIMDType, NoiseType::Value, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, _BuildType>::_(args...);
+        break;
+    case NoiseType::Perlin:
+    case NoiseType::PerlinFractal:
+        Build<_SIMDType, NoiseType::Perlin, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, _BuildType>::_(args...);
+        break;
+    case NoiseType::Simplex:
+    case NoiseType::SimplexFractal:
+        Build<_SIMDType, NoiseType::Simplex, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, _BuildType>::_(args...);
+        break;
+    case NoiseType::WhiteNoise:
+        Build<_SIMDType, NoiseType::WhiteNoise, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, _BuildType>::_(args...);
+        break;
+    case NoiseType::Cellular:
+        Build<_SIMDType, NoiseType::Cellular, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, _BuildType>::_(args...);
+        break;
+    case NoiseType::Cubic:
+    case NoiseType::CubicFractal:
+        Build<_SIMDType, NoiseType::Cubic, _PerturbType, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType, _BuildType>::_(args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, FractalType _FractalType, CellularDistance _CellularDistance, CellularReturnType _CellularReturnType, NoiseType _LookupNoiseType, typename... _Types>
+static void CallBuild(NoiseType noiseType, PerturbType perturbType, _Types... args)
+{
+    switch(perturbType)
+    {
+    case PerturbType::None:
+        CallBuild<_SIMDType, _BuildType, PerturbType::None, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>(noiseType, args...);
+        break;
+    case PerturbType::Gradient:
+        CallBuild<_SIMDType, _BuildType, PerturbType::Gradient, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>(noiseType, args...);
+        break;
+    case PerturbType::GradientFractal:
+        CallBuild<_SIMDType, _BuildType, PerturbType::GradientFractal, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>(noiseType, args...);
+        break;
+    case PerturbType::Normalise:
+        CallBuild<_SIMDType, _BuildType, PerturbType::Normalise, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>(noiseType, args...);
+        break;
+    case PerturbType::Gradient_Normalise:
+        CallBuild<_SIMDType, _BuildType, PerturbType::Gradient_Normalise, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>(noiseType, args...);
+        break;
+    case PerturbType::GradientFractal_Normalise:
+        CallBuild<_SIMDType, _BuildType, PerturbType::GradientFractal_Normalise, _FractalType, _CellularDistance, _CellularReturnType, _LookupNoiseType>(noiseType, args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, CellularDistance _cellularDistance, CellularReturnType _cellularReturnType, NoiseType _LookupNoiseType, typename... _Types>
+static void CallBuildFractal(NoiseType noiseType, PerturbType perturbType, FractalType fractalType, _Types... args)
+{
+    switch(fractalType)
+    {
+//    case FractalType::None:
+//        CallBuild<_SIMDType, _BuildType, FractalType::None, _cellularDistance, _cellularReturnType, _LookupNoiseType>(noiseType, perturbType, args...);
+//        break;
+    case FractalType::FBM:
+        CallBuild<_SIMDType, _BuildType, FractalType::FBM, _cellularDistance, _cellularReturnType, _LookupNoiseType>(noiseType, perturbType, args...);
+        break;
+    case FractalType::Billow:
+        CallBuild<_SIMDType, _BuildType, FractalType::Billow, _cellularDistance, _cellularReturnType, _LookupNoiseType>(noiseType, perturbType, args...);
+        break;
+    case FractalType::RigidMulti:
+        CallBuild<_SIMDType, _BuildType, FractalType::RigidMulti, _cellularDistance, _cellularReturnType, _LookupNoiseType>(noiseType, perturbType, args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, CellularReturnType _CellularReturnType, typename... _Types>
+static void CallBuildCellular(CellularDistance cellularDistance, _Types... args)
+{
+    switch(cellularDistance)
+    {
+    case CellularDistance::None:
+        Build<_SIMDType, NoiseType::Cellular, PerturbType::None, FractalType::None, CellularDistance::None, _CellularReturnType, NoiseType::None, _BuildType>::_(args...);
+        break;
+    case CellularDistance::Euclidean:
+        Build<_SIMDType, NoiseType::Cellular, PerturbType::None, FractalType::None, CellularDistance::Euclidean, _CellularReturnType, NoiseType::None, _BuildType>::_(args...);
+        break;
+    case CellularDistance::Manhattan:
+        Build<_SIMDType, NoiseType::Cellular, PerturbType::None, FractalType::None, CellularDistance::Manhattan, _CellularReturnType, NoiseType::None, _BuildType>::_(args...);
+        break;
+    case CellularDistance::Natural:
+        Build<_SIMDType, NoiseType::Cellular, PerturbType::None, FractalType::None, CellularDistance::Natural, _CellularReturnType, NoiseType::None, _BuildType>::_(args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, CellularReturnType _CellularReturnType, NoiseType _lookupNoiseType, typename... _Types>
+static void CallBuildCellularLookup(NoiseType noiseType, PerturbType perturbType, FractalType fractalType, CellularDistance cellularDistance, _Types... args)
+{
+    switch(cellularDistance)
+    {
+    case CellularDistance::None:
+        CallBuildFractal<_SIMDType, _BuildType, CellularDistance::None, _CellularReturnType, _lookupNoiseType>(noiseType, perturbType, fractalType, args...);
+        break;
+    case CellularDistance::Euclidean:
+        CallBuildFractal<_SIMDType, _BuildType, CellularDistance::Euclidean, _CellularReturnType, _lookupNoiseType>(noiseType, perturbType, fractalType, args...);
+        break;
+    case CellularDistance::Manhattan:
+        CallBuildFractal<_SIMDType, _BuildType, CellularDistance::Manhattan, _CellularReturnType, _lookupNoiseType>(noiseType, perturbType, fractalType, args...);
+        break;
+    case CellularDistance::Natural:
+        CallBuildFractal<_SIMDType, _BuildType, CellularDistance::Natural, _CellularReturnType, _lookupNoiseType>(noiseType, perturbType, fractalType,args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, CellularReturnType _cellularReturnType, typename... _Types>
+static void CallBuildCellularLookup(NoiseType noiseType, PerturbType perturbType, FractalType fractalType, CellularDistance cellularDistance, NoiseType lookupNoiseType, _Types... args)
+{
+    switch(lookupNoiseType)
+    {
+    case NoiseType::None:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::None>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::Value:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::Value>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::ValueFractal:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::ValueFractal>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::Perlin:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::Perlin>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::PerlinFractal:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::PerlinFractal>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::Simplex:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::Simplex>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::SimplexFractal:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::SimplexFractal>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::WhiteNoise:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::WhiteNoise>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::Cellular:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::Cellular>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::Cubic:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::Cubic>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    case NoiseType::CubicFractal:
+        CallBuildCellularLookup<_SIMDType, _BuildType, _cellularReturnType, NoiseType::CubicFractal>(noiseType, perturbType, fractalType, cellularDistance, args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, typename... _Types>
+static void CallBuildCellular(NoiseType noiseType, PerturbType perturbType, FractalType fractalType, CellularDistance cellularDistance, CellularReturnType cellularReturnType, NoiseType lookupNoiseType, _Types... args)
+{
+    switch(cellularReturnType)
+    {
+    case CellularReturnType::None:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::None>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Value:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Value>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Distance:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Distance2:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance2>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Distance2Add:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance2Add>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Distance2Sub:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance2Sub>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Distance2Mul:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance2Mul>(cellularDistance, args...);
+        break;
+    case CellularReturnType::Distance2Div:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance2Div>(cellularDistance, args...);
+        break;
+//    case CellularReturnType::NoiseLookup:
+//        CallBuildCellularLookup<_SIMDType, _BuildType, CellularReturnType::NoiseLookup>(noiseType, perturbType, fractalType, cellularDistance, lookupNoiseType, args...);
+//        break;
+    case CellularReturnType::Distance2Cave:
+        CallBuildCellular<_SIMDType, _BuildType, CellularReturnType::Distance2Cave>(cellularDistance, args...);
+        break;
+    }
+}
+
+template<SIMDType _SIMDType, BuildType _BuildType, typename... _Types>
+static void CallBuild(NoiseType noiseType, PerturbType perturbType, FractalType fractalType, CellularDistance cellularDistance, CellularReturnType cellularReturnType, NoiseType lookupNoiseType, _Types... args)
+{
+    if(noiseType==NoiseType::Cellular)
+    {
+        if(cellularReturnType == CellularReturnType::NoiseLookup)
+            CallBuildCellularLookup<_SIMDType, _BuildType, CellularReturnType::NoiseLookup>(noiseType, perturbType, fractalType, cellularDistance, lookupNoiseType, args...);
+        else
+            CallBuildCellular<_SIMDType, _BuildType>(noiseType, perturbType, fractalType, cellularDistance, cellularReturnType, lookupNoiseType, args...);
+    }
+    else if((noiseType==NoiseType::ValueFractal)||(noiseType==NoiseType::PerlinFractal)||(noiseType==NoiseType::SimplexFractal)||(noiseType==NoiseType::CubicFractal))
+        CallBuildFractal<_SIMDType, _BuildType, CellularDistance::None, CellularReturnType::None, NoiseType::None>(noiseType, perturbType, fractalType, args...);
+    else
+        CallBuild<_SIMDType, _BuildType, FractalType::None, CellularDistance::None, CellularReturnType::None, NoiseType::None>(noiseType, perturbType, args...);
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//fill functions
+////////////////////////////////////////////////////////////////////////////////
+
+template<SIMDType _SIMDType>
+void NoiseSIMD<_SIMDType>::FillSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
+{
+    assert(noiseSet);
+    SIMD<_SIMDType>::zeroAll();
+
+    if(m_noiseType==NoiseType::WhiteNoise)
+    {
+        FillWhiteNoiseSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+        return;
+    }
+
+    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails, scaleModifier);
+    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
+
+    CallBuild<_SIMDType, BuildType::Default>(m_noiseType, m_perturbType, m_fractalType, m_cellularDistance, m_cellularReturnType, m_cellularNoiseLookupType,
+        noise, perturb, noiseSet, xStart, yStart, zStart, xSize, ySize, zSize);
+
+    SIMD<_SIMDType>::zeroAll();
+}
+
+template<SIMDType _SIMDType>
+void NoiseSIMD<_SIMDType>::FillSet(float* noiseSet, VectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
+{
+    assert(noiseSet);
+    assert(vectorSet);
+    assert(vectorSet->size>=0);
+    SIMD<_SIMDType>::zeroAll();
+
+    NoiseValues<_SIMDType> noise=initNoise<_SIMDType>(m_noiseDetails);
+    typename SIMD<_SIMDType>::Float xOffsetV=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(xOffset), noise.xFreqV);
+    typename SIMD<_SIMDType>::Float yOffsetV=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(yOffset), noise.yFreqV);
+    typename SIMD<_SIMDType>::Float zOffsetV=SIMD<_SIMDType>::mulf(SIMD<_SIMDType>::set(zOffset), noise.zFreqV);
+    PerturbValues<_SIMDType> perturb=initPerturb<_SIMDType>(m_perturbType, m_noiseDetails, m_perturbDetails);
+
+    CallBuild<_SIMDType, BuildType::Vector>(m_noiseType, m_perturbType, m_fractalType, m_cellularDistance, m_cellularReturnType, m_cellularNoiseLookupType,
+        noise, perturb, noiseSet, vectorSet, xOffsetV, yOffsetV, zOffsetV);
+
+    SIMD<_SIMDType>::zeroAll();
+}
+
+template<SIMDType _SIMDType>
+void NoiseSIMD<_SIMDType>::FillWhiteNoiseSet(float* noiseSet, int xStart, int yStart, int zStart, int xSize, int ySize, int zSize, float scaleModifier)
+{
+    typedef Constants<typename SIMD<_SIMDType>::Float, typename SIMD<_SIMDType>::Int, _SIMDType> Constant;
+
+    assert(noiseSet);
+    SIMD<_SIMDType>::zeroAll();
+    typename SIMD<_SIMDType>::Int seedV=SIMD<_SIMDType>::set(m_noiseDetails.seed);
+
+    if((zSize & (SIMD<_SIMDType>::vectorSize()-1))==0)
+    {
+        typename SIMD<_SIMDType>::Int x=SIMD<_SIMDType>::mul(SIMD<_SIMDType>::set(xStart), Constant::numi_xPrime);
+        typename SIMD<_SIMDType>::Int yBase=SIMD<_SIMDType>::mul(SIMD<_SIMDType>::set(yStart), Constant::numi_yPrime);
+        typename SIMD<_SIMDType>::Int zBase=SIMD<_SIMDType>::mul(SIMD<_SIMDType>::add(Constant::numi_incremental, SIMD<_SIMDType>::set(zStart)), Constant::numi_zPrime);
+
+        typename SIMD<_SIMDType>::Int zStep=SIMD<_SIMDType>::mul(Constant::numi_vectorSize, Constant::numi_zPrime);
+
+        int index=0;
+
+        for(int ix=0; ix < xSize; ix++)
+        {
+            typename SIMD<_SIMDType>::Int y=yBase;
+
+            for(int iy=0; iy < ySize; iy++)
+            {
+                typename SIMD<_SIMDType>::Int z=zBase;
+
+                SIMD<_SIMDType>::store(&noiseSet[index], ValCoord<_SIMDType>(seedV, x, y, z));
+
+                int iz=SIMD<_SIMDType>::vectorSize();
+                while(iz < zSize)
+                {
+                    z=SIMD<_SIMDType>::add(z, zStep);
+                    index+=SIMD<_SIMDType>::vectorSize();
+                    iz+=SIMD<_SIMDType>::vectorSize();
+
+                    SIMD<_SIMDType>::store(&noiseSet[index], ValCoord<_SIMDType>(seedV, x, y, z));
+                }
+                index+=SIMD<_SIMDType>::vectorSize();
+                y=SIMD<_SIMDType>::add(y, Constant::numi_yPrime);
+            }
+            x=SIMD<_SIMDType>::add(x, Constant::numi_xPrime);
+        }
+    }
+    else
+    {
+        typename SIMD<_SIMDType>::Int ySizeV=SIMD<_SIMDType>::set(ySize);
+        typename SIMD<_SIMDType>::Int zSizeV=SIMD<_SIMDType>::set(zSize);
+
+        typename SIMD<_SIMDType>::Int yEndV=SIMD<_SIMDType>::set(yStart+ySize-1);
+        typename SIMD<_SIMDType>::Int zEndV=SIMD<_SIMDType>::set(zStart+zSize-1);
+
+        typename SIMD<_SIMDType>::Int x=SIMD<_SIMDType>::set(xStart);
+        typename SIMD<_SIMDType>::Int y=SIMD<_SIMDType>::set(yStart);
+        typename SIMD<_SIMDType>::Int z=SIMD<_SIMDType>::add(SIMD<_SIMDType>::set(zStart), Constant::numi_incremental);
+
+        axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 1);
+
+        int index=0;
+        int maxIndex=xSize * ySize * zSize;
+
+        for(; index < maxIndex-SIMD<_SIMDType>::vectorSize(); index+=SIMD<_SIMDType>::vectorSize())
+        {
+            SIMD<_SIMDType>::store(&noiseSet[index], ValCoord<_SIMDType>(seedV, SIMD<_SIMDType>::mul(x, Constant::numi_xPrime), SIMD<_SIMDType>::mul(y, Constant::numi_yPrime), SIMD<_SIMDType>::mul(z, Constant::numi_zPrime)));
+
+            z=SIMD<_SIMDType>::add(z, Constant::numi_vectorSize);
+
+            axisReset<_SIMDType>(x, y, z, ySizeV, yEndV, zSizeV, zEndV, zSize, 0);
+        }
+        typename SIMD<_SIMDType>::Float result=ValCoord<_SIMDType>(seedV, SIMD<_SIMDType>::mul(x, Constant::numi_xPrime), SIMD<_SIMDType>::mul(y, Constant::numi_yPrime), SIMD<_SIMDType>::mul(z, Constant::numi_zPrime));
+        STORE_LAST_RESULT(&noiseSet[index], result);
+    }
+    SIMD<_SIMDType>::zeroAll();
+}
+
+
 //#define SAMPLE_INDEX(_x,_y,_z) ((_x) * yzSizeSample + (_y) * zSizeSample + (_z))
 //#define SET_INDEX(_x,_y,_z) ((_x) * yzSize + (_y) * zSize + (_z))
 //
@@ -2025,7 +1933,7 @@ static typename SIMD<_SIMDType>::Float VECTORCALL CellularReturnDistanceSingle(t
 //}
 //
 //template<SIMDType _SIMDType>
-//void NoiseSIMD<_SIMDType>::FillSampledNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
+//void NoiseSIMD<_SIMDType>::FillSampledNoiseSet(float* noiseSet, VectorSet* vectorSet, float xOffset, float yOffset, float zOffset)
 //{
 //    typedef Constants<typename SIMD<_SIMDType>::Float, typename SIMD<_SIMDType>::Int, _SIMDType> Constant;
 //

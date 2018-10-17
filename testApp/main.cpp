@@ -29,7 +29,6 @@ struct NoiseInfo
     FastNoise::NoiseType type;
 };
 
-//enum NoiseType { Value, ValueFractal, Perlin, PerlinFractal, Simplex, SimplexFractal, WhiteNoise, Cellular, Cubic, CubicFractal };
 std::vector<NoiseInfo> Noises=
 {
     {"Value", FastNoise::NoiseType::Value},
@@ -39,7 +38,7 @@ std::vector<NoiseInfo> Noises=
     {"Simplex", FastNoise::NoiseType::Simplex},
     {"SimplexFractal", FastNoise::NoiseType::SimplexFractal},
     {"WhiteNoise", FastNoise::NoiseType::WhiteNoise},
-//    {"Cellular", FastNoise::NoiseType::Cellular},
+    {"Cellular", FastNoise::NoiseType::Cellular},
     {"Cubic", FastNoise::NoiseType::Cubic},
     {"CubicFractal", FastNoise::NoiseType::CubicFractal}
 };
@@ -56,7 +55,7 @@ std::vector<std::string> SIMDNames=
 
 void saveNoise(std::string &fileName, float *data, size_t x, size_t y, size_t z)
 {
-    FILE *file=fopen(fileName.c_str(), "w");
+    FILE *file=fopen(fileName.c_str(), "wb");
 
     if(!file)
         return;
@@ -67,7 +66,7 @@ void saveNoise(std::string &fileName, float *data, size_t x, size_t y, size_t z)
     fclose(file);
 }
 
-void generate()
+void generate(int highestLevel=-1)
 {
 #if FN_USE_FILESYSTEM == 0
     assert(false);
@@ -77,7 +76,9 @@ void generate()
     int ySize=64;
     int zSize=64;
 
-//    maxLevel=2;
+    if(highestLevel>=0)
+        maxLevel=std::min(maxLevel, highestLevel);
+
     fs::path dataDir("./data");
 
     if(!fs::exists(dataDir))
@@ -87,17 +88,23 @@ void generate()
     //skip neon
     for(int i=maxLevel; i>=0; --i)
     {
+        std::cout<<"SIMD: "<<SIMDNames[i]<<" --------------------------------------------------------\n";
+
         FastNoise::NoiseSIMD::SetSIMDLevel((FastNoise::SIMDType)i);
         float* noiseSet=FastNoise::NoiseSIMD::GetEmptySet(xSize, ySize, zSize);
         FastNoise::NoiseSIMD *noise=FastNoise::NoiseSIMD::New();
 
         for(auto &info:Noises)
         {
+            std::cout<<"    "<<info.name;
+
             noise->SetNoiseType(info.type);
             noise->FillSet(noiseSet, 0, 0, 0, xSize, ySize, zSize);
 
             fileName=dataDir.string()+"/"+info.name+"_"+SIMDNames[i]+".ns";
             saveNoise(fileName, noiseSet, xSize, ySize, zSize);
+
+            std::cout<<"  complete\n";
         }
         delete noise;
     }
@@ -166,7 +173,31 @@ void testPerformance()
 int main(int argc, char ** argv)
 {
     FastNoise::NoiseSIMD::loadSimd("./");
-//    generate();
-    testPerformance();
+    
+    int maxLevel=-1;
+    bool getMaxLevel=false;
+    bool runGenerate=false;
+    bool runPerformance=false;
+
+    for(size_t i=1; i<argc; ++i)
+    {
+        if(strcmp(argv[i], "-g")==0)
+            runGenerate=true;
+        else if(strcmp(argv[i], "-p")==0)
+            runPerformance=true;
+        else if(strcmp(argv[i], "-m")==0)
+            getMaxLevel=true;
+        else if(getMaxLevel)
+            maxLevel=atoi(argv[i]);
+        else
+        {
+            getMaxLevel=false;;
+        }
+    }
+
+    if(runGenerate)
+        generate(maxLevel);
+    if(runPerformance)
+        testPerformance();
     return 0;
 }

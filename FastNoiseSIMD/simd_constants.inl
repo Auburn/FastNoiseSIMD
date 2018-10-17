@@ -25,7 +25,6 @@ struct ConstantsBase
     static Float numf_15_5;
     static Float numf_511_5;
 
-    //static Float numf_cellJitter;
     static Float numf_F3;
     static Float numf_G3;
     static Float numf_G33;
@@ -39,10 +38,6 @@ struct ConstantsBase
     static Int numi_255;
     static Int numi_60493;
     static Int numi_0x7fffffff;
-
-    //static Int numi_xGradBits;
-    //static Int numi_yGradBits;
-    //static Int numi_zGradBits;
 
     static Int numi_xPrime;
     static Int numi_yPrime;

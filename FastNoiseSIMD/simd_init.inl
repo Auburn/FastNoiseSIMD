@@ -43,7 +43,6 @@ struct InitSIMDValuesBase
         _Constants::numf_15_5=SIMD<_SIMDType>::set(15.5f);
         _Constants::numf_511_5=SIMD<_SIMDType>::set(511.5f);
 
-        //_Constants::numf_cellJitter = SIMD<_SIMDType>::set(0.39614f);
         _Constants::numf_F3=SIMD<_SIMDType>::set(1.f/3.f);
         _Constants::numf_G3=SIMD<_SIMDType>::set(1.f/6.f);
         _Constants::numf_G33=SIMD<_SIMDType>::set((3.f/6.f)-1.f);
@@ -56,10 +55,6 @@ struct InitSIMDValuesBase
         _Constants::numi_255=SIMD<_SIMDType>::set(255);
         _Constants::numi_60493=SIMD<_SIMDType>::set(60493);
         _Constants::numi_0x7fffffff=SIMD<_SIMDType>::set(0x7fffffff);
-
-        //_Constants::numi_xGradBits = SIMD<_SIMDType>::set(1683327112);
-        //_Constants::numi_yGradBits = SIMD<_SIMDType>::set(-2004331104);
-        //_Constants::numi_zGradBits = SIMD<_SIMDType>::set(-1851744171);
 
         _Constants::numi_xPrime=SIMD<_SIMDType>::set(1619);
         _Constants::numi_yPrime=SIMD<_SIMDType>::set(31337);
