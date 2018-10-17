@@ -2,7 +2,6 @@
 
 #include "simd_constants.inl"
 #include "internal_none.inl"
-#include "internal_sse2.inl"
 #include "FastNoiseSIMD_internal.h"
 
 #include "simd_init.inl"
@@ -13,11 +12,8 @@ namespace FastNoise
 namespace details
 {
 
-#ifdef FN_COMPILE_SSE2
-
-template class NoiseSIMD<SIMDType::SSE2>;
-
-#endif
+template class NoiseSIMD<SIMDType::None>;
 
 }//namespace details
-}//namespace FastNoiseSIMD
+}//namespace FastNoise
+

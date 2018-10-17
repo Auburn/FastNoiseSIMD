@@ -1,53 +1,89 @@
-// FastNoiseSIMD_avx512.cpp
-//
-// MIT License
-//
-// Copyright(c) 2017 Jordan Peck
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files(the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions :
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-//
-// The developer's email is jorzixdan.me2@gzixmail.com (for great email, take
-// off every 'zix'.)
-//
-
 #include "FastNoiseSIMD.h"
 
-// DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
+#include "simd_constants.inl"
 
-// To compile AVX512 support enable AVX(2) code generation compiler flags for this file
-#ifdef FN_COMPILE_AVX512
-#ifndef __AVX__
-#ifdef __GNUC__
-#error To compile AVX512 add build command "-march=core-avx2" on FastNoiseSIMD_avx512.cpp, or remove "#define FN_COMPILE_AVX512" from FastNoiseSIMD.h
-#else
-#error To compile AVX512 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_avx512.cpp, or remove "#define FN_COMPILE_AVX512" from FastNoiseSIMD.h
-#endif
-#endif
+namespace FastNoise
+{
+namespace details
+{
 
-#define SIMD_LEVEL_H FN_AVX512
+template<typename Float, typename Int>
+struct Constants<Float, Int, SIMDType::AVX512>:ConstantsBase<Float, Int>
+{
+    static Float numf_X_GRAD;
+    static Float numf_Y_GRAD;
+    static Float numf_Z_GRAD;
+};
+
+template<typename Float, typename Int>
+Float Constants<Float, Int, SIMDType::AVX512>::numf_X_GRAD;
+template<typename Float, typename Int>
+Float Constants<Float, Int, SIMDType::AVX512>::numf_Y_GRAD;
+template<typename Float, typename Int>
+Float Constants<Float, Int, SIMDType::AVX512>::numf_Z_GRAD;
+
+}
+}
+
+#include "internal_none.inl"
+#include "internal_avx512.inl"
 #include "FastNoiseSIMD_internal.h"
-#ifdef _WIN32
-#include <intrin.h> //AVX512
-#else
-#include <x86intrin.h> //AVX512
+
+#include "simd_init.inl"
+
+namespace FastNoise
+{
+namespace details
+{
+
+template<>
+struct InitSIMDValues<SIMDType::AVX512>:InitSIMDValuesBase<SIMDType::AVX512>
+{
+    typedef Constants<typename SIMD<SIMDType::AVX512>::Float, typename SIMD<SIMDType::AVX512>::Int, SIMDType::AVX512> _Constants;
+
+    static void _()
+    {
+        if(_Constants::valueSet)
+            return;
+
+        _Constants::numf_X_GRAD=_mm512_set_ps(0, -1, 0, 1, 0, 0, 0, 0, -1, 1, -1, 1, -1, 1, -1, 1);
+        _Constants::numf_Y_GRAD=_mm512_set_ps(-1, 1, -1, 1, -1, 1, -1, 1, 0, 0, 0, 0, -1, -1, 1, 1);
+        _Constants::numf_Z_GRAD=_mm512_set_ps(-1, 0, 1, 0, -1, -1, 1, 1, -1, -1, 1, 1, 0, 0, 0, 0);
+
+        InitSIMDValuesBase<SIMDType::AVX512>::init<_Constants>();
+    }
+};
+
+}
+}
+#include "FastNoiseSIMD_internal.inl"
+
+namespace FastNoise
+{
+namespace details
+{
+
+template<>
+struct GradCoord<SIMDType::AVX512>
+{
+    static typename SIMD<SIMDType::AVX512>::Float VECTORCALL _(typename SIMD<SIMDType::AVX512>::Int seed, typename SIMD<SIMDType::AVX512>::Int xi, typename SIMD<SIMDType::AVX512>::Int yi, typename SIMD<SIMDType::AVX512>::Int zi, typename SIMD<SIMDType::AVX512>::Float x, typename SIMD<SIMDType::AVX512>::Float y, typename SIMD<SIMDType::AVX512>::Float z)
+    {
+        typedef Constants<SIMD<SIMDType::AVX512>::Float, SIMD<SIMDType::AVX512>::Int, SIMDType::AVX512> Constant;
+        typename SIMD<SIMDType::AVX512>::Int hash=Hash<SIMDType::AVX512>(seed, xi, yi, zi);
+
+        typename SIMD<SIMDType::AVX512>::Float xGrad=SIMD<SIMDType::AVX512>::permute(Constant::numf_X_GRAD, hash);
+        typename SIMD<SIMDType::AVX512>::Float yGrad=SIMD<SIMDType::AVX512>::permute(Constant::numf_Y_GRAD, hash);
+        typename SIMD<SIMDType::AVX512>::Float zGrad=SIMD<SIMDType::AVX512>::permute(Constant::numf_Z_GRAD, hash);
+
+        return SIMD<SIMDType::AVX512>::mulAdd(x, xGrad, SIMD<SIMDType::AVX512>::mulAdd(y, yGrad, SIMD<SIMDType::AVX512>::mulf(z, zGrad)));
+    }
+};
+
+#ifdef FN_COMPILE_AVX512
+template class NoiseSIMD<SIMDType::AVX512>;
+//template struct Constants<typename SIMD<SIMDType::AVX512>::Float, typename SIMD<SIMDType::AVX512>::Int, SIMDType::AVX512>;
 #endif
 
-#define SIMD_LEVEL FN_AVX512
-#include "FastNoiseSIMD_internal.cpp"
-#endif
+}//namespace details
+}//namespace FastNoiseSIMD
+
