@@ -1,8 +1,16 @@
-# This is currently very rudimentary and likely needs various improvements.
+cmake_minimum_required(VERSION 3.10)
 
-cmake_minimum_required(VERSION 3.7) # Requiring 3.7 might be incorrect.
+# detect if FastNoiseSIMD is being bundled,
+# disable testsuite in that case
+if(NOT DEFINED PROJECT_NAME)
+  set(NOT_SUBPROJECT ON)
+endif()
 
-project(FastNoiseSIMD)
+project(FastNoiseSIMD
+    VERSION 0.7.0
+    DESCRIPTION "C++ SIMD Noise Library"
+    LANGUAGES CXX
+)
 
 set(CMAKE_CXX_STANDARD 11) # Requiring C++11 might be incorrect.
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -34,19 +42,21 @@ option(
     "Using FMA instructions with AVX(51)2/NEON provides a small performance \
     increase but can cause minute variations in noise output compared to other \
     SIMD levels due to higher calculation precision."
-    ON)
+    ON
+)
 
 option(
     FN_ALIGNED_SETS
     "Using aligned sets of memory for float arrays allows faster storing of \
     SIMD data."
-    ON)
+    ON
+)
 
 configure_file(
     ${CMAKE_CURRENT_LIST_DIR}/cmake/FastNoiseSIMD_config.h.in
     ${CMAKE_CURRENT_LIST_DIR}/include/FastNoiseSIMD/FastNoiseSIMD_config.h
     @ONLY
-    )
+)
 
 add_library(FastNoiseSIMD STATIC
     src/FastNoiseSIMD.cpp
@@ -97,8 +107,8 @@ if(NOT_SUBPROJECT)
     install(EXPORT FastNoiseSIMDTargets DESTINATION ${FN_CMAKE_CONFIG_DESTINATION})
 
     write_basic_package_version_file(
-      "${CMAKE_CURRENT_BINARY_DIR}/FastNoiseSIMDConfigVersion.cmake"
-      COMPATIBILITY SameMajorVersion
+        "${CMAKE_CURRENT_BINARY_DIR}/FastNoiseSIMDConfigVersion.cmake"
+        COMPATIBILITY SameMajorVersion
     )
 
     install(TARGETS FastNoiseSIMD LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
