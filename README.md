@@ -1,4 +1,17 @@
-# FastNoise SIMD
+<h1 align="center">
+    FastNoise SIMD
+</h1>
+<p align="center">
+    <a href="https://travis-ci.org/open-terra/terra">
+        <img src="https://img.shields.io/travis/open-terra/terra/master.svg?label=Travis&style=flat-square&logo=travis" alt="Travis Build Status">
+    </a>
+    <a href="https://ci.appveyor.com/project/C0RP3N/terra">
+        <img src="https://img.shields.io/appveyor/ci/C0RP3N/terra/master.svg?label=AppVeyor&style=flat-square&logo=appveyor" alt="Appveyor Build Status">
+    </a>
+    <br>
+    <strong>FastNoise SIMD is the SIMD implementation of my noise library <a href="https://github.com/Auburns/FastNoise">FastNoise</a>.</strong>
+</p>
+
 FastNoise SIMD is the SIMD implementation of my noise library [FastNoise](https://github.com/Auburns/FastNoise). It aims to provide faster performance through the use of intrinsic(SIMD) CPU functions. Vectorisation of the code allows noise functions to process data in sets of 4/8/16 increasing performance by 700% in some cases (Simplex).
 
 After releasing FastNoise I got in contact with the author of [FastNoise SIMD](https://github.com/jackmott/FastNoise-SIMD) (naming is coincidence) and was inspired to work with SIMD functions myself. Through his code and discussions with him I created my implementation with even more optimisation thanks to the removal of lookup tables. 
