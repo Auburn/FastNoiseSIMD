@@ -1,0 +1,15 @@
+version: 1.0.{build}
+image: Visual Studio 2019
+configuration: Debug
+clone_depth: 50
+platform: x64
+
+before_build:
+  - mkdir build
+  - cd build
+  - cmake -DFN_COMPILE_AVX2=ON -DFN_COMPILE_AVX512=ON -G "Visual Studio 16 2019" ..
+
+build:
+  project: build/FastNoiseSIMD.sln
+  parallel: true
+  verbosity: minimal
