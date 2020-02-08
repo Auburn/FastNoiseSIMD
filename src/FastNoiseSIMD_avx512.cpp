@@ -1,4 +1,4 @@
-// FastNoiseSIMD_sse2.cpp
+// FastNoiseSIMD_avx512.cpp
 //
 // MIT License
 //
@@ -26,16 +26,28 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 // DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
 
-// Depending on the compiler this file may need to have SSE2 code generation compiler flags enabled
-#ifdef FN_COMPILE_SSE2
-#define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD_internal.h"
-#include <emmintrin.h> //SSE2
+// To compile AVX512 support enable AVX(2) code generation compiler flags for this file
+#ifdef FN_COMPILE_AVX512
+#ifndef __AVX__
+#ifdef __GNUC__
+#error To compile AVX512 add build command "-march=core-avx2" on FastNoiseSIMD_avx512.cpp, or remove "#define FN_COMPILE_AVX512" from FastNoiseSIMD.h
+#else
+#error To compile AVX512 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_avx512.cpp, or remove "#define FN_COMPILE_AVX512" from FastNoiseSIMD.h
+#endif
+#endif
 
-#define SIMD_LEVEL FN_SSE2
+#define SIMD_LEVEL_H FN_AVX512
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#ifdef _WIN32
+#include <intrin.h> //AVX512
+#else
+#include <x86intrin.h> //AVX512
+#endif
+
+#define SIMD_LEVEL FN_AVX512
 #include "FastNoiseSIMD_internal.cpp"
 #endif

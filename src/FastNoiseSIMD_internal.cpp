@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include <assert.h> 
 
 #if defined(SIMD_LEVEL) || defined(FN_COMPILE_NO_SIMD_FALLBACK)
@@ -34,7 +34,7 @@
 #ifndef SIMD_LEVEL
 #define SIMD_LEVEL FN_NO_SIMD_FALLBACK
 #define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #include <math.h>
 #define FN_ALIGNED_SETS
 #endif

@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -34,32 +34,32 @@
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
 #define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_SSE2
 #define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_SSE41
 #define SIMD_LEVEL_H FN_SSE41
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_AVX2
 #define SIMD_LEVEL_H FN_AVX2
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_AVX512
 #define SIMD_LEVEL_H FN_AVX512
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_NEON
 #define SIMD_LEVEL_H FN_NEON
-#include "FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
 #endif
 
 // CPUid
@@ -67,7 +67,7 @@
 #include <intrin.h>
 #elif defined(FN_ARM)
 #if !defined(__aarch64__) && !defined(FN_IOS)
-#include "ARM/cpu-features.h"
+#include "FastNoiseSIMD/ARM/cpu-features.h"
 #endif
 #else
 #include <cpuid.h>
