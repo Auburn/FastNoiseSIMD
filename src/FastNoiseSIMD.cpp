@@ -34,32 +34,32 @@
 
 #ifdef FN_COMPILE_NO_SIMD_FALLBACK
 #define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_SSE2
 #define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_SSE41
 #define SIMD_LEVEL_H FN_SSE41
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_AVX2
 #define SIMD_LEVEL_H FN_AVX2
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_AVX512
 #define SIMD_LEVEL_H FN_AVX512
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #endif
 
 #ifdef FN_COMPILE_NEON
 #define SIMD_LEVEL_H FN_NEON
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #endif
 
 // CPUid

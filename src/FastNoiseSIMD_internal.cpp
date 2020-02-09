@@ -34,7 +34,7 @@
 #ifndef SIMD_LEVEL
 #define SIMD_LEVEL FN_NO_SIMD_FALLBACK
 #define SIMD_LEVEL_H FN_NO_SIMD_FALLBACK
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #include <math.h>
 #define FN_ALIGNED_SETS
 #endif

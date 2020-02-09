@@ -30,7 +30,7 @@
 #ifdef FN_COMPILE_NEON
 
 #define SIMD_LEVEL_H FN_NEON
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #include <arm_neon.h>
 
 #define SIMD_LEVEL FN_NEON

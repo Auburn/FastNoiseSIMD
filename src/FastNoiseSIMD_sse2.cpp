@@ -33,7 +33,7 @@
 // Depending on the compiler this file may need to have SSE2 code generation compiler flags enabled
 #ifdef FN_COMPILE_SSE2
 #define SIMD_LEVEL_H FN_SSE2
-#include "FastNoiseSIMD/FastNoiseSIMD_internal.h"
+#include "FastNoiseSIMD_internal.h"
 #include <emmintrin.h> //SSE2
 
 #define SIMD_LEVEL FN_SSE2
