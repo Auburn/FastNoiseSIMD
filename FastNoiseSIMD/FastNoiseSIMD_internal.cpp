@@ -191,8 +191,8 @@ static SIMDf VECTORCALL FUNC(FLOOR)(SIMDf a)
 	SIMDf fval = SIMDf_CONVERT_TO_FLOAT(SIMDi_CONVERT_TO_INT(a));
 
 	return vsubq_f32(fval,
-		SIMDf_CAST_TO_FLOAT(vandq_s32(SIMDf_LESS_THAN(a, fval),
-			SIMDi_CAST_TO_INT(SIMDf_NUM(1)))));
+	                 SIMDf_CAST_TO_FLOAT(vandq_s32(SIMDf_LESS_THAN(a, fval),
+	                                               SIMDi_CAST_TO_INT(SIMDf_NUM(1)))));
 }
 #define SIMDf_FLOOR(a) FUNC(FLOOR)(a)
 #else
@@ -446,7 +446,7 @@ static float FUNC(INV_SQRT)(float x)
 	int i = *(int*)&x;
 	i = 0x5f3759df - (i >> 1);
 	x = *(float*)&i;
-	x = x * (1.5f - xhalf * x*x);
+	x = x*(1.5f - xhalf*x*x);
 	return x;
 }
 #define SIMDf_INV_SQRT(a) FUNC(INV_SQRT)(a)
