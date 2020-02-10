@@ -15,6 +15,11 @@ project(FastNoiseSIMD
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+if(BUILD_TESTING)
+    # Catch2 needed for testing
+    find_package(Catch2 CONFIG REQUIRED)
+endif()
+
 set(CMAKE_CXX_STANDARD 11) # Requiring C++11 might be incorrect.
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -92,6 +97,10 @@ elseif(${FN_COMPILE_AVX2})
 endif()
 
 target_compile_options(FastNoiseSIMD PRIVATE "${FN_CXX_FLAGS}")
+
+if(BUILD_TESTING)
+    include(test/tests.cmake)
+endif()
 
 # Only perform the installation steps when not being used as
 # a subproject via `add_subdirectory`, or the destinations will break
