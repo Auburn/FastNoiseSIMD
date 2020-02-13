@@ -279,3 +279,6 @@ _deps
 
 # VSCode
 .vscode/
+
+# FastNoiseSIMD
+FastNoiseSIMD_config.h
