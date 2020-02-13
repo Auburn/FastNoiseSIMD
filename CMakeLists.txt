@@ -20,9 +20,16 @@ if(BUILD_TESTING)
     find_package(Catch2 CONFIG REQUIRED)
 endif()
 
-set(CMAKE_CXX_STANDARD 11) # Requiring C++11 might be incorrect.
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# Do stuff depending on the compiler
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "-W -Wall -Wextra -Wpedantic -Wunused-value -Wold-style-cast")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS "/W4")
+    set(CMAKE_CXX_FLAGS_DEBUG "/O0 /ZI")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2")
+endif()
 
 set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FastNoiseSIMD)
 
@@ -74,6 +81,13 @@ add_library(FastNoiseSIMD STATIC
     src/FastNoiseSIMD_neon.cpp
     src/FastNoiseSIMD_sse2.cpp
     src/FastNoiseSIMD_sse41.cpp
+)
+
+set_target_properties(FastNoiseSIMD
+    PROPERTIES 
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED ON
+        CMAKE_DEBUG_POSTFIX "d"
 )
 
 target_include_directories(FastNoiseSIMD PUBLIC
