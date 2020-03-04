@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 // DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
 

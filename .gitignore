@@ -262,3 +262,23 @@ paket-files/
 /TEST/FastNoiseSIMD Preview
 /cellModel.skp
 /cellModel.skb
+
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+[Bb]uild
+
+# VSCode
+.vscode/
+
+# FastNoiseSIMD
+FastNoiseSIMD_config.h

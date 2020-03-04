@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -67,7 +67,7 @@
 #include <intrin.h>
 #elif defined(FN_ARM)
 #if !defined(__aarch64__) && !defined(FN_IOS)
-#include "ARM/cpu-features.h"
+#include "FastNoiseSIMD/ARM/cpu-features.h"
 #endif
 #else
 #include <cpuid.h>

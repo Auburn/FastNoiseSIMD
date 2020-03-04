@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include <assert.h> 
 
 #if defined(SIMD_LEVEL) || defined(FN_COMPILE_NO_SIMD_FALLBACK)

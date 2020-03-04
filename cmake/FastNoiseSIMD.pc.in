@@ -1,0 +1,7 @@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: FastNoiseSIMD
+Description: 
+URL: https://github.com/c0rp3n/fastnoise-simd
+Version: @FastNoiseSIMD_VERSION@
+Cflags: -I${includedir}
