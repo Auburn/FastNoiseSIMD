@@ -21,6 +21,10 @@ if(BUILD_TESTING)
 endif()
 
 # Do stuff depending on the compiler
+option(FN_SET_c0rp3n_CXX_FLAGS
+    "Set CMAKE_CXX_FLAGS[_DEBUG][_RELEASE] defaults from the c0rp3n/fastnoise-simd fork."
+    OFF)
+if(FN_SET_c0rp3n_CXX_FLAGS)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "-W -Wall -Wextra -Wpedantic -Wunused-value -Wold-style-cast")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
@@ -29,6 +33,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "/W4")
     set(CMAKE_CXX_FLAGS_DEBUG "/O0 /ZI")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2")
+endif()
 endif()
 
 set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FastNoiseSIMD)
