@@ -79,7 +79,7 @@ Timings below are x1000 ns to generate 32x32x32 points of noise on a single thre
 | Cellular    | 851    | 1283 | 2679   | 2959 | 2979      | 58125    |
 | Cubic       | 615    | 952  | 1970   | 3516 | 2979      |          |
 
-Comparision of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
+Comparison of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
 # Examples
 ### Cellular Noise
