@@ -1,7 +1,20 @@
-# FastNoise SIMD
-FastNoise SIMD is the SIMD implementation of my noise library [FastNoise](https://github.com/Auburns/FastNoise). It aims to provide faster performance through the use of intrinsic(SIMD) CPU functions. Vectorisation of the code allows noise functions to process data in sets of 4/8/16 increasing performance by 700% in some cases (Simplex).
+<h1 align="center">
+    FastNoise SIMD
+</h1>
+<p align="center">
+    <a href="https://travis-ci.org/open-terra/terra">
+        <img src="https://img.shields.io/travis/c0rp3n/fastnoise-simd/master.svg?label=Travis&style=flat-square&logo=travis" alt="Travis Build Status">
+    </a>
+    <a href="https://ci.appveyor.com/project/C0RP3N/terra">
+        <img src="https://img.shields.io/appveyor/ci/C0RP3N/fastnoise-simd/master.svg?label=AppVeyor&style=flat-square&logo=appveyor" alt="Appveyor Build Status">
+    </a>
+    <br>
+    <strong>FastNoise SIMD is the SIMD implementation of <a href="https://github.com/Auburns/FastNoise">FastNoise</a>.</strong>
+</p>
 
-After releasing FastNoise I got in contact with the author of [FastNoise SIMD](https://github.com/jackmott/FastNoise-SIMD) (naming is coincidence) and was inspired to work with SIMD functions myself. Through his code and discussions with him I created my implementation with even more optimisation thanks to the removal of lookup tables. 
+FastNoise SIMD aims to provide faster performance through the use of intrinsic(SIMD) CPU functions. Vectorisation of the code allows noise functions to process data in sets of 4/8/16 increasing performance by 700% in some cases (Simplex).
+
+Inspired by [FastNoise SIMD](https://github.com/jackmott/FastNoise-SIMD) (naming is coincidence). FastNoise SIMD was created with even more optimisation thanks to the removal of lookup tables.
 
 Runtime detection of highest supported instruction set ensures the fastest possible performance with only 1 compile needed. If no support is found it will fallback to standard types (float/int).
 
@@ -66,7 +79,7 @@ Timings below are x1000 ns to generate 32x32x32 points of noise on a single thre
 | Cellular    | 851    | 1283 | 2679   | 2959 | 2979      | 58125    |
 | Cubic       | 615    | 952  | 1970   | 3516 | 2979      |          |
 
-Comparision of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
+Comparison of fractals and sampling performance [here](https://github.com/Auburns/FastNoiseSIMD/wiki/In-depth-SIMD-level).
 
 # Examples
 ### Cellular Noise

@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include <assert.h> 
 
 #if defined(SIMD_LEVEL) || defined(FN_COMPILE_NO_SIMD_FALLBACK)
@@ -461,6 +461,7 @@ static float FUNC(INV_SQRT)(float x)
 #define SIMDf_XOR(a,b) SIMDf_CAST_TO_FLOAT(SIMDi_CAST_TO_INT(a) ^ SIMDi_CAST_TO_INT(b))
 
 #define SIMDf_FLOOR(a) floorf(a)
+#define SIMDf_ROUND(a) roundf(a)
 #define SIMDf_ABS(a) fabsf(a)
 #define SIMDf_BLENDV(a,b,mask) (mask ? (b) : (a))
 #define SIMDf_GATHER(p,a) (*(reinterpret_cast<const float*>(p)+(a)))
@@ -566,15 +567,18 @@ static SIMDf SIMDf_NUM(10);
 static SIMDf SIMDf_NUM(15);
 static SIMDf SIMDf_NUM(32);
 static SIMDf SIMDf_NUM(999999);
+static SIMDf SIMDf_NUM(_1);
 
 static SIMDf SIMDf_NUM(0_5);
 static SIMDf SIMDf_NUM(0_6);
 static SIMDf SIMDf_NUM(15_5);
 static SIMDf SIMDf_NUM(511_5);
+static SIMDf SIMDf_NUM(32768_5);
 
 //static SIMDf SIMDf_NUM(cellJitter);
 static SIMDf SIMDf_NUM(F3);
 static SIMDf SIMDf_NUM(G3);
+static SIMDf SIMDf_NUM(R3);
 static SIMDf SIMDf_NUM(G33);
 static SIMDf SIMDf_NUM(hash2Float);
 static SIMDf SIMDf_NUM(vectorSize);
@@ -632,15 +636,18 @@ void FUNC(InitSIMDValues)()
 	SIMDf_NUM(15) = SIMDf_SET(15.0f);
 	SIMDf_NUM(32) = SIMDf_SET(32.0f);
 	SIMDf_NUM(999999) = SIMDf_SET(999999.0f);
+	SIMDf_NUM(_1) = SIMDf_SET(-1.0f);
 
 	SIMDf_NUM(0_5) = SIMDf_SET(0.5f);
 	SIMDf_NUM(0_6) = SIMDf_SET(0.6f);
 	SIMDf_NUM(15_5) = SIMDf_SET(15.5f);
 	SIMDf_NUM(511_5) = SIMDf_SET(511.5f);
+	SIMDf_NUM(32768_5) = SIMDf_SET(32768.5f);
 
 	//SIMDf_NUM(cellJitter) = SIMDf_SET(0.39614f);
 	SIMDf_NUM(F3) = SIMDf_SET(1.f / 3.f);
 	SIMDf_NUM(G3) = SIMDf_SET(1.f / 6.f);
+	SIMDf_NUM(R3) = SIMDf_SET(2.f / 3.f);
 	SIMDf_NUM(G33) = SIMDf_SET((3.f / 6.f) - 1.f);
 	SIMDf_NUM(hash2Float) = SIMDf_SET(1.f / 2147483648.f);
 	SIMDf_NUM(vectorSize) = SIMDf_SET(VECTOR_SIZE);
@@ -920,6 +927,65 @@ static SIMDf VECTORCALL FUNC(SimplexSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf 
 	SIMDf v3 = SIMDf_MASK(n3, SIMDf_MUL(SIMDf_MUL(t3, t3), FUNC(GradCoord)(seed, SIMDi_ADD(i, SIMDi_NUM(xPrime)), SIMDi_ADD(j, SIMDi_NUM(yPrime)), SIMDi_ADD(k, SIMDi_NUM(zPrime)), x3, y3, z3)));
 
 	return SIMDf_MUL(SIMDf_NUM(32), SIMDf_MASK_ADD(n0, SIMDf_MASK_ADD(n1, SIMDf_MASK_ADD(n2, v3, v2), v1), v0));
+}
+
+static SIMDf VECTORCALL FUNC(OpenSimplex2Single)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)
+{
+	SIMDf f = SIMDf_MUL(SIMDf_NUM(R3), SIMDf_ADD(SIMDf_ADD(x, y), z));
+	SIMDf xr = SIMDf_SUB(f, x);
+	SIMDf yr = SIMDf_SUB(f, y);
+	SIMDf zr = SIMDf_SUB(f, z);
+
+	SIMDf val = SIMDf_NUM(0);
+	for (int i = 0; i < 2; i++)
+	{
+		SIMDf v0xr = SIMDf_FLOOR(SIMDf_ADD(xr, SIMDf_NUM(0_5)));
+		SIMDf v0yr = SIMDf_FLOOR(SIMDf_ADD(yr, SIMDf_NUM(0_5)));
+		SIMDf v0zr = SIMDf_FLOOR(SIMDf_ADD(zr, SIMDf_NUM(0_5)));
+		SIMDf d0xr = SIMDf_SUB(xr, v0xr);
+		SIMDf d0yr = SIMDf_SUB(yr, v0yr);
+		SIMDf d0zr = SIMDf_SUB(zr, v0zr);
+
+		SIMDf score0xr = SIMDf_ABS(d0xr);
+		SIMDf score0yr = SIMDf_ABS(d0yr);
+		SIMDf score0zr = SIMDf_ABS(d0zr);
+		MASK dir0xr = SIMDf_LESS_EQUAL(SIMDf_MAX(score0yr, score0zr), score0xr);
+		MASK dir0yr = SIMDi_AND_NOT(dir0xr, SIMDf_LESS_EQUAL(SIMDf_MAX(score0zr, score0xr), score0yr));
+		MASK dir0zr = SIMDi_NOT(SIMDi_OR(dir0xr, dir0yr));
+		SIMDf v1xr = SIMDf_ADD(v0xr, SIMDf_BLENDV(SIMDf_NUM(0), SIMDf_BLENDV(SIMDf_NUM(1), SIMDf_NUM(_1), SIMDf_LESS_THAN(d0xr, SIMDf_NUM(0))), dir0xr));
+		SIMDf v1yr = SIMDf_ADD(v0yr, SIMDf_BLENDV(SIMDf_NUM(0), SIMDf_BLENDV(SIMDf_NUM(1), SIMDf_NUM(_1), SIMDf_LESS_THAN(d0yr, SIMDf_NUM(0))), dir0yr));
+		SIMDf v1zr = SIMDf_ADD(v0zr, SIMDf_BLENDV(SIMDf_NUM(0), SIMDf_BLENDV(SIMDf_NUM(1), SIMDf_NUM(_1), SIMDf_LESS_THAN(d0zr, SIMDf_NUM(0))), dir0zr));
+		SIMDf d1xr = SIMDf_SUB(xr, v1xr);
+		SIMDf d1yr = SIMDf_SUB(yr, v1yr);
+		SIMDf d1zr = SIMDf_SUB(zr, v1zr);
+
+		SIMDi hv0xr = SIMDi_MUL(SIMDi_CONVERT_TO_INT(v0xr), SIMDi_NUM(xPrime));
+		SIMDi hv0yr = SIMDi_MUL(SIMDi_CONVERT_TO_INT(v0yr), SIMDi_NUM(yPrime));
+		SIMDi hv0zr = SIMDi_MUL(SIMDi_CONVERT_TO_INT(v0zr), SIMDi_NUM(zPrime));
+		SIMDi hv1xr = SIMDi_MUL(SIMDi_CONVERT_TO_INT(v1xr), SIMDi_NUM(xPrime));
+		SIMDi hv1yr = SIMDi_MUL(SIMDi_CONVERT_TO_INT(v1yr), SIMDi_NUM(yPrime));
+		SIMDi hv1zr = SIMDi_MUL(SIMDi_CONVERT_TO_INT(v1zr), SIMDi_NUM(zPrime));
+
+		SIMDf t0 = SIMDf_NMUL_ADD(d0zr, d0zr, SIMDf_NMUL_ADD(d0yr, d0yr, SIMDf_NMUL_ADD(d0xr, d0xr, SIMDf_NUM(0_6))));
+		SIMDf t1 = SIMDf_NMUL_ADD(d1zr, d1zr, SIMDf_NMUL_ADD(d1yr, d1yr, SIMDf_NMUL_ADD(d1xr, d1xr, SIMDf_NUM(0_6))));
+		MASK n0 = SIMDf_GREATER_THAN(t0, SIMDf_NUM(0));
+		MASK n1 = SIMDf_GREATER_THAN(t1, SIMDf_NUM(0));
+		t0 = SIMDf_MUL(t0, t0);
+		t1 = SIMDf_MUL(t1, t1);
+
+		SIMDf v0 = SIMDf_MUL(SIMDf_MUL(t0, t0), FUNC(GradCoord)(seed, hv0xr, hv0yr, hv0zr, d0xr, d0yr, d0zr));
+		SIMDf v1 = SIMDf_MUL(SIMDf_MUL(t1, t1), FUNC(GradCoord)(seed, hv1xr, hv1yr, hv1zr, d1xr, d1yr, d1zr));
+
+		val = SIMDf_MASK_ADD(n0, SIMDf_MASK_ADD(n1, val, v1), v0);
+
+		if (i == 0) {
+			xr = SIMDf_ADD(xr, SIMDf_NUM(32768_5));
+			yr = SIMDf_ADD(yr, SIMDf_NUM(32768_5));
+			zr = SIMDf_ADD(zr, SIMDf_NUM(32768_5));
+		}
+	}
+
+	return SIMDf_MUL(SIMDf_NUM(32), val);
 }
 
 static SIMDf VECTORCALL FUNC(CubicSingle)(SIMDi seed, SIMDf x, SIMDf y, SIMDf z)
@@ -1376,6 +1442,9 @@ FILL_FRACTAL_SET(Perlin)
 FILL_SET(Simplex)
 FILL_FRACTAL_SET(Simplex)
 
+FILL_SET(OpenSimplex2)
+FILL_FRACTAL_SET(OpenSimplex2)
+
 //FILL_SET(WhiteNoise)
 
 FILL_SET(Cubic)
@@ -1490,6 +1559,9 @@ void SIMD_LEVEL_CLASS::Fill##func##FractalSet(float* noiseSet, FastNoiseVectorSe
 
 	FILL_VECTOR_SET(Simplex)
 	FILL_FRACTAL_VECTOR_SET(Simplex)
+
+	FILL_VECTOR_SET(OpenSimplex2)
+	FILL_FRACTAL_VECTOR_SET(OpenSimplex2)
 
 	FILL_VECTOR_SET(WhiteNoise)
 
@@ -1764,6 +1836,12 @@ static SIMDf VECTORCALL FUNC(CellularLookup##distanceFunc##Single)(SIMDi seedV, 
 		break;\
 	case FastNoiseSIMD::SimplexFractal:\
 		CELLULAR_LOOKUP_FRACTAL_VALUE(Simplex);\
+		break; \
+	case FastNoiseSIMD::OpenSimplex2:\
+		result = FUNC(OpenSimplex2Single)(seedV, xF, yF, zF); \
+		break;\
+	case FastNoiseSIMD::OpenSimplex2Fractal:\
+		CELLULAR_LOOKUP_FRACTAL_VALUE(OpenSimplex2);\
 		break; \
 	case FastNoiseSIMD::Cubic:\
 		result = FUNC(CubicSingle)(seedV, xF, yF, zF); \

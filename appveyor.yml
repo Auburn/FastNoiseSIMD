@@ -1,0 +1,25 @@
+version: 1.0.{build}
+image: Visual Studio 2019
+configuration: Debug
+clone_depth: 50
+platform: x64
+
+cache:
+  - c:\tools\vcpkg\installed
+
+install:
+  - vcpkg install Catch2:x64-windows
+  - vcpkg integrate install
+
+before_build:
+  - mkdir build
+  - cd build
+  - cmake -DFN_COMPILE_AVX2=ON -DFN_COMPILE_AVX512=OFF -DBUILD_TESTING=ON -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 16 2019" ..
+
+build:
+  project: build/FastNoiseSIMD.sln
+  parallel: true
+  verbosity: minimal
+
+test_script:
+  - ctest

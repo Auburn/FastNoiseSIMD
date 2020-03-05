@@ -1,4 +1,4 @@
-// FastNoiseSIMD_sse41.cpp
+// FastNoiseSIMD_avx2.cpp
 //
 // MIT License
 //
@@ -26,16 +26,24 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 
 // DISABLE WHOLE PROGRAM OPTIMIZATION for this file when using MSVC
 
-// Depending on the compiler this file may need to have SSE4.1 code generation compiler flags enabled
-#ifdef FN_COMPILE_SSE41
-#define SIMD_LEVEL_H FN_SSE41
-#include "FastNoiseSIMD_internal.h"
-#include <smmintrin.h> //SSE4.1
+// To compile AVX2 support enable AVX(2) code generation compiler flags for this file
+#ifdef FN_COMPILE_AVX2
+#ifndef __AVX__
+#ifdef __GNUC__
+#error To compile AVX2 add build command "-march=core-avx2" on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
+#else
+#error To compile AVX2 set C++ code generation to use /arch:AVX(2) on FastNoiseSIMD_avx2.cpp, or remove "#define FN_COMPILE_AVX2" from FastNoiseSIMD.h
+#endif
+#endif
 
-#define SIMD_LEVEL FN_SSE41
+#define SIMD_LEVEL_H FN_AVX2
+#include "FastNoiseSIMD_internal.h"
+#include <immintrin.h> //AVX2 FMA3
+
+#define SIMD_LEVEL FN_AVX2
 #include "FastNoiseSIMD_internal.cpp"
 #endif

@@ -26,7 +26,7 @@
 // off every 'zix'.)
 //
 
-#include "FastNoiseSIMD.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -67,7 +67,7 @@
 #include <intrin.h>
 #elif defined(FN_ARM)
 #if !defined(__aarch64__) && !defined(FN_IOS)
-#include "ARM/cpu-features.h"
+#include "FastNoiseSIMD/ARM/cpu-features.h"
 #endif
 #else
 #include <cpuid.h>
@@ -422,6 +422,12 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, int xStart, int yStart, int zS
 	case SimplexFractal:
 		FillSimplexFractalSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
+	case OpenSimplex2:
+		FillOpenSimplex2Set(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+		break;
+	case OpenSimplex2Fractal:
+		FillOpenSimplex2FractalSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
+		break;
 	case WhiteNoise:
 		FillWhiteNoiseSet(noiseSet, xStart, yStart, zStart, xSize, ySize, zSize, scaleModifier);
 		break;
@@ -460,6 +466,12 @@ void FastNoiseSIMD::FillNoiseSet(float* noiseSet, FastNoiseVectorSet* vectorSet,
 		break;
 	case SimplexFractal:
 		FillSimplexFractalSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
+		break;
+	case OpenSimplex2:
+		FillOpenSimplex2Set(noiseSet, vectorSet, xOffset, yOffset, zOffset);
+		break;
+	case OpenSimplex2Fractal:
+		FillOpenSimplex2FractalSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
 		break;
 	case WhiteNoise:
 		FillWhiteNoiseSet(noiseSet, vectorSet, xOffset, yOffset, zOffset);
@@ -507,6 +519,9 @@ GET_SET(PerlinFractal)
 
 GET_SET(Simplex)
 GET_SET(SimplexFractal)
+
+GET_SET(OpenSimplex2)
+GET_SET(OpenSimplex2Fractal)
 
 GET_SET(Cellular)
 
