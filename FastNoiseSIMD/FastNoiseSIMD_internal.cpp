@@ -1399,6 +1399,7 @@ if (loopMax != vectorSet->size)\
 	yF = SIMDf_MUL_ADD(yF, yFreqV, yOffsetV);\
 	zF = SIMDf_MUL_ADD(zF, zFreqV, zOffsetV);\
 	\
+	PERTURB_SWITCH()\
 	SIMDf result;\
 	f;\
 	std::memcpy(&noiseSet[index], &result, remaining);\
