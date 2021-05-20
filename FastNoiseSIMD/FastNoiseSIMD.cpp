@@ -70,7 +70,9 @@
 #include "ARM/cpu-features.h"
 #endif
 #else
+#if !(defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__))
 #include <cpuid.h>
+#endif
 #include "inttypes.h"
 #endif
 
@@ -106,6 +108,15 @@ uint64_t xgetbv(unsigned int x) {
 	return _xgetbv(x);
 }
 #else
+#if defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__)
+void cpuid(int32_t out[4], int32_t x) {
+	/* Just disable it as anything better is unimplemented. */
+	out[0] = 0;
+}
+uint64_t xgetbv(unsigned int index) {
+	return 0;
+}
+#else
 void cpuid(int32_t out[4], int32_t x) {
 	__cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
 }
@@ -114,6 +125,7 @@ uint64_t xgetbv(unsigned int index) {
 	__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
 	return ((uint64_t)edx << 32) | eax;
 }
+#endif
 #define _XCR_XFEATURE_ENABLED_MASK  0
 #endif
 
