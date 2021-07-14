@@ -66,7 +66,10 @@
 #ifdef _WIN32
 #include <intrin.h>
 #elif defined(FN_ARM)
-#if !defined(__aarch64__) && !defined(FN_IOS)
+#if !defined(__ANDROID__) && (defined(__linux__) || defined(linux) || defined(__LINUX__) || defined(__linux))
+#include <sys/auxv.h>
+#include <asm/hwcap.h>
+#elif !defined(__aarch64__) && !defined(FN_IOS)
 #include "ARM/cpu-features.h"
 #endif
 #else
@@ -81,6 +84,10 @@ int GetFastestSIMD()
 {
 #if defined(__aarch64__) || defined(FN_IOS)
 	return FN_NEON;
+#elif !defined(__ANDROID__) && (defined(__linux__) || defined(linux) || defined(__LINUX__) || defined(__linux))
+	if ((getauxval(AT_HWCAP) & HWCAP_NEON) != 0) {
+		return FN_NEON;
+	}
 #else
 	if (android_getCpuFamily() == ANDROID_CPU_FAMILY_ARM)
 	{
@@ -92,9 +99,9 @@ int GetFastestSIMD()
 #endif
 				return FN_NEON;
 	}
+#endif
 
 	return FN_NO_SIMD_FALLBACK;
-#endif
 }
 #else
 
